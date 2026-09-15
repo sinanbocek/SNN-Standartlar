@@ -93,7 +93,7 @@ function dirtyInfo(dir) {
   const lines = out.split('\n').filter(Boolean);
   let oldest = Date.now();
   for (const line of lines) {
-    const rel = line.slice(3).replace(/^"|"$/g, '').split(' -> ').pop();
+    const rel = line.replace(/^\s*\S{1,2}\s+/, '').replace(/^"|"$/g, '').split(' -> ').pop(); // ilk satır kırpılmış olabilir
     try {
       const m = fs.statSync(path.join(dir, rel)).mtimeMs;
       if (m < oldest) oldest = m;
