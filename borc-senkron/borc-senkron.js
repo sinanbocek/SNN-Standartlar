@@ -90,6 +90,7 @@ function setBoardStatus(board, item, key) {
 
 function ensureOnBoard(repo, board, issueNumber, key) {
   if (!board || board.skipped) return '';
+  loadBoardItems(repo, board); // SABOTAJ
   let item = board.items.get(issueNumber);
   if (!item) {
     const url = `${repo.url}/issues/${issueNumber}`;
@@ -224,7 +225,6 @@ function main() {
     } catch (e) {
       const msg = (e.stderr || e.message).toString().trim();
       // Hak sınırı arıza değildir: yeşil biter, kalanlar sonraki turda (kırmızı hata e-postası atmaz)
-      if (kota.isRateLimitError(msg)) { budget = measureBudget(); stopForBudget(null); break; }
       console.log(`  ✗ ${w.label} — HATA: ${msg}`);
       process.exitCode = 1;
       break;
