@@ -71,6 +71,12 @@ function usageSummary(dir) {
   return `${top.length} farklı ad, ${top.reduce((s, x) => s + x[1], 0)} import: ${top.slice(0, 12).map(([n, c]) => `\`${n}\`×${c}`).join(', ')}${top.length > 12 ? '…' : ''}`;
 }
 
+// npm 10 sabit etiketli git bağımlılığını kilit dosyasına işlemiyor (2026-09-15 ölçümü); uygulamadan önce durdur
+function assertNpm11() {
+  const major = Number(run('npm', ['--version']).trim().split('.')[0]);
+  if (!(major >= 11)) throw new Error(`npm ${major} ile güncelleme yapılamaz; npm 11 gerekli (npm 10 git bağımlılığını kilit dosyasına işlemiyor)`);
+}
+
 function applyOne(repo, plan, pkgText, changelog) {
   const token = process.env.GH_TOKEN;
   if (!token) throw new Error('GH_TOKEN yok');
@@ -141,6 +147,7 @@ function main() {
   if (!P.parse(TARGET)) throw new Error('Kullanım: --surum vX.Y.Z');
   const coreLog = fileAt(P.CORE_REPO, 'CHANGELOG.md', TARGET.startsWith('v') ? TARGET : `v${TARGET}`) || fileAt(P.CORE_REPO, 'CHANGELOG.md') || '';
   console.log(`${APPLY ? '▶ UYGULAMA' : '🔍 KURU ÇALIŞTIRMA (hiçbir şey değişmez)'} · çekirdek ${TARGET}${ONLY ? ` · yalnız ${ONLY}` : ''}`);
+  if (APPLY) assertNpm11();
   let failed = 0;
   for (const repo of consumers()) {
     const pkgText = fileAt(repo, 'package.json');

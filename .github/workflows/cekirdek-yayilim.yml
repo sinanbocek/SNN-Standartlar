@@ -39,9 +39,16 @@ jobs:
           repository: sinanbocek/SNN-Standartlar
           ref: ${{ inputs.standart_surumu }}
 
+      # Node 24 = npm 11. npm 10 sabit etiketli git bağımlılığını (#v2.7.0 → #v3.2.0) kilit dosyasına işlemiyor ve
+      # npm 11'in yazdığı libc satırlarını siliyor (2026-09-15 ölçümü: Gunum-Var PR açılamadı, Ihale/Portföy'de gürültü)
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
+
+      - name: npm sürümü en az 11 olmalı
+        run: |
+          npm --version
+          [ "$(npm --version | cut -d. -f1)" -ge 11 ] || { echo "npm 11 gerekli"; exit 1; }
 
       - name: Çekirdek sürümünü projelere yay
         env:
