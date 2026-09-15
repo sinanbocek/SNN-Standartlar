@@ -18,6 +18,8 @@ jobs:
           node-version: 20
       - name: Senkron testleri
         run: node borc-senkron/test/senkron.test.js
+      - name: Uçtan uca (sahte gh ile istek hakkı ve board maliyeti)
+        run: node borc-senkron/test/senkron-e2e.test.js
       - name: Sözdizimi
         run: node --check borc-senkron/borc-senkron.js
       - name: ESM projede çalışma (tüketen package.json "type":"module" olsa da)

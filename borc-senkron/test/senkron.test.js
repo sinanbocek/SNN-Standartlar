@@ -135,5 +135,16 @@ let hata = null;
 try { setIssueNumber(iki, 'TB-999', 1); } catch (e) { hata = e.message; }
 expect('olmayan kayıt → açık hata (sessiz geçmez)', hata, 'TB-999 kütükte bulunamadı');
 
+console.log('— istek hakkı (kota) kararları');
+const kota = require('../lib/kota');
+expect('GraphQL hak sınırı mesajı tanınır', kota.isRateLimitError('GraphQL: API rate limit exceeded for user ID 196833380.'), true);
+expect('ikincil sınır mesajı tanınır', kota.isRateLimitError('You have exceeded a secondary rate limit'), true);
+expect('başka hata hak sınırı sayılmaz', kota.isRateLimitError('resource not found, please check the URL'), false);
+expect('pay altında → dur', kota.shouldPause(kota.RESERVE - 1), true);
+expect('pay üstünde → devam', kota.shouldPause(kota.RESERVE), false);
+expect('ölçülemedi → devam (hata olursa mesajdan yakalanır)', kota.shouldPause(null), false);
+const pm = kota.pauseMessage({ remaining: 12, resetAt: '2026-09-15T13:52:28Z', done: 27, left: 4 });
+expect('durma mesajı yenilenme saatini ve kalanı söyler', [pm.includes('13:52'), pm.includes('27 işlem'), pm.includes('4 işlem sonraki')], [true, true, true]);
+
 console.log(fail ? `\n✗ ${fail} test başarısız` : '\n✓ tümü geçti');
 process.exit(fail ? 1 : 0);

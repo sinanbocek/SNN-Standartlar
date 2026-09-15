@@ -11,6 +11,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { parseDebts, parseArchiveIds, setIssueNumber } = require('./lib/borc');
 const { plan } = require('./lib/senkron-plan');
+const kota = require('./lib/kota');
 
 const OPEN_FILE = path.join('docs', 'teknik-borc.md');
 const ARCHIVE_FILE = path.join('docs', 'teknik-borc-arsiv.md');
@@ -60,38 +61,57 @@ function findBoard(repo) {
 const CREATE_PAUSE_MS = 1500;
 const pause = () => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, CREATE_PAUSE_MS);
 
+// Board kartları tur başında BİR KEZ okunur ve bellekte tutulur. Eskiden her kart için tüm board yeniden
+// okunuyordu; ilk toplu doldurmada saatlik istek hakkını bitiriyordu (2026-09-15 ölçümü).
+// board.items: issue numarası → { id, status }
+function loadBoardItems(repo, board) {
+  const items = JSON.parse(ghp(['project', 'item-list', String(board.number), '--owner', repo.owner, '--format', 'json', '--limit', '1000'])).items;
+  board.items = new Map(items.filter((i) => i.content && i.content.repository === repo.full)
+    .map((i) => [i.content.number, { id: i.id, status: i.status || null }]));
+}
+
 // Issue'su olan ama board'da kartı olmayan YA DA kartı olup durumu boş kalan kayıtlar
 // (2026-09-15: hız sınırında kart eklendi, durum ayarı düştü → "var ama durumsuz" kart)
 // issueOf: kaydın issue numarası — kütükteki "Issue: #N" satırı yoksa başlıktaki [TB-xxx] eşleşmesinden (--ci modunda kütüğe yazılmaz)
-function missingOnBoard(repo, board, debts, issueOf) {
-  const items = JSON.parse(ghp(['project', 'item-list', String(board.number), '--owner', repo.owner, '--format', 'json', '--limit', '1000'])).items;
-  const byIssue = new Map(items.filter((i) => i.content && i.content.repository === repo.full).map((i) => [i.content.number, i]));
+function missingOnBoard(board, debts, issueOf) {
   return debts
     .map((d) => ({ ...d, issue: issueOf(d) }))
-    .filter((d) => d.issue && (!byIssue.has(d.issue) || !byIssue.get(d.issue).status))
-    .map((d) => ({ ...d, boardReason: byIssue.has(d.issue) ? 'kart var, durum boş' : 'issue var, kart yok' }));
+    .filter((d) => d.issue && (!board.items.has(d.issue) || !board.items.get(d.issue).status))
+    .map((d) => ({ ...d, boardReason: board.items.has(d.issue) ? 'kart var, durum boş' : 'issue var, kart yok' }));
 }
 
-function boardItemId(repo, board, issueNumber) {
-  const items = JSON.parse(ghp(['project', 'item-list', String(board.number), '--owner', repo.owner, '--format', 'json', '--limit', '500'])).items;
-  const hit = items.find((i) => i.content && i.content.number === issueNumber && i.content.repository === repo.full);
-  return hit ? hit.id : null;
-}
-
-function setBoardStatus(repo, board, itemId, key) {
-  if (!board || !board.statusFieldId || !board.optionIds[key]) return `board durumu "${BOARD_STATUS[key]}" bulunamadı`;
-  ghp(['project', 'item-edit', '--id', itemId, '--project-id', board.id, '--field-id', board.statusFieldId, '--single-select-option-id', board.optionIds[key]]);
+function setBoardStatus(board, item, key) {
+  if (!board.statusFieldId || !board.optionIds[key]) return `board durumu "${BOARD_STATUS[key]}" bulunamadı`;
+  if (item.status === BOARD_STATUS[key]) return `board: ${BOARD_STATUS[key]}`;
+  ghp(['project', 'item-edit', '--id', item.id, '--project-id', board.id, '--field-id', board.statusFieldId, '--single-select-option-id', board.optionIds[key]]);
+  item.status = BOARD_STATUS[key];
   return `board: ${BOARD_STATUS[key]}`;
 }
 
 function ensureOnBoard(repo, board, issueNumber, key) {
   if (!board || board.skipped) return '';
-  let itemId = boardItemId(repo, board, issueNumber);
-  if (!itemId) {
+  let item = board.items.get(issueNumber);
+  if (!item) {
     const url = `${repo.url}/issues/${issueNumber}`;
-    itemId = JSON.parse(ghp(['project', 'item-add', String(board.number), '--owner', repo.owner, '--url', url, '--format', 'json'])).id;
+    item = { id: JSON.parse(ghp(['project', 'item-add', String(board.number), '--owner', repo.owner, '--url', url, '--format', 'json'])).id, status: null };
+    board.items.set(issueNumber, item);
   }
-  return ` (${setBoardStatus(repo, board, itemId, key)})`;
+  return ` (${setBoardStatus(board, item, key)})`;
+}
+
+// En düşük kalan GraphQL hakkı (issue anahtarı ve board anahtarı ayrı ayrı ölçülür). rate_limit sorgusu hak harcamaz.
+function measureBudget() {
+  const read = (project) => {
+    try {
+      return JSON.parse(gh(['api', 'rate_limit', '--jq', '.resources.graphql'], { project }));
+    } catch {
+      return null;
+    }
+  };
+  const all = [read(false), process.env.PROJECT_TOKEN ? read(true) : null].filter(Boolean);
+  if (!all.length) return { remaining: null, resetAt: null };
+  const low = all.reduce((a, b) => (b.remaining < a.remaining ? b : a));
+  return { remaining: low.remaining, resetAt: low.reset * 1000 };
 }
 
 function writeBack(file, id, number) {
@@ -171,40 +191,46 @@ function main() {
   console.log(`${doApply ? '▶ UYGULAMA' : '🔍 KURU ÇALIŞTIRMA (hiçbir şey değişmez)'}${CI ? ' [CI]' : ''} · ${repo.full} (${repo.isPublic ? 'PUBLIC' : 'private'})`);
   console.log(`Kütük: ${debts.length} açık · arşiv: ${archiveIds.length} · depodaki issue: ${issues.length}`);
   console.log(`Board "${boardTitle(repo.name)}": ${boardLabel}`);
-  let boardFixes = 0;
-  for (const a of actions) {
+  if (board && !board.skipped) loadBoardItems(repo, board);
+
+  // İş listesi: önce plan işlemleri, sonra board düzeltmeleri (kartlar bellekte olduğu için baştan hesaplanır;
+  // bu turda açılacak issue'ların kartı açılırken eklenir, düzeltme listesine girmez)
+  const work = actions.map((a) => ({ label: describe(a), run: () => apply(a, repo, openFile, board) }));
+  if (board && !board.skipped) {
+    const created = new Set(actions.filter((a) => a.type === 'create').map((a) => a.id));
+    for (const d of missingOnBoard(board, debts.filter((x) => !created.has(x.id)), issueOf)) {
+      work.push({ label: `board düzelt: ${d.id} → #${d.issue} (${d.boardReason})`, run: () => { const n = ensureOnBoard(repo, board, d.issue, 'open'); pause(); return n; } });
+    }
+  }
+
+  let done = 0;
+  let budget = { remaining: null, resetAt: null };
+  const stopForBudget = (remaining) => {
+    const msg = kota.pauseMessage({ remaining, resetAt: budget.resetAt, done, left: work.length - done });
+    console.log(`  ${msg}`);
+  };
+  for (const w of work) {
     if (!doApply) {
-      console.log(`  • ${describe(a)}`);
+      console.log(`  • ${w.label}`);
       continue;
     }
+    if (done % kota.CHECK_EVERY === 0) {
+      budget = measureBudget();
+      if (kota.shouldPause(budget.remaining)) { stopForBudget(budget.remaining); break; }
+    }
     try {
-      console.log(`  • ${describe(a)} ${apply(a, repo, openFile, board)}`);
+      console.log(`  • ${w.label} ${w.run()}`);
+      done += 1;
     } catch (e) {
-      console.log(`  ✗ ${describe(a)} — HATA: ${(e.stderr || e.message).toString().trim()}`);
+      const msg = (e.stderr || e.message).toString().trim();
+      // Hak sınırı arıza değildir: yeşil biter, kalanlar sonraki turda (kırmızı hata e-postası atmaz)
+      if (kota.isRateLimitError(msg)) { budget = measureBudget(); stopForBudget(null); break; }
+      console.log(`  ✗ ${w.label} — HATA: ${msg}`);
       process.exitCode = 1;
       break;
     }
   }
-  if (board && !board.skipped && process.exitCode !== 1) {
-    const created = new Set(actions.filter((a) => a.type === 'create').map((a) => a.id));
-    const fresh = parseDebts(fs.readFileSync(openFile, 'utf8')).filter((d) => !created.has(d.id) || !doApply);
-    for (const d of missingOnBoard(repo, board, fresh, issueOf)) {
-      boardFixes += 1;
-      if (!doApply) {
-        console.log(`  • board düzelt: ${d.id} → #${d.issue} (${d.boardReason})`);
-        continue;
-      }
-      try {
-        console.log(`  • board düzelt: ${d.id} → #${d.issue} (${d.boardReason})${ensureOnBoard(repo, board, d.issue, 'open')}`);
-        pause();
-      } catch (e) {
-        console.log(`  ✗ board'a ekle: ${d.id} — HATA: ${(e.stderr || e.message).toString().trim()}`);
-        process.exitCode = 1;
-        break;
-      }
-    }
-  }
-  if (!actions.length && !boardFixes) console.log('Yapılacak işlem yok; senkron.');
+  if (!work.length) console.log('Yapılacak işlem yok; senkron.');
   if (board && board.skipped) console.log(`  ⚠ ${board.skipped}`);
   warnings.forEach((w) => console.log(`  ⚠ ${w}`));
 }
