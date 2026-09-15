@@ -24,7 +24,29 @@ function parseMerges(cmd) {
     if (repo && /\$/.test(repo)) repo = null;
     out.push({ number, repo, raw: m[0].trim() });
   }
+  // Doğrudan API ile birleştirme de aynı denetimden geçer (2026-09-15: başka oturum PR'ı
+  // "gh api repos/o/r/pulls/74/merge -X PUT" ile kapıyı atlayarak birleştirdi)
+  for (const m of cmd.matchAll(/\bgh\s+api\b[^\n;|&]*?\brepos\/([^/\s'"]+\/[^/\s'"]+)\/pulls\/([^/\s'"]+)\/merge\b[^\n;|&]*/g)) {
+    const number = /^\d+$/.test(m[2]) ? Number(m[2]) : null;
+    const repo = /\$/.test(m[1]) ? null : m[1];
+    out.push({ number, repo, raw: m[0].trim() });
+  }
   return out;
+}
+
+// SAF: denetimi atlatan yollar. Ham GraphQL ile birleştirme ya da taslak işaretini kaldırma kapıdan geçmez;
+// taslak işareti bir insanın "henüz hazır değil" kararıdır. Döner: ret gerekçesi ya da null
+function bypassReason(cmd) {
+  if (/\bmergePullRequest\b|\benablePullRequestAutoMerge\b/.test(cmd)) {
+    return 'PR ham GraphQL ile birleştirilemez; kontrolleri denetleyen "gh pr merge <no> -R <depo>" kullanılmalı.';
+  }
+  if (/\bmarkPullRequestReadyForReview\b/.test(cmd)) {
+    return 'Taslak (draft) işareti ham GraphQL ile kaldırılamaz. Taslak, bir insanın "henüz hazır değil" kararıdır: önce kullanıcıdan sohbette onay al, sonra ayrı bir adımda "gh pr ready <no> -R <depo>" kullan.';
+  }
+  if (/\bgh\s+pr\s+ready\b/.test(cmd) && /\bgh\s+pr\s+merge\b|\/pulls\/[^/\s]+\/merge\b/.test(cmd)) {
+    return 'Taslak işaretini kaldırma ile birleştirme aynı komutta yapılamaz; ikisi ayrı adım olmalı ve arada kullanıcı onayı bulunmalı.';
+  }
+  return null;
 }
 
 // SAF: kontrol listesine göre karar. checks = [{ name, bucket }] (bucket: pass|fail|pending|skipping|cancel), null = kontrol tanımlı değil
@@ -58,6 +80,8 @@ function readChecks(merge, cwd) {
 
 // Komuttaki tüm birleştirmeler için ilk ret gerekçesi ya da null
 function gate(cmd, cwd) {
+  const bypass = bypassReason(cmd);
+  if (bypass) return bypass;
   for (const merge of parseMerges(cmd)) {
     let checks;
     try {
@@ -71,4 +95,6 @@ function gate(cmd, cwd) {
   return null;
 }
 
-module.exports = { parseMerges, decide, gate };
+module.exports = { parseMerges, bypassReason, decide, gate };
+// Hook'un bu modülü çağırması gereken komutlar (ucuz ön süzgeç)
+module.exports.TRIGGER = /\bgh\s+pr\s+(merge|ready)\b|\/pulls\/[^/\s]+\/merge\b|mergePullRequest|enablePullRequestAutoMerge|markPullRequestReadyForReview/;
