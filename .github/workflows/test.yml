@@ -1,0 +1,22 @@
+# Ortak deponun kendi kontrolü: senkron planı testleri
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Senkron testleri
+        run: node borc-senkron/test/senkron.test.js
+      - name: Sözdizimi
+        run: node --check borc-senkron/borc-senkron.js
