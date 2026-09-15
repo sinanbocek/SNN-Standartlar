@@ -1,6 +1,6 @@
 // Birleştirme kapısı testleri (saf; GitHub'a istek atmaz). Çalıştır: node kalite/test/birlestirme-kapisi.test.js
 'use strict';
-const { parseMerges, decide } = require('../birlestirme-kapisi');
+const { parseMerges, bypassReason, decide, TRIGGER } = require('../birlestirme-kapisi');
 
 let fail = 0;
 const expect = (name, actual, wanted) => {
@@ -18,6 +18,19 @@ expect('değişkenli numara çözülemez', pick(parseMerges('gh pr merge $n -R $
 expect('tırnaklı komutta tırnak depo adına karışmaz', pick(parseMerges('bash -c "gh pr merge 3 -R o/r"')), [{ number: 3, repo: 'o/r' }]);
 expect('zincirde iki birleştirme', parseMerges('gh pr merge 1 -R a/b; gh pr merge 2 -R c/d').length, 2);
 expect('başka gh komutu sayılmaz', parseMerges('gh pr view 3 --json state; gh pr checks 3').length, 0);
+
+console.log('— atlatma yolları');
+expect('REST birleştirme çözülür', pick(parseMerges('gh api repos/sinanbocek/Gunum-Var/pulls/74/merge -X PUT -f merge_method=merge')), [{ number: 74, repo: 'sinanbocek/Gunum-Var' }]);
+expect('REST birleştirme, -X önce', pick(parseMerges('gh api -X PUT repos/o/r/pulls/9/merge')), [{ number: 9, repo: 'o/r' }]);
+expect('REST değişkenli numara çözülemez', pick(parseMerges('gh api repos/o/r/pulls/$n/merge -X PUT')), [{ number: null, repo: 'o/r' }]);
+expect('PR okuma (birleştirme değil) sayılmaz', parseMerges('gh api repos/o/r/pulls/9 --jq .mergeable').length, 0);
+expect('ham GraphQL birleştirme → ret', bypassReason('gh api graphql -f query="mutation { mergePullRequest(input:{}) { clientMutationId } }"') !== null, true);
+expect('ham GraphQL taslak kaldırma → ret', bypassReason('gh api graphql -f query="mutation { markPullRequestReadyForReview(input:{}) { pullRequest { isDraft } } }"') !== null, true);
+expect('taslak kaldırma + birleştirme aynı komutta → ret', bypassReason('gh pr ready 110 -R o/r && gh pr merge 110 -R o/r') !== null, true);
+expect('tek başına taslak kaldırma komutu → atlatma değil', bypassReason('gh pr ready 110 -R o/r'), null);
+expect('olay: diğer oturumun engellenen komutu tetikler', TRIGGER.test('gh api graphql -f query="mutation { markPullRequestReadyForReview(input:{}) { x } }" && gh api repos/o/r/pulls/110/merge -X PUT'), true);
+expect('olay: REST birleştirme tetikler', TRIGGER.test('gh api repos/o/r/pulls/74/merge -X PUT -f merge_method=merge'), true);
+expect('ilgisiz gh komutu tetiklemez', TRIGGER.test('gh pr view 3 --json state'), false);
 
 console.log('— karar');
 const m = { number: 3, repo: 'o/r', raw: 'gh pr merge 3' };
