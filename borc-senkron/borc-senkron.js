@@ -238,6 +238,13 @@ function main() {
 try {
   main();
 } catch (e) {
-  console.error(`borc-senkron hatası: ${(e.stderr || e.message).toString().trim()}`);
+  const msg = (e.stderr || e.message).toString().trim();
+  // İşlemlere başlamadan önceki okumalarda (depo, issue listesi, board) hak biterse de arıza sayılmaz
+  // (2026-09-15: Portföy'de board okunurken hak bitti, görevli kırmızı bitti)
+  if (kota.isRateLimitError(msg)) {
+    console.log(`  ${kota.pauseMessage({ remaining: null, resetAt: null, done: 0, left: 'tüm' })}`);
+    process.exit(0);
+  }
+  console.error(`borc-senkron hatası: ${msg}`);
   process.exit(1);
 }

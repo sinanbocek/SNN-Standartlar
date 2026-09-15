@@ -35,7 +35,10 @@ if (k === 'label list') out(['teknik-borç', 'P1-Acil', 'P2-Planlı', 'P3-Fırsa
 if (k === 'api rate_limit') out({ remaining: Number(process.env.FAKE_REMAINING || 5000), reset: 1789999999 });
 if (k === 'project list') out({ projects: [{ number: 1, id: 'P', title: 'r · Teknik Borç' }] });
 if (k === 'project field-list') out({ fields: [{ name: 'Status', id: 'F', options: [{ id: 'o1', name: 'Açık' }, { id: 'o2', name: 'Kapandı' }] }] });
-if (k === 'project item-list') out({ items: [] });
+if (k === 'project item-list') {
+  if (process.env.FAKE_BOARD_LIMIT) { process.stderr.write('GraphQL: API rate limit exceeded for user ID 1.'); process.exit(1); }
+  out({ items: [] });
+}
 if (k === 'project item-add') out({ id: 'I' + Date.now() });
 if (k === 'project item-edit') out('');
 if (k === 'issue create') {
@@ -80,6 +83,11 @@ console.log('— hak baştan azdı');
 r = run({ FAKE_REMAINING: '100' });
 expect('hiç issue açılmaz, çıkış 0', [r.code, count(r.calls, 'issue create')], [0, 0]);
 expect('durma mesajı kalan hakkı söyler', r.out.includes('kalan hak 100'), true);
+
+console.log('— hak board okunurken bitti (işlemlerden önce)');
+r = run({ FAKE_BOARD_LIMIT: '1' });
+expect('kırmızı hata yok: çıkış 0 ve ⏸', [r.code, r.out.includes('⏸')], [0, true]);
+expect('hiç issue açılmaz', count(r.calls, 'issue create'), 0);
 
 console.log('— gerçek arıza (hak sınırı değil)');
 r = run({ FAKE_OTHER_ERR: '1' });
