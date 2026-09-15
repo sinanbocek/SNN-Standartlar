@@ -26,6 +26,8 @@ jobs:
         run: node kalite/test/sema-belgesi.test.js
       - name: Birleştirme kapısı testleri
         run: node kalite/test/birlestirme-kapisi.test.js
+      - name: Unutulan iş testleri
+        run: node borc-senkron/test/unutulan-is.test.js
       - name: Güvenlik uyarıları testleri
         run: node kalite/test/guvenlik-uyarilari.test.js
       - name: Sözdizimi
