@@ -32,6 +32,10 @@ jobs:
         run: node borc-senkron/test/unutulan-is.test.js
       - name: Güvenlik uyarıları testleri
         run: node kalite/test/guvenlik-uyarilari.test.js
+      - name: Çekirdek yayılım planı testleri
+        run: node cekirdek/test/yayilim-plan.test.js
+      - name: Çekirdek yayılım sözdizimi
+        run: node --check cekirdek/yayilim.js
       - name: Akış dosyası yazım denetimi
         run: node kalite/test/akis-dosyalari.test.js
       - name: Anahtar taraması testleri

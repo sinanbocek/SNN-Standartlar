@@ -1,0 +1,39 @@
+# YALNIZ çekirdek deposuna (SNN-Abacus-Core) konacak dosya: .github/workflows/cekirdek-yayilim.yml
+# Yeni sürüm etiketi (v1.2.3) gönderilince, çekirdeği kullanan her projeye güncelleme PR'ı açılır.
+# Elle tetikleme: önce "uygula" işaretsiz (yalnız plan), sonra işaretli.
+name: cekirdek-yayilim
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      surum:
+        description: "Yayılacak sürüm (ör. v3.3.0)"
+        type: string
+        required: true
+      uygula:
+        description: "İşaretsizse yalnız plan"
+        type: boolean
+        default: false
+      yalniz:
+        description: "Yalnız bu depo (boş = tüm tüketiciler)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cekirdek-yayilim
+  cancel-in-progress: false
+
+jobs:
+  yay:
+    uses: sinanbocek/SNN-Standartlar/.github/workflows/cekirdek-yayilim.yml@main
+    with:
+      surum: ${{ github.event_name == 'push' && github.ref_name || inputs.surum }}
+      uygula: ${{ github.event_name == 'push' || inputs.uygula }}
+      yalniz: ${{ github.event_name == 'push' && '' || inputs.yalniz }}
+    secrets:
+      PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}

@@ -1,0 +1,48 @@
+// Çekirdek yayılım planı testleri (saf). Çalıştır: node cekirdek/test/yayilim-plan.test.js
+'use strict';
+const P = require('../lib/yayilim-plan');
+const { parseDebts } = require('../../borc-senkron/lib/borc');
+
+let fail = 0;
+const expect = (name, actual, wanted) => {
+  const ok = JSON.stringify(actual) === JSON.stringify(wanted);
+  if (!ok) fail += 1;
+  console.log(`${ok ? '✓' : '✗'} ${name}${ok ? '' : `\n    gelen: ${JSON.stringify(actual)}\n    beklenen: ${JSON.stringify(wanted)}`}`);
+};
+
+console.log('— sürüm');
+expect('karşılaştırma', [P.compare('3.0.0', '3.2.0'), P.compare('v3.2.0', '3.2.0'), P.compare('3.10.0', '3.9.9')], [-1, 0, 1]);
+
+console.log('— karar (bugünkü gerçek tüketiciler, hedef 3.2.0)');
+const d = (locked, extra = {}) => P.decide({ locked, target: 'v3.2.0', hasOpenPr: false, ...extra });
+expect('trade-kasa 3.2.0 → atla (güncel)', d('3.2.0').action, 'atla');
+expect('Yönetici Özeti 3.0.0 → PR, ana sürüm değil', [d('3.0.0').action, d('3.0.0').major], ['pr', false]);
+expect('GHS 2.8.0 → PR, ANA sürüm', [d('2.8.0').action, d('2.8.0').major], ['pr', true]);
+expect('açık PR varsa → atla (aynı PR iki kez açılmaz)', d('3.0.0', { hasOpenPr: true }).action, 'atla');
+expect('kilit okunamadı → atla', d(null).action, 'atla');
+expect('bozuk hedef → hata', P.decide({ locked: '3.0.0', target: 'son', hasOpenPr: false }).action, 'hata');
+
+console.log('— bağımlılık tanımı');
+expect('sabit sürüm korunur (Gunum-Var)', P.rewriteSpec('github:sinanbocek/SNN-Abacus-Core#v2.7.0', '3.2.0'), 'github:sinanbocek/SNN-Abacus-Core#v3.2.0');
+expect('semver aralığı güncellenir', P.rewriteSpec('github:sinanbocek/SNN-Abacus-Core#semver:^3.0.0', 'v3.2.0'), 'github:sinanbocek/SNN-Abacus-Core#semver:^3.2.0');
+expect('depo yazımı korunur (Ihale küçük harf)', P.rewriteSpec('github:sinanbocek/snn-abacus-core#semver:^3.1.0', '3.2.0'), 'github:sinanbocek/snn-abacus-core#semver:^3.2.0');
+
+console.log('— değişiklik günlüğü');
+const log = '# Günlük\n\n## [3.2.0] - 2026-09-15\n\nC\n\n## [3.1.0] - 2026-09-10\n\nB\n\n## [3.0.1] - 2026-09-05\n\nA1\n\n## [3.0.0] - 2026-09-01\n\nA\n';
+const bol = P.changelogBetween(log, '3.0.0', '3.2.0');
+expect('(from, to] aralığı: 3.0.0 hariç, 3.2.0 dahil', [bol.includes('[3.2.0]'), bol.includes('[3.1.0]'), bol.includes('[3.0.1]'), bol.includes('[3.0.0]')], [true, true, true, false]);
+expect('aralık dışı boş', P.changelogBetween(log, '3.2.0', '3.2.0'), '');
+
+console.log('— kütük kaydı');
+expect('sonraki numara arşivi de sayar', P.nextDebtId(['### TB-041 — a', '- **Kapanış:** TB-088']), 'TB-089');
+expect('3 hane doldurma', P.nextDebtId(['### TB-7']), 'TB-008');
+const rec = P.majorDebtRecord({ id: 'TB-050', from: '2.8.0', to: '3.2.0', date: '2026-09-15', usage: '17 import' });
+const kutuk = '# Kütük\n\n### TB-001 — acil\n- **Öncelik:** P1 (Acil)\n\n---\n\n### TB-002 — plan\n- **Öncelik:** P2 (Planlı)\n\n---\n\n### TB-003 — fırsat\n- **Öncelik:** P3 (Fırsatta)\n';
+const yeni = P.insertRecord(kutuk, rec);
+const kayitlar = parseDebts(yeni);
+expect('kayıt standart ayrıştırıcıyla okunur (P2, sade anlatımlı)', (() => { const r = kayitlar.find((x) => x.id === 'TB-050'); return [r.priority, r.sade.includes('Sorun ne?')]; })(), ['P2', true]);
+expect('P2 grubunun sonuna, P3\'ün önüne yerleşir', kayitlar.map((x) => x.id), ['TB-001', 'TB-002', 'TB-050', 'TB-003']);
+expect('P3 yoksa sona eklenir', parseDebts(P.insertRecord('# K\n\n### TB-001 — a\n- **Öncelik:** P1 (Acil)\n', rec)).map((x) => x.id), ['TB-001', 'TB-050']);
+
+console.log(fail ? `\n✗ ${fail} test başarısız` : '\n✓ tümü geçti');
+process.exit(fail ? 1 : 0);
