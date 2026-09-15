@@ -32,7 +32,7 @@ jobs:
       - name: Ortak senkron betiğini al
         uses: actions/checkout@v4
         with:
-          repository: sinanbocek/snn-standartlar
+          repository: sinanbocek/SNN-Standartlar
           ref: ${{ inputs.standart_surumu }}
           path: .snn-standartlar
 

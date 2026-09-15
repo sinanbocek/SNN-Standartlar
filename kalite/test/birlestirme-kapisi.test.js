@@ -11,7 +11,7 @@ const expect = (name, actual, wanted) => {
 const pick = (list) => list.map(({ number, repo }) => ({ number, repo }));
 
 console.log('— komut çözme');
-expect('numara ve -R', pick(parseMerges('gh pr merge 3 -R sinanbocek/snn-standartlar --merge')), [{ number: 3, repo: 'sinanbocek/snn-standartlar' }]);
+expect('numara ve -R', pick(parseMerges('gh pr merge 3 -R sinanbocek/SNN-Standartlar --merge')), [{ number: 3, repo: 'sinanbocek/SNN-Standartlar' }]);
 expect('--repo= biçimi', pick(parseMerges('gh pr merge --merge --repo=o/r 12')), [{ number: 12, repo: 'o/r' }]);
 expect('PR adresi', pick(parseMerges('gh pr merge https://github.com/o/r/pull/7 --squash')), [{ number: 7, repo: 'o/r' }]);
 expect('değişkenli numara çözülemez', pick(parseMerges('gh pr merge $n -R $r --merge')), [{ number: null, repo: null }]);
