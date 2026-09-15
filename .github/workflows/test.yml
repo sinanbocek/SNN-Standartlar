@@ -32,6 +32,8 @@ jobs:
         run: node borc-senkron/test/unutulan-is.test.js
       - name: Güvenlik uyarıları testleri
         run: node kalite/test/guvenlik-uyarilari.test.js
+      - name: Akış dosyası yazım denetimi
+        run: node kalite/test/akis-dosyalari.test.js
       - name: Anahtar taraması testleri
         run: node kalite/test/anahtar-tarama.test.js
       - name: Bu PR'da eklenen satırlarda gizli anahtar (kendi kendini tarama)

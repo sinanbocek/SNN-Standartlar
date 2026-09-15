@@ -18,7 +18,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Proje deposunu al (tam geçmiş: taban commit ile karşılaştırma için)
+      - name: Proje deposunu al (tam geçmiş, taban commit ile karşılaştırma için)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
