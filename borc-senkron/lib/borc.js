@@ -102,6 +102,32 @@ function dirtyInfo(dir) {
   return { count: lines.length, ageDays: Math.floor((Date.now() - oldest) / DAY_MS) };
 }
 
+// Hiçbir uzak depoya gönderilmemiş commit'i olan yerel dallar: [{ name, commits, ageDays }]
+// ageDays = dalın son commit'inin yaşı. Neden (2026-09-15): Gunum-Var'da 11 dal yalnız bilgisayarda duruyordu;
+// bilgisayar bozulursa iş kaybolur, oturum başı yalnız commit'lenmemiş dosyaları gösteriyordu.
+function unpushedBranches(dir) {
+  const refs = git(dir, ['for-each-ref', 'refs/heads', '--format=%(refname:short)|%(committerdate:unix)']);
+  if (!refs) return [];
+  const hasRemote = !!git(dir, ['remote']);
+  return refs.split('\n').filter(Boolean).map((line) => {
+    const [name, unix] = line.split('|');
+    const count = hasRemote ? Number(git(dir, ['rev-list', '--count', name, '--not', '--remotes']) || 0) : 0;
+    return { name, commits: count, ageDays: Math.floor((Date.now() - Number(unix) * 1000) / DAY_MS) };
+  }).filter((b) => b.commits > 0);
+}
+
+// SAF: unutulmuş sayılan işler (eşik: gün). dirty = dirtyInfo çıktısı, branches = unpushedBranches çıktısı
+function forgottenWork({ dirty, branches }, days) {
+  const out = [];
+  if (dirty.count && dirty.ageDays >= days) out.push(`${dirty.count} dosya ${dirty.ageDays} gündür commit'siz`);
+  const old = branches.filter((b) => b.ageDays >= days);
+  if (old.length) {
+    const shown = old.slice(0, 3).map((b) => `${b.name} (${b.ageDays}g)`).join(', ');
+    out.push(`${old.length} dal ${Math.min(...old.map((b) => b.ageDays))}+ gündür hiç gönderilmemiş: ${shown}${old.length > 3 ? '…' : ''}`);
+  }
+  return out;
+}
+
 function projectStatus(dir) {
   let version = null;
   try {
@@ -117,6 +143,7 @@ function projectStatus(dir) {
     lastDate,
     lastMsg,
     dirty: dirtyInfo(dir),
+    branches: unpushedBranches(dir),
     debts: readDebts(dir),
   };
 }
@@ -142,4 +169,4 @@ function debtLabel(d) {
   return `P1:${c.P1} P2:${c.P2} P3:${c.P3}` + (c['P?'] ? ` P?:${c['P?']}` : '');
 }
 
-module.exports = { PROJECTS_ROOT, projectStatus, listProjects, findProjectRoot, debtLabel, parseDebts, parseArchiveIds, setIssueNumber };
+module.exports = { PROJECTS_ROOT, projectStatus, unpushedBranches, forgottenWork, listProjects, findProjectRoot, debtLabel, parseDebts, parseArchiveIds, setIssueNumber };
