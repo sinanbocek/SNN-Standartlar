@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
-const PROJECTS_ROOT = process.env.CLAUDE_PROJECTS_ROOT || 'C:\\Users\\sboce\\Documents\\SNN-AI-Asus-Z14';
+const PROJECTS_ROOT = process.env.CLAUDE_PROJECTS_ROOT || path.join(require('os').homedir(), 'Documents', 'SNN-AI-Asus-Z14');
 const STANDARD_FILE = path.join('docs', 'teknik-borc.md');
 const LEGACY_FILES = ['docs/tech-debt.md', 'docs/TECHNICAL_DEBT.md', 'TECH_DEBT.md', 'TECHNICAL_DEBT.md'];
 const DAY_MS = 86400000;
