@@ -20,3 +20,8 @@ jobs:
         run: node borc-senkron/test/senkron.test.js
       - name: Sözdizimi
         run: node --check borc-senkron/borc-senkron.js
+      - name: ESM projede çalışma (tüketen package.json "type":"module" olsa da)
+        run: |
+          mkdir -p /tmp/esm/.snn-standartlar && echo '{"type":"module"}' > /tmp/esm/package.json
+          cp -r borc-senkron /tmp/esm/.snn-standartlar/
+          cd /tmp/esm && node .snn-standartlar/borc-senkron/lib/senkron-plan.js

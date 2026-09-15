@@ -1,0 +1,4 @@
+{
+  "//": "Betik CommonJS; tüketen projenin package.json \"type\": \"module\" ayarı buraya sızmasın",
+  "type": "commonjs"
+}
