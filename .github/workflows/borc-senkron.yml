@@ -50,6 +50,8 @@ jobs:
             echo "docs/teknik-borc.md yok — bu projede kütük standart biçimde değil, senkron atlandı." | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+          # Teşhis: anahtarın DEĞERİ değil yalnız uzunluğu yazılır (0 = gelmedi ya da boş kaydedilmiş)
+          echo "PROJECT_TOKEN uzunluğu: ${#PROJECT_TOKEN}"
           ARGS=". --ci"
           if [ "$UYGULA" = "true" ]; then ARGS="$ARGS --uygula"; fi
           set -o pipefail
