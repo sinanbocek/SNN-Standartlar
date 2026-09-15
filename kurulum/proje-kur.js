@@ -17,6 +17,11 @@ const gh = (args) => execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 1e8
 const ghJson = (args) => JSON.parse(gh(args));
 const tryGh = (args) => { try { return { ok: true, out: gh(args) }; } catch (e) { return { ok: false, err: (e.stderr || e.message).toString() }; } };
 const exists = (repo, file, ref) => tryGh(['api', `repos/${repo}/contents/${file}?ref=${ref}`]).ok;
+// Tüketici akış dosyası mı? Ortak depodaki aynı adlı dosya çağrılabilir görevlidir (workflow_call), projeyi taramaz
+const callerWorkflow = (repo, file, ref) => {
+  const r = tryGh(['api', `repos/${repo}/contents/${file}?ref=${ref}`]);
+  return r.ok && !Buffer.from(JSON.parse(r.out).content, 'base64').toString('utf8').includes('workflow_call');
+};
 
 function readRemote(dir) {
   try {
@@ -50,8 +55,9 @@ function measure(dir) {
     debt,
     archive: exists(full, 'docs/teknik-borc-arsiv.md', def),
     workflows: {
-      'teknik-borc.yml': exists(full, '.github/workflows/teknik-borc.yml', def),
-      'anahtar-tarama.yml': exists(full, '.github/workflows/anahtar-tarama.yml', def),
+      'teknik-borc.yml': callerWorkflow(full, '.github/workflows/teknik-borc.yml', def),
+      // Ortak deponun kendisinde bu ad çağrılabilir görevlidir; üzerine proje örneği YAZILMAMALI. Ortak depo kendi PR'larını test.yml ile tarar.
+      'anahtar-tarama.yml': /\/SNN-Standartlar$/i.test(full) ? true : callerWorkflow(full, '.github/workflows/anahtar-tarama.yml', def),
     },
     board,
     secret: secretList.ok ? JSON.parse(secretList.out).secrets.some((s) => s.name === 'PROJECT_TOKEN') : null,
@@ -66,7 +72,15 @@ function putFile(repo, file, content, message) {
   const tmp = path.join(require('os').tmpdir(), `kurulum-${Date.now()}.b64`);
   fs.writeFileSync(tmp, b64);
   try {
-    gh(['api', '-X', 'PUT', `repos/${repo}/contents/${file}`, '-f', `branch=${BRANCH}`, '-F', `content=@${tmp}`, '-f', `message=${message}`]);
+    // Dal önceki bir çalıştırmadan kaldıysa dosya dalda zaten olabilir: aynı içerikse atla, farklıysa sha ile güncelle
+    const onBranch = tryGh(['api', `repos/${repo}/contents/${file}?ref=${BRANCH}`]);
+    const shaArgs = [];
+    if (onBranch.ok) {
+      const cur = JSON.parse(onBranch.out);
+      if (cur.content.replace(/\s/g, '') === b64) return;
+      shaArgs.push('-f', `sha=${cur.sha}`);
+    }
+    gh(['api', '-X', 'PUT', `repos/${repo}/contents/${file}`, '-f', `branch=${BRANCH}`, '-F', `content=@${tmp}`, '-f', `message=${message}`, ...shaArgs]);
   } finally {
     fs.rmSync(tmp, { force: true });
   }
