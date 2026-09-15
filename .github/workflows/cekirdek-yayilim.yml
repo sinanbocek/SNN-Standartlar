@@ -1,0 +1,58 @@
+# Ortak görevli: çekirdekte (SNN-Abacus-Core) yeni sürüm etiketi çıkınca, çekirdeği kullanan her projeye güncelleme PR'ı açar.
+# Çekirdek deposu bunu kendi .github/workflows/cekirdek-yayilim.yml dosyasından çağırır (ornek/cekirdek-yayilim.yml).
+name: cekirdek-yayilim
+
+on:
+  workflow_call:
+    inputs:
+      surum:
+        description: "Yayılacak çekirdek sürümü (ör. v3.3.0)"
+        type: string
+        required: true
+      uygula:
+        description: "false ise yalnız plan yazdırılır"
+        type: boolean
+        default: true
+      yalniz:
+        description: "Boş değilse yalnız bu depo (ör. sinanbocek/SNN-Yonetici-Ozeti)"
+        type: string
+        default: ""
+      standart_surumu:
+        description: "SNN-Standartlar deposundan kullanılacak dal/etiket"
+        type: string
+        default: main
+    secrets:
+      PROJECT_TOKEN:
+        description: "Tüketici depolarda dal ve PR açabilen anahtar (klasik PAT, repo yetkisi)"
+        required: true
+
+jobs:
+  yay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Ortak görevliyi al
+        uses: actions/checkout@v4
+        with:
+          repository: sinanbocek/SNN-Standartlar
+          ref: ${{ inputs.standart_surumu }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Çekirdek sürümünü projelere yay
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          SURUM: ${{ inputs.surum }}
+          UYGULA: ${{ inputs.uygula }}
+          YALNIZ: ${{ inputs.yalniz }}
+        run: |
+          ARGS=(--surum "$SURUM")
+          if [ "$UYGULA" = "true" ]; then ARGS+=(--uygula); fi
+          if [ -n "$YALNIZ" ]; then ARGS+=(--yalniz "$YALNIZ"); fi
+          set -o pipefail
+          node cekirdek/yayilim.js "${ARGS[@]}" 2>&1 | tee yayilim.log
+          { echo '### Çekirdek yayılımı'; echo '```'; cat yayilim.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
