@@ -11,6 +11,11 @@ Bir değişiklik birleştirilmeden önce sorulan sorular. Her madde **evet/hayı
 - [ ] Para, telefon, TCKN, VKN, e-posta, plaka biçimleri ABACUS motorlarından mı geliyor? Ham `toLocaleString`, `Intl`, `toFixed`, `toUpperCase` var mı?
       → `standartlar/giris-alanlari-standardi.md`
 
+## Adlandırma
+
+- [ ] **Yeni tanımlayıcı (dosya, klasör, değişken, tip, tablo, sütun, API alanı) İngilizce mi? Proje kuralı aile standardıyla çelişiyor mu?**
+      → `standartlar/kod-dili-standardi.md` (vaka: SNN-Piyasa-Core 2026-09-17, 52 dosya ve 10 tablo Türkçe adlandırıldı)
+
 ## Kayıt ve izlenebilirlik
 
 - [ ] Çözülmeyip ertelenen bir sorun fark edildiyse kütüğe kaydı açıldı mı (standart biçimde, Sade Anlatım + Teknik Detay)?
