@@ -11,6 +11,8 @@ SNN projelerinin ortak çalışma standartları ve **teknik borç kütüphanecis
 | Klasör | Ne işe yarar |
 |---|---|
 | `standartlar/teknik-borc-standardi.md` | Borç kaydının biçimi (Sade Anlatım + Teknik Detay, P1/P2/P3, hassas kayıt) |
+| `standartlar/giris-alanlari-standardi.md` | Sayı ve kod girişleri: yanlış karakter yazılamaz, biçim yazarken kurulur |
+| `standartlar/kod-inceleme-kontrol-listesi.md` | Birleştirmeden önce sorulan sorular |
 | `borc-senkron/` | Kütüğü okuyup issue ve board'u güncelleyen betik + testleri |
 | `.github/workflows/borc-senkron.yml` | GitHub'da çalışan ortak görevli (projeler bunu çağırır) |
 | `ornek/teknik-borc.yml` | Her projeye kopyalanacak tek bağlantı dosyası |
