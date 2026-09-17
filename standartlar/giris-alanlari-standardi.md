@@ -35,6 +35,7 @@ Bu yüzden her giriş alanında iki savunma **birlikte** bulunur:
 - **Binlik ayracı yazıldıkça kurulur**: kullanıcı `1250000` yazarken kutuda `1.250.000` görür.
 - Biçim **ABACUS para motorundan** gelir: tam sayı girilen kutularda `money.fmtDecimalGrouped`, ondalık girilebilen kutularda `money.formatGroupedInput`.
 - **Yasak:** ham `toLocaleString`, `Intl.NumberFormat`, `toFixed`. Bunlar tarayıcıya ve dil ayarına göre farklı sonuç verir; ABACUS tek ve ölçülmüş bir biçim üretir.
+- Aynı yasak **ham `toUpperCase` / `toLowerCase`** için de geçerlidir (bkz. 3. madde). Tek istisna: dizede yalnızca ASCII harf ve rakam kaldığı **ölçülebilir biçimde garanti** edildikten sonra yapılan ASCII büyütme; o zaman Türkçe harf tuzağı zaten kalmamıştır.
 - Kayıt anında kutudaki metin, saf bir yardımcı ile sayıya çevrilir (ayraçlar atılır).
 
 ### 2. Yıl, adet, hane sayısı belli alanlar
@@ -44,11 +45,27 @@ Bu yüzden her giriş alanında iki savunma **birlikte** bulunur:
 
 ### 3. Kod alanları (şasi, plaka, motor no, ruhsat seri)
 
-- **Otomatik büyük harf**: `text.upper` kullanılır.
-- Araya giren **boşluklar atılır**.
-- **Uzunluk sınırlanır** (şasi numarası 17 karakter gibi).
-- **Yasak:** ham `toUpperCase`. Türkçe harf tuzağı vardır: ham çağrı `i` harfini `I` yapar, oysa Türkçede karşılığı `İ`'dir; noktasız `ı` ise `I` olmalıdır. `text.upper` bunu doğru yapar.
-- Plaka için hazır motor vardır: `text.plate` (ayraçları atar, Türkçe `ı/İ` tuzağını çözer, değerin geçerli olup olmadığını söyler).
+Ortak kural: **otomatik büyük harf**, araya giren **boşluklar atılır**, **uzunluk sınırlanır** (şasi numarası 17 karakter gibi).
+
+Büyük harfe çevirmenin **iki ayrı doğrusu** vardır; alanın türüne göre seçilir:
+
+| Alan | Doğru yol | Neden |
+|---|---|---|
+| Türkçe metin içerebilen alanlar (ad, unvan, açıklama) | `text.upper` | Türkçe harf kurallarını bilir: `ı → I`, `i → İ` |
+| **Yalnız ASCII kod alanları** (şasi/VIN, motor no, ruhsat seri) | ASCII büyütme + `[A-Z0-9]` dışını süzme | Şasi numarasında Türkçe harf yoktur; `İ` yazmak kodu bozar |
+| Plaka | `text.plate` | Ayraçları atar, Türkçe `ı/İ` tuzağını çözer, geçerliliği söyler |
+
+**Ölçüm (2026-09-17, ABACUS 3.2.0 kaynağından çalıştırıldı):**
+
+```
+text.upper('irmaksasi')            => "İRMAKSASİ"   ← şasi alanı için YANLIŞ
+'irmaksasi'.toUpperCase()          => "IRMAKSASI"   ← burada doğru, ama Türkçe metinde yanlış
+```
+
+Yani **tek bir büyütme işi her alana uymaz**:
+- Ham `toUpperCase` Türkçe metinde yanlıştır (`i → I`, oysa `İ` olmalı). Bu yüzden **yasaktır**.
+- `text.upper` ise ASCII kod alanında yanlıştır (`i → İ`). Kod alanına uygulanmaz.
+- ASCII kodlar için doğru yol: harf ve rakam dışını süz, sonra ASCII büyüt. ABACUS'ta bunun hazır karşılığı **henüz yok** (`text.toAsciiLower` var, büyütme ikizi yok) — çekirdeğe talep edildi: `docs/abacus-talebi-giris-suzme.md`. Gelene kadar proje içindeki saf yardımcı kullanılır.
 
 ### 4. Telefon, TCKN, VKN, e-posta
 
@@ -88,9 +105,13 @@ export const amountInputToNumber = (raw: string): number | null => {
   return digits === '' ? null : Number(digits);
 };
 
-/** Kod alanı: büyük harf (Türkçe güvenli), boşluksuz, uzunluk sınırlı. */
+/** ASCII kod alanı (şasi, motor no): yalnız harf/rakam, ASCII büyük harf, sınırlı. */
 export const codeInput = (raw: string, maxLength: number): string =>
-  text.upper((raw ?? '').replace(/\s+/g, '')).slice(0, maxLength);
+  (raw ?? '').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, maxLength);
+
+/** Türkçe metin alanı (ad, unvan): Türkçe kurallarına göre büyük harf. */
+export const upperTextInput = (raw: string, maxLength: number): string =>
+  text.upper(raw ?? '').slice(0, maxLength);
 ```
 
 ```tsx
@@ -114,6 +135,8 @@ expect(groupedAmountInput('')).toBe('');
 expect(digitsOnlyInput('2o0a7', 4)).toBe('207');
 expect(digitsOnlyInput('20267', 4)).toBe('2026');
 expect(codeInput('nmt ab 1234', 17)).toBe('NMTAB1234');
+expect(codeInput('irmak sasi', 17)).toBe('IRMAKSASI');   // İRMAKSASİ değil
+expect(upperTextInput('irmak', 50)).toBe('İRMAK');       // Türkçe metinde doğrusu bu
 expect(amountInputToNumber('1.250.000')).toBe(1250000);
 expect(amountInputToNumber('')).toBeNull();
 ```
@@ -126,27 +149,22 @@ Kod incelemesinde (`standartlar/kod-inceleme-kontrol-listesi.md`) şu madde soru
 
 ## Ek değerlendirme: bu yardımcılar ABACUS'a taşınmalı mı?
 
-**Öneri: evet, ama önce ölçülerek ve iki adımda.** Karar proje sahibinindir.
+**Bu, bu deponun kararı değildir.** ABACUS ayrı bir depodur ve kendi kabul kuralları vardır (`GERI-BILDIRIM-KAYDI.md`, `AI-RULES §4.1`). Burada yalnızca **ölçüm ve talep** üretilir; kararı çekirdek ekibi verir.
 
-**Neden taşınmalı**
+Hazırlanan talep metni: **`docs/abacus-talebi-giris-suzme.md`**. Çekirdek talebi kabul edene kadar bu standart, **projelerin kendi yardımcı dosyaları için** bağlayıcıdır.
 
-- Biçimlendirme zaten ABACUS'ta (`money`, `text`, `validate`, `mask` motorları). Giriş süzme katmanı dışarıda kalırsa her proje kendi kopyasını yazar; kopyalar zamanla birbirinden ayrışır.
-- ABACUS'ta "canlı giriş" kavramı **zaten başlamış**: `money.formatGroupedInput` işinin açıklaması "serbest ondalık giriş kutuları için CANLI biçimlendirme".
-- ABACUS kendi ESLint yapılandırmasını yayımlıyor (`@snn/abacus-core/eslint`). Ham `toLocaleString` / `Intl` / `toFixed` / `toUpperCase` yasağı aynı yerden kurala bağlanabilir; yasak o zaman yazıya değil, derleme hattına yazılmış olur.
-- Çekirdeğin yayılım görevlisi yeni sürümü tüketici projelere PR olarak taşır; tek kaynak kendiliğinden dağılır.
+Talebin dayandığı ölçüm (2026-09-17, `src` altında aynı iki satırlık süzme kuralının kopyaları):
 
-**Riskler**
+| Proje | Geçiş | Dosya |
+|---|---|---|
+| GHS-Panel | 31 | 12 |
+| SNN-Portfoy-Yonetimi | 24 | 10 |
+| SNN-Yonetici-Ozeti | 59 | 8 |
+| SNN-Proje-ve-Nakit-Akis-Yonetimi | 7 | 3 |
+| Gunum-Var | 6 | 6 |
+| SNN-Ihale-Maliyet-Teklif-Yonetimi | 2 | 2 |
 
-- ABACUS saf bir hesaplama ve biçimlendirme çekirdeğidir. Arayüz kavramları (`onChange`, bileşen) oraya sızarsa sınırı bulanıklaşır. Çözüm: taşınan işler **yalnız metin → metin** olur; hiçbir React/DOM kavramı taşınmaz (`maxLength` sayı olarak verilir, bu bir arayüz kavramı değildir).
-- Yeni işler API yüzeyini büyütür; ABACUS'ta yüzey ve belge denetimleri var (`api-surface.test.ts`, `docs-claims.test.ts`), her iş belgelenmelidir.
-- Ana sürüm gerekmez (yalnız ekleme yapılır), ama tüketici projelerin sürümü yükseltmesi gerekir.
-
-**Önerilen adımlar**
-
-1. **Ölçüm:** 10 projede kaç giriş alanı var, kaçında kopya süzme mantığı yazılmış? Ölçülmeden taşınmaz.
-2. **1. adım — küçük çekirdek:** `input.digitsOnly(raw, maxLength)`, `input.groupedAmount(raw)`, `input.amountToNumber(raw)`, `input.code(raw, maxLength)` işleri ABACUS'ta yeni bir `input` motoru olarak yayımlanır (MINOR sürüm). GHS-Panel'deki dosya bunları çağırmaya geçer, kendi testleri yerinde kalır.
-3. **2. adım — kural:** ham `toLocaleString` / `Intl` / `toFixed` / `toUpperCase` yasağı ABACUS'un ESLint yapılandırmasına eklenir.
-4. Taşıma bitene kadar projeler kendi `numberInput.ts` dosyasını kullanır; **bu standart o dosya için de geçerlidir.**
+Aynı kural 41 dosyada yeniden yazılmış ve sürümleri ayrışıyor. Ayrıca ASCII kod alanları için çekirdekte karşılık yok (yukarıdaki 3. madde). Talep bu iki bulguya dayanıyor.
 
 ## Sözlük
 
