@@ -61,21 +61,36 @@ function deletedBranch(cmd) {
   if (push) return push[1];
   const local = text.match(/\bgit\s+branch\s+(?:-D|-d|--delete)\s+(\S+)/);
   if (local) return local[1];
-  if (/\bgh\s+pr\s+merge\b[^\n]*--delete-branch\b/.test(text)) return '(gh pr merge --delete-branch)';
+  // Birleştirme komutu dalı silerken silinen dal, O PR'IN KENDİ dalıdır (head).
+  // Burada PR numarası döndürülür; hangi dal olduğunu çağıran (bekçi) gh ile okur.
+  // 2026-09-18: yer tutucu bir metin döndürmek, her açık PR'ı eşleşme sayıp kendi
+  // birleştirmemizi engelledi — yanlış alarm, kendi kapımıza takıldık.
+  const viaCli = text.match(/\bgh\s+pr\s+merge\s+(\d+)\b[^\n]*--delete-branch\b/);
+  if (viaCli) return { prNumber: Number(viaCli[1]) };
   return null;
 }
 
 // SAF: dal siliniyor ve o dalı TABAN alan açık PR varsa engel gerekçesi döndürür.
 // openBasePRs: [{ number, base }] — bekçi bu listeyi gh ile okur, burada ağ yok.
-function branchDeleteBlock(cmd, openBasePRs = []) {
-  const branch = deletedBranch(cmd);
-  if (!branch) return null;
-  const hits = (openBasePRs || []).filter((p) => p && p.base && (branch === p.base || branch.endsWith(`/${p.base}`) || branch === '(gh pr merge --delete-branch)'));
+// SAF: dal siliniyor ve o dalı TABAN alan BAŞKA bir açık PR varsa engel gerekçesi döndürür.
+// openPRs: [{ number, base, head }] — bekçi bu listeyi gh ile okur; burada ağ yok.
+function branchDeleteBlock(cmd, openPRs = []) {
+  const target = deletedBranch(cmd);
+  if (!target) return null;
+  const list = openPRs || [];
+  // Silinecek dalın adı: doğrudan verilmişse o, değilse birleştirilen PR'ın kendi dalı
+  let branch = typeof target === 'string' ? target : null;
+  let mergingPr = null;
+  if (!branch && target && target.prNumber) {
+    mergingPr = list.find((p) => p && p.number === target.prNumber);
+    branch = mergingPr ? mergingPr.head : null;
+  }
+  if (!branch) return null; // hangi dalın silineceği okunamadı → engelleme yok
+  const hits = list.filter((p) => p && p.base === branch && p.number !== (target.prNumber || null));
   if (!hits.length) return null;
-  const list = hits.map((p) => `#${p.number} (taban: ${p.base})`).join(', ');
-  return `[global kural] Engellendi: üstünde açık PR duran dal siliniyor — ${list}. `
+  const text = hits.map((p) => `#${p.number} (taban: ${p.base})`).join(', ');
+  return `[global kural] Engellendi: silinecek dalı (${branch}) TABAN alan açık PR var — ${text}. `
     + 'Taban dalı silinen PR GitHub tarafından KAPATILIR ve tabanı değiştirilemez (2026-09-18, PR #18). '
     + 'Önce üstteki PR\'ın tabanını main yap, sonra dalı sil.';
 }
-
 module.exports = { RULES, check, blockMessage, deletedBranch, branchDeleteBlock };
