@@ -43,6 +43,20 @@ expect('SQL satır yorumu yakalanmaz', adlar('create table observations ( -- gö
 expect('SQL tablo/sütun adı yakalanır', adlar('create table gozlem ( cekilme_zamani timestamptz );', true), ['gozlem', 'cekilme_zamani']);
 expect('SQL dizgesi yakalanmaz', adlar("insert into daily_close values ('gün sonu');", true), []);
 
+console.log('— JSX/HTML metni taranmaz (kullanıcıya görünen yazı)');
+expect('etiketler arası yazı', adlar('<label className="block text-xs">Poliçe Durumu</label>'), []);
+expect('düz metin satırı', adlar('Dönem ortasında iptal ve prim iadesi için Poliçeler ekranını kullanın.'), []);
+expect('satır sonuna sarkan metin', adlar('<div className="title">Poliçe'), []);
+expect('satır başındaki metin devamı', adlar('Hatırlatıcı</div>'), []);
+expect('süslü parantezli ifade korunur', adlar('<div>{gunSonu}</div>'), ['gunSonu']);
+expect('JSX özniteliği taranır', adlar('<Input value={gunSonu} onChange={(e) => setGunSonu(e.target.value)} />'), ['gunSonu', 'setGunSonu']);
+expect('JSX içindeki İngilizce metin de atılır (zararsız)', adlar('<span>Policy status</span>'), []);
+
+expect('parantezli JSX yazısı', adlar('<span className="b">Altın (Gram) Değişim</span>'), []);
+expect('tek kelimelik JSX satırı', adlar('İptal'), []);
+expect('düzenli ifade gövdesi taranmaz', adlar('change(/Tedarikçiye ödeme günü/, "-30");'), []);
+expect('bölme işareti düzenli ifade sanılmaz', adlar('const oran = toplam / adet;'), ['oran','toplam','adet']);
+
 console.log('— dosya ve klasör adları');
 expect('Türkçe dosya adı yakalanır', t.yolBulgulari('src/gun-sonu.ts', kelimeler).map((b) => b.ad), ['gun-sonu']);
 expect('Türkçe klasör adı yakalanır', t.yolBulgulari('src/kaynak/reader.ts', kelimeler).map((b) => b.ad), ['kaynak']);

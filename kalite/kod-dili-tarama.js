@@ -83,8 +83,32 @@ function kodKismi(satir, sql) {
   }
   s = s.replace(/"(?:[^"\\]|\\.)*"/g, '""');           // çift tırnaklı dizge
   s = s.replace(/`(?:[^`\\]|\\.)*`/g, '``');           // şablon dizge (içindeki ${} de atılır)
+  // Düzenli ifade (regex) gövdesi ekran yazısı taşıyabilir (testlerde getByText(/Ürün ekle/));
+  // tanımlayıcı değildir. Bölme işaretiyle karışmasın diye yalnız açılış bağlamından sonra aranır.
+  s = s.replace(/([(,=:[!&|?]\s*)\/(?:[^/\n]|\.)+\/[gimsuyd]*/g, '$1/re/');
   s = s.replace(/\/\/.*$/, '');                        // satır yorumu
   s = s.replace(/\/\*[\s\S]*?(\*\/|$)/g, ' ');         // blok yorum (satır içi)
+  return jsxMetniAt(s);
+}
+
+// SAF: JSX/HTML etiketleri ARASINDAKİ yazıyı atar. Bu yazı kullanıcıya görünen Türkçe metindir,
+// tanımlayıcı değildir (GHS-Panel ölçümü 2026-09-18: `<label …>Poliçe Durumu</label>` gibi satırlar
+// 3.127 bulgunun büyük kısmını üretiyordu — yanlış alarm, kuralı kullanılamaz hale getirir).
+// Kod işareti (= ( ) { } ;) taşımayan metin parçaları atılır; taşıyanlar (ör. `{policy.name}`) korunur.
+const KOD_ISARETI = /[={};]/;
+const duzMetin = (parca) => parca.trim() !== '' && !KOD_ISARETI.test(parca);
+function jsxMetniAt(satir) {
+  let s = satir;
+  // 1) <etiket> ... </etiket> arasındaki düz yazı
+  s = s.replace(/>([^<>]*)</g, (tam, ic) => (duzMetin(ic) ? '><' : tam));
+  // 2) satırın sonunda, son '>' işaretinden sonra kalan yazı (metin alt satıra sarkıyor)
+  const sonKapanis = s.lastIndexOf('>');
+  if (sonKapanis >= 0 && duzMetin(s.slice(sonKapanis + 1))) s = s.slice(0, sonKapanis + 1);
+  // 3) satırın başında, ilk '<' işaretinden önce kalan yazı (metnin devamı)
+  const ilkAcilis = s.indexOf('<');
+  if (ilkAcilis > 0 && duzMetin(s.slice(0, ilkAcilis))) s = s.slice(ilkAcilis);
+  // 4) tamamen düz yazı olan satır (JSX gövdesinin ortası): kod işareti ve etiket yoksa metindir
+  if (!/[<>]/.test(s) && duzMetin(s)) return '';
   return s;
 }
 
@@ -251,7 +275,7 @@ function rapor({ bulgular, uyarilar = [], dosyaSayisi }, kip) {
 }
 
 module.exports = {
-  asciiKatla, parcala, turkceKelime, tanimlayiciSorunu, kodKismi, satirBulgulari,
+  asciiKatla, parcala, jsxMetniAt, turkceKelime, tanimlayiciSorunu, kodKismi, satirBulgulari,
   yolBulgulari, istisnaOku, eklenenSatirlar, rapor, taraDiff, taraTumu,
 };
 

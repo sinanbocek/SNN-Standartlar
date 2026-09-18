@@ -104,6 +104,10 @@ node kalite/test/kod-dili-tarama.test.js
 
 `ornek/kod-dili.yml` dosyasını projede `.github/workflows/kod-dili.yml` olarak kopyala. Başka ayar gerekmez.
 
+**Ama sırası vardır.** Turnike yalnız yeni girenlere bakar, eski kodu kırmızıya boyamaz; yine de bir projede **sürmekte olan bir yeniden adlandırma göçü varsa** turnike o göç bitene kadar takılmaz — aksi hâlde proje kendi düzeltme PR'ını kendisi engeller. Adımlar, önerilen sıra ve her projenin ölçülmüş yükü: **`docs/kod-dili-gecis.md`**.
+
+**Geçmişin temizliği projenin kendi işidir.** Ortak depo kuralı, tarayıcıyı, kayıt şablonunu ve istek metnini verir; projelerin dosyalarına dokunmaz.
+
 ### Kelime listesi ve istisnalar
 
 - Kelime listesi veri dosyasındadır: `kalite/veri/turkce-kelimeler.json`. Ekleme ölçütü: kelime İngilizce bir sözcükle çakışmamalı. (`plan`, `not`, `para`, `son` gibi çakışanlar bilerek **listede değildir**.)
@@ -123,7 +127,7 @@ node kalite/test/kod-dili-tarama.test.js
 
 ### Bilinen sınırlar (ölçülmüştür, gizlenmez)
 
-- Tarayıcı **ayrıştırıcı (parser) değildir**, satır bazlı çalışır. Yorum ve dizgeler satır bazında atılır; blok yorumun `*` ile başlamayan gövde satırları taranabilir.
+- Tarayıcı **ayrıştırıcı (parser) değildir**, satır bazlı çalışır. Yorum, dizge, JSX/HTML yazısı ve düzenli ifade gövdesi satır bazında atılır; blok yorumun `*` ile başlamayan gövde satırları ve çok satırlı şablon dizgelerin ortası taranabilir. Kalibrasyon (2026-09-18, 10 proje): yanlış alarm düzeltmeleriyle Portföy 3.780 → 922, GHS 3.127 → 697 bulguya indi.
 - Kelime listesi sonludur: listede olmayan bir Türkçe kelime (ör. `nobet`) Türkçe harf içermiyorsa kaçar. Kaçan kelime listeye eklenerek kapatılır.
 - Tarayıcı **niyet okumaz**: `data` gibi İngilizce ama anlamsız adları yakalamaz. Onlar kod incelemesinin işidir.
 

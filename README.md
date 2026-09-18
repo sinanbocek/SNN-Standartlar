@@ -15,6 +15,7 @@ SNN projelerinin ortak çalışma standartları ve **teknik borç kütüphanecis
 | `standartlar/kod-inceleme-kontrol-listesi.md` | Birleştirmeden önce sorulan sorular |
 | `standartlar/kod-dili-standardi.md` | Tanımlayıcılar İngilizce, belgeler ve yorumlar Türkçe |
 | `kalite/kod-dili-tarama.js` | Türkçe tanımlayıcı tarayıcısı (+ `ornek/kod-dili.yml` ile projeye bağlanır) |
+| `docs/kod-dili-gecis.md` | Bağlama süreci, projelerin ölçülmüş yükü, kütük kaydı şablonu ve istek metni |
 | `borc-senkron/` | Kütüğü okuyup issue ve board'u güncelleyen betik + testleri |
 | `.github/workflows/borc-senkron.yml` | GitHub'da çalışan ortak görevli (projeler bunu çağırır) |
 | `ornek/teknik-borc.yml` | Her projeye kopyalanacak tek bağlantı dosyası |
