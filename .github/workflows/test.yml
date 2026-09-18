@@ -44,6 +44,8 @@ jobs:
         run: node kalite/test/akis-dosyalari.test.js
       - name: Anahtar taraması testleri
         run: node kalite/test/anahtar-tarama.test.js
+      - name: Kod dili taraması testleri
+        run: node kalite/test/kod-dili-tarama.test.js
       - name: Bu PR'da eklenen satırlarda gizli anahtar (kendi kendini tarama)
         if: github.event_name == 'pull_request'
         run: |
