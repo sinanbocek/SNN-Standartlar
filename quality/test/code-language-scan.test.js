@@ -57,6 +57,11 @@ expect('tek kelimelik JSX satırı', names('İptal'), []);
 expect('düzenli ifade gövdesi taranmaz', names('change(/Tedarikçiye ödeme günü/, "-30");'), []);
 expect('bölme işareti düzenli ifade sanılmaz', names('const oran = toplam / adet;'), ['oran','toplam','adet']);
 
+expect('metin + ifade aynı satırda: yazı atılır', names('{metrics.count} adet ödemenin kur bilgisi için TL'), []);
+expect('metin + ifade: ifade içindeki kod taranır', names('{gunSonu} adet kayıt bulundu'), ['gunSonu']);
+expect('ok işaretli olay bağlayıcısı kaçmaz', names('onChange={(e) => setGunSonu(e.target.value)}'), ['setGunSonu']);
+expect('karşılaştırmalı JSX satırında yazı atılır', names('Kurum Adı {sortField === "name" ? 1 : 2}'), []);
+
 console.log('— dosya ve klasör adları');
 expect('Türkçe dosya adı yakalanır', t.pathFindings('src/gun-sonu.ts', words).map((b) => b.name), ['gun-sonu']);
 expect('Türkçe klasör adı yakalanır', t.pathFindings('src/kaynak/reader.ts', words).map((b) => b.name), ['kaynak']);
