@@ -29,23 +29,27 @@ Her proje için sırayla:
 4. **En son SNN-Piyasa-Core:** şu anda İngilizceye çeviriliyor; çeviri main'e girmeden turnike takılmaz.
 5. **SNN-Standartlar (bu depo):** TB-001 kapanınca kendi turnikesini takar. Kural koyan depo, kuralı en son değil en görünür biçimde uygular.
 
-## 2. Ölçüm (2026-09-18 akşamı, üçüncü kalibrasyondan sonra, `--tumu`)
+## 2. Ölçüm (2026-09-18 gecesi, finans köklerinin eklenmesinden sonra)
 
 Tarayıcı yalnız tanımlayıcılara bakar; yorum, dizge, JSX yazısı ve düzenli ifade gövdesi taranmaz.
 
 | Proje | Bulgu | Ayrı ad | Nerede | En sık adlar | Önerilen öncelik |
 |---|---|---|---|---|---|
 | Naturapan-Web-Sitesi | **0** | 0 | — | — | Kayıt gerekmez |
-| SNN-Proje-ve-Nakit-Akis-Yonetimi | 22 | 20 | kaynak 22 | `İhaleler`, `Tedarikçi`, `Keşideci` | P3 |
-| SNN-Ihale-Maliyet-Teklif-Yonetimi | 60 | 51 | kaynak 60 | `satir`, `oran`, `birim` | P3 |
-| SNN-Abacus-Core | 108 | 26 | kaynak 108 | `sonuc`, `yeniKayit`, `satir`, `geriGun` | P2 (kuralın kaynağı) |
-| trade-kasa | 272 | 40 | kaynak 272 | `islem`, `alanaYaz`, `kayit` | P3 |
-| SNN-Piyasa-Core | 297 | 93 | **sql 243**, kaynak 54 | `sembol`, `kaynak`, `zaman`, `gun_sonu` | P2 (göç sürüyor) |
-| GHS-Panel | 434 | 231 | **sql 190**, kaynak 244 | `v_kalan`, `tablo`, `sonuc` | P2 |
-| SNN-Portfoy-Yonetimi | 743 | 311 | kaynak 620, **sql 123** | `tarih`, `Altın`, `adet` | P2 |
-| Gunum-Var | 1.509 | 261 | kaynak 1.412, sql 97 | `zincirKur`, `sonuc`, `hata` | P2 |
-| SNN-Yonetici-Ozeti | 6.295 | 397 | kaynak 6.295 | `hesapKodu`, `tablo`, `yil`, `grupKodu` | P2 |
 | SNN-Standartlar (bu depo) | **0** | 0 | — | TB-001 kapandı | — |
+| SNN-Proje-ve-Nakit-Akis-Yonetimi | 22 | 20 | kaynak 22 | `İhaleler`, `Tedarikçi`, `Keşideci` | P3 |
+| SNN-Ihale-Maliyet-Teklif-Yonetimi | 71 | 56 | kaynak 71 | `satir`, `oran`, `birim` | P3 |
+| SNN-Abacus-Core | 220 | 37 | kaynak 220 | `sonuc`, `kasa`, `yeniKayit`, `satir` | P2 (kuralın kaynağı) |
+| SNN-Piyasa-Core | 301 | 94 | **sql 243**, kaynak 58 | `sembol`, `kaynak`, `zaman`, `gun_sonu` | P2 (göç sürüyor) |
+| GHS-Panel | 466 | 244 | **sql 191**, kaynak 275 | `v_kalan`, `tablo`, `sonuc`, `hedef` | P2 |
+| trade-kasa | 496 | 70 | kaynak 496 | `usdTryKuru`, `bistKasaTL`, `islem`, `maxRiskYuzdesi` | P3 |
+| SNN-Portfoy-Yonetimi | 1.433 | 442 | kaynak 1.308, **sql 125** | `tradeKasa`, `tarih`, `kasaLogs` | P2 |
+| Gunum-Var | 1.841 | 311 | kaynak 1.739, sql 102 | `zincirKur`, `sonuc`, `kur`, `hata` | P2 |
+| SNN-Yonetici-Ozeti | 11.172 | 645 | kaynak 11.172 | `hesapKodu`, `kurus`, `donem`, `mizan` | P2 |
+
+**Sayılar neden dünden büyük?** 18 Eylül gecesi kelime listesine 21 kök eklendi: `kasa`, `kur`, `yuzde`, `hedef`, `getiri`, `risksiz`, `pozisyon`, `bakiye`, `kurus`, `grup`, `sinif`, `ceyrek`, `donem`, `bilanco`, `beyanname`, `isaret`, `mizan`, `cari`, `onceki`, `adi`, `pasif`. Bunlar Türkçe harf taşımadığı için tarayıcıdan **sessizce geçiyordu**; eksiği **trade-kasa oturumu bildirdi** (bkz. kod dili standardı, "Kelime listesi eksik kök bulunca").
+
+En büyük değişim, listenin en çok kaçırdığı yerde oldu: trade-kasa 272 → 496, Portföy 743 → 1.433, Yönetici Özeti 6.295 → 11.172, Abacus 108 → 220. Bu adların çoğu **üretim kodunda** ve bir kısmı dışa açık yüzeyde (ör. trade-kasa'da kullanıcının dışa aktardığı JSON yedeğindeki `Settings` alanları). Yani liste eksikken geçiş planı en pahalı kalemi "yok" sayıyordu.
 
 **Okuma notu:** "bulgu" toplam geçiş sayısıdır, "ayrı ad" kaç farklı ad olduğudur. İş yükünü **ayrı ad** sayısı belirler; aynı ad çoğu zaman tek bir yeniden adlandırmayla düzelir.
 
