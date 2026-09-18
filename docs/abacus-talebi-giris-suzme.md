@@ -132,3 +132,29 @@ const toNum = (raw: string) => {
 console.log(grouped('121212scca'), digitsOnly('2o0a7', 4), toNum('1.250.000'));
 console.log(text.upper('irmaksasi'), 'irmaksasi'.toUpperCase());
 ```
+
+---
+
+## SONUÇ (2026-09-18) — talep kabul edildi, ABACUS 3.3.0
+
+Çekirdek ekibinin kararı (`GERI-BILDIRIM-KAYDI.md` madde 33, talep #7):
+
+- ✅ **A** → `text.toAsciiUpper(str)` — yalnız `a-z` büyütür, Türkçe harfe dokunmaz.
+- ✅ **B** → `text.digits(raw, maxLength?)` — ayrı `input` motoru açılmadı; iş metin işidir, `text` içine girdi.
+- ❌ **C, D** → karşılıkları zaten vardı: `money.formatGroupedInput`, `money.parseNumber`. Talebin örnekleri bu ikisiyle çalıştırılmış, çıktılar birebir aynı çıkmış. (Bu maddeler talep gönderilmeden önce daha iyi taranmalıydı; ders: talepten önce çekirdeğin mevcut yüzeyi işlev işlev okunur.)
+- ❌ **E** → `input.code` ertelendi: tek ekrandan geldi. `toAsciiUpper` ile tüketicide tek satır.
+- ✅ **F** → lint kuralı **hata** seviyesinde eklendi; `toLowerCase` de kapsama girdi.
+
+Doğrulama (3.3.0 kaynağından çalıştırıldı, 2026-09-18):
+
+```
+text.toAsciiUpper('irmaksasi')          => "IRMAKSASI"
+text.upper('irmaksasi')                 => "İRMAKSASİ"
+text.digits('2o0a7')                    => "207"
+text.digits('20267', 4)                 => "2026"
+money.formatGroupedInput('121212scca')  => "121.212"
+money.parseNumber('1.250.000')          => 1250000
+money.parseNumber('abc')                => null
+```
+
+Standart bu sonuca göre güncellendi: `standartlar/giris-alanlari-standardi.md`.
