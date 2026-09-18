@@ -116,11 +116,11 @@ node quality/test/code-language-scan.test.js
 
 ```json
 {
-  "istisnalar": [
-    { "ad": "plaka", "gerekce": "Türkiye tescil plakası; 'plate' kavramı taşımıyor (TB-012)" }
+  "exceptions": [
+    { "name": "plaka", "reason": "Türkiye tescil plakası; 'plate' kavramı taşımıyor (TB-012)" }
   ],
-  "yollar": [
-    { "yol": "supabase/migrations/2026*", "gerekce": "canlıya uygulanmış migration değişmez (AI-RULES §5.6)" }
+  "paths": [
+    { "path": "supabase/migrations/2026*", "reason": "canlıya uygulanmış migration değişmez (AI-RULES §5.6)" }
   ]
 }
 ```

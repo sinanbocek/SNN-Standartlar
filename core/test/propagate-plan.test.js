@@ -37,11 +37,11 @@ console.log('— kütük kaydı');
 expect('sonraki numara arşivi de sayar', P.nextDebtId(['### TB-041 — a', '- **Kapanış:** TB-088']), 'TB-089');
 expect('3 hane doldurma', P.nextDebtId(['### TB-7']), 'TB-008');
 const rec = P.majorDebtRecord({ id: 'TB-050', from: '2.8.0', to: '3.2.0', date: '2026-09-15', usage: '17 import' });
-const kutuk = '# Kütük\n\n### TB-001 — acil\n- **Öncelik:** P1 (Acil)\n\n---\n\n### TB-002 — plan\n- **Öncelik:** P2 (Planlı)\n\n---\n\n### TB-003 — fırsat\n- **Öncelik:** P3 (Fırsatta)\n';
-const yeni = P.insertRecord(kutuk, rec);
-const kayitlar = parseDebts(yeni);
-expect('kayıt standart ayrıştırıcıyla okunur (P2, sade anlatımlı)', (() => { const r = kayitlar.find((x) => x.id === 'TB-050'); return [r.priority, r.sade.includes('Sorun ne?')]; })(), ['P2', true]);
-expect('P2 grubunun sonuna, P3\'ün önüne yerleşir', kayitlar.map((x) => x.id), ['TB-001', 'TB-002', 'TB-050', 'TB-003']);
+const ledger = '# Kütük\n\n### TB-001 — acil\n- **Öncelik:** P1 (Acil)\n\n---\n\n### TB-002 — plan\n- **Öncelik:** P2 (Planlı)\n\n---\n\n### TB-003 — fırsat\n- **Öncelik:** P3 (Fırsatta)\n';
+const yeni = P.insertRecord(ledger, rec);
+const records = parseDebts(yeni);
+expect('kayıt standart ayrıştırıcıyla okunur (P2, sade anlatımlı)', (() => { const r = records.find((x) => x.id === 'TB-050'); return [r.priority, r.sade.includes('Sorun ne?')]; })(), ['P2', true]);
+expect('P2 grubunun sonuna, P3\'ün önüne yerleşir', records.map((x) => x.id), ['TB-001', 'TB-002', 'TB-050', 'TB-003']);
 expect('P3 yoksa sona eklenir', parseDebts(P.insertRecord('# K\n\n### TB-001 — a\n- **Öncelik:** P1 (Acil)\n', rec)).map((x) => x.id), ['TB-001', 'TB-050']);
 
 console.log(fail ? `\n✗ ${fail} test başarısız` : '\n✓ tümü geçti');

@@ -14,8 +14,8 @@ const LABELS = [
 const SENSITIVE = /güvenlik|guvenlik|\bRLS\b|token|anahtar|parola|şifre|sifre|secret|credential|yetki|KVKK|VKN|TCKN|sızıntı|sizinti/i;
 
 // Hassas kayıtta issue başlığı açığı anlatmaz (kullanıcı kararı a, 2026-09-15); ayrıntı yalnız kütükte kalır.
-const HASSAS_VARSAYILAN_BASLIK = 'Ayrıntısı kütükte (hassas kayıt)';
-const issueTitle = (d) => `[${d.id}] ${d.hassas ? (d.publicTitle || HASSAS_VARSAYILAN_BASLIK) : d.title}`;
+const SENSITIVE_DEFAULT_TITLE = 'Ayrıntısı kütükte (hassas kayıt)';
+const issueTitle = (d) => `[${d.id}] ${d.hassas ? (d.publicTitle || SENSITIVE_DEFAULT_TITLE) : d.title}`;
 const idFromTitle = (title) => (title.match(/^\[(TB-\d+)\]/) || [])[1] || null;
 
 function issueBody(d, ctx) {

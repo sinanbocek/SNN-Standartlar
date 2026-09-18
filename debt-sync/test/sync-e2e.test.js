@@ -54,8 +54,8 @@ const repo = path.join(base, 'proje');
 fs.mkdirSync(path.join(repo, 'docs'), { recursive: true });
 execFileSync('git', ['init', '-q', repo]);
 execFileSync('git', ['-C', repo, 'remote', 'add', 'origin', 'https://github.com/o/r.git']);
-const kayit = (n) => `### TB-00${n} — Kayıt ${n}\n- **Öncelik:** P3 (Fırsatta)\n\n#### 🟢 Sade Anlatım\n- **Sorun ne?** x\n\n---\n`;
-fs.writeFileSync(path.join(repo, 'docs', 'teknik-borc.md'), `# Kütük\n\n${[1, 2, 3, 4, 5].map(kayit).join('\n')}`);
+const record = (n) => `### TB-00${n} — Kayıt ${n}\n- **Öncelik:** P3 (Fırsatta)\n\n#### 🟢 Sade Anlatım\n- **Sorun ne?** x\n\n---\n`;
+fs.writeFileSync(path.join(repo, 'docs', 'teknik-borc.md'), `# Kütük\n\n${[1, 2, 3, 4, 5].map(record).join('\n')}`);
 
 function run(env) {
   for (const f of ['calls.log', 'creates']) fs.rmSync(path.join(base, f), { force: true });
