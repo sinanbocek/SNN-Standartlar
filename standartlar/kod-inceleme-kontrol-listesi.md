@@ -16,6 +16,11 @@ Bir değişiklik birleştirilmeden önce sorulan sorular. Her madde **evet/hayı
 - [ ] **Yeni tanımlayıcı (dosya, klasör, değişken, tip, tablo, sütun, API alanı) İngilizce mi? Proje kuralı aile standardıyla çelişiyor mu?**
       → `standartlar/kod-dili-standardi.md` (vaka: SNN-Piyasa-Core 2026-09-17, 52 dosya ve 10 tablo Türkçe adlandırıldı)
 
+## Eş zamanlı çalışma
+
+- [ ] Commit'e yalnız bu işin dosyaları mı girdi? Silinen dalı taban alan açık PR var mıydı?
+      → `standartlar/es-zamanli-calisma-standardi.md` (vaka: 2026-09-18, `git add -A` paralel oturumun dosyasını aldı; `--delete-branch` üstünde PR duran dalı silip o PR'ı kapattı)
+
 ## Kayıt ve izlenebilirlik
 
 - [ ] Çözülmeyip ertelenen bir sorun fark edildiyse kütüğe kaydı açıldı mı (standart biçimde, Sade Anlatım + Teknik Detay)?
