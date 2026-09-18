@@ -17,7 +17,9 @@ SNN-Standartlar'da iki oturum aynı çalışma klasöründe, birbirinden habersi
 
 ## 1. Kural — her oturum
 
-1. **Kendi dalında çalışır.** `main`'e doğrudan commit yok. Dal adı işi anlatır (`feat/…`, `fix/…`, `docs/…`, `refactor/…`).
+1. **Kendi dalında çalışır.** `main`'e doğrudan commit yok — bu artık **makine tarafından engellenir**. Dal adı işi anlatır (`feat/…`, `fix/…`, `docs/…`, `refactor/…`).
+
+   > Bu madde 2026-09-18'de yazılıydı ama zorlanmıyordu; aynı gün bir oturum (dal açma komutu başka bir bekçiye takıldığı için) fark etmeden ana dala commit attı. **Yazılı kural, dikkat dağıldığı anda tutmaz.**
 2. **Commit'e yalnız kendi dosyalarını ekler.** `git add <yol>` ile açıkça. `git add -A`, `git add .`, `git commit -a` **yasaktır**.
 3. **Toplu geri alma yapmaz.** `git checkout -- .`, `git restore .`, `git clean -fd`, `git stash` yasaktır; bunlar başkasının henüz commit'lenmemiş işini siler. Kendi dosyanı geri almak serbesttir: `git restore <yol>`.
 4. **Başkasının dalını ve PR'ını silmez/kapatmaz.** Bir dalı silmeden önce: o dalı **taban alan açık PR var mı**? Varsa önce o PR'ın tabanı `main` yapılır.
@@ -50,6 +52,7 @@ git worktree remove ../<proje>-<is-adi>
 |---|---|---|
 | **Oturum defteri** | `quality/session-registry.js` + oturum açılış bekçisi | Her oturum kendini deftere yazar; açılışta **"bu projede N başka oturum açık"** satırı gösterilir (dal ve son görülme zamanıyla). 2 saat haber vermeyen kayıt düşer. Defter bilgisayarda durur, depoya girmez. |
 | **Geniş etkili komut denetimi** | `quality/wide-effect-git.js` + `guard-bash` bekçisi | `git add -A/.`, `git commit -a`, `git checkout -- .`, `git restore .`, `git clean -fd`, `git stash` engellenir; doğru yol mesajda yazar. |
+| **Ana dal koruması** | aynı modül (`mainCommitBlock`) | `main`/`master` üzerindeyken commit engellenir: "önce kendi dalını aç". 1. maddenin makine karşılığıdır. |
 | **Dal silme koruması** | aynı modül | Silinecek dalı **taban alan açık PR** varsa silme engellenir; mesaj PR numarasını söyler. |
 
 Bekçiler `~/.claude/settings.json` üzerinden **tüm projelerde** çalışır: hiçbir projeye ayrı kurulum gerekmez.
