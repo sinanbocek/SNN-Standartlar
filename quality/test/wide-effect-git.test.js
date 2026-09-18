@@ -59,5 +59,16 @@ expect('kendi dalını silen birleştirme serbest', g.branchDeleteBlock('gh pr m
 expect('başka dal serbest', g.branchDeleteBlock('git push origin --delete feat/baska', acikPR), null);
 expect('açık PR listesi boşsa serbest', g.branchDeleteBlock('git push origin --delete docs/giris', []), null);
 expect('PR listede yoksa engelleme yok', g.branchDeleteBlock('gh pr merge 99 --merge --delete-branch', tekPR), null);
+console.log('— ana dala doğrudan commit');
+expect('main dalında commit engellenir', g.mainCommitBlock('git commit -m "x"', 'main') !== null, true);
+expect('master dalında da engellenir', g.mainCommitBlock('git commit -m "x"', 'master') !== null, true);
+expect('kendi dalında serbest', g.mainCommitBlock('git commit -m "x"', 'feat/kapi'), null);
+expect('dosyadan mesajla da engellenir', g.mainCommitBlock('git commit -F mesaj.txt', 'main') !== null, true);
+expect('commit olmayan komut serbest', g.mainCommitBlock('git log --oneline -3', 'main'), null);
+expect('kuru çalıştırma serbest', g.mainCommitBlock('git commit --dry-run', 'main'), null);
+expect('dal bilinmiyorsa engelleme yok', g.mainCommitBlock('git commit -m "x"', ''), null);
+expect('mesaj doğru yolu söyler', g.mainCommitBlock('git commit -m "x"', 'main').includes('git checkout -b'), true);
+expect('mesaj kurala yönlendirir', g.mainCommitBlock('git commit -m "x"', 'main').includes('es-zamanli-calisma-standardi.md'), true);
+
 console.log(fail ? `\n${fail} test başarısız` : '\nTüm testler geçti');
 process.exit(fail ? 1 : 0);

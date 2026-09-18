@@ -93,4 +93,24 @@ function branchDeleteBlock(cmd, openPRs = []) {
     + 'Taban dalı silinen PR GitHub tarafından KAPATILIR ve tabanı değiştirilemez (2026-09-18, PR #18). '
     + 'Önce üstteki PR\'ın tabanını main yap, sonra dalı sil.';
 }
-module.exports = { RULES, check, blockMessage, deletedBranch, branchDeleteBlock };
+// ── Ana dala doğrudan commit koruması ────────────────────────────────────────
+// Neden (2026-09-18, kendi üzerimizde ölçüldü): dal açma komutu başka bir bekçiye takılınca
+// fark edilmeden ana dala commit atıldı. Kural yazılıydı ("her oturum kendi dalında çalışır")
+// ama makine zorlamıyordu; yazılı kural, dikkat dağıldığı anda tutmaz.
+//
+// Ana dalda commit yasaktır: paralel oturumlar aynı dalda birikirse hangi işin hangi commit
+// olduğu kaybolur, geri alma tek tek commit ayıklamaya döner.
+const MAIN_BRANCHES = ['main', 'master'];
+
+// SAF: komut yerel bir commit mi? (mesaj okuma, günlük listeleme gibi çağrılar hariç)
+const isCommit = (cmd) => /\bgit\s+commit\b/.test(String(cmd || '')) && !/\bgit\s+commit\b[^\n]*\s--dry-run\b/.test(String(cmd || ''));
+
+// SAF: ana dalda commit ediliyorsa engel gerekçesi döndürür. branch = o an bulunulan dal.
+function mainCommitBlock(cmd, branch) {
+  if (!isCommit(cmd)) return null;
+  if (!MAIN_BRANCHES.includes(String(branch || '').trim())) return null;
+  return `[global kural] Engellendi: ${branch} dalına doğrudan commit. `
+    + 'Önce kendi dalını aç: git checkout -b <tur>/<kisa-ad> (feat/ fix/ docs/ refactor/), sonra commit\'le ve PR aç. '
+    + 'Kural: standartlar/es-zamanli-calisma-standardi.md — paralel oturumlar aynı dalda birikirse hangi işin hangi commit olduğu kaybolur.';
+}
+module.exports = { RULES, check, blockMessage, deletedBranch, branchDeleteBlock, MAIN_BRANCHES, isCommit, mainCommitBlock };
