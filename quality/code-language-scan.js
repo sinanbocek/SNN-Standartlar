@@ -16,64 +16,90 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
-const KAYNAK_UZANTI = /\.(ts|tsx|js|jsx|mjs|cjs)$/;
-const SQL_UZANTI = /\.sql$/;
+const SOURCE_EXT = /\.(ts|tsx|js|jsx|mjs|cjs)$/;
+const SQL_EXT = /\.sql$/;
 // Bu klasörler hiç taranmaz (bizim yazmadığımız ya da üretilen kod)
-const ATLANAN_YOL = /(^|\/)(node_modules|dist|build|coverage|\.next|vendor|supabase\/\.temp)(\/|$)/;
+const SKIPPED_PATH = /(^|\/)(node_modules|dist|build|coverage|\.next|vendor|supabase\/\.temp)(\/|$)/;
 
-const VERI = path.join(__dirname, 'data', 'turkish-words.json');
+const DATA_FILE = path.join(__dirname, 'data', 'turkish-words.json');
 
 // SAF: Türkçe harfleri ASCII'ye katlar (karşılaştırma için; 'gözlem' → 'gozlem')
-function asciiKatla(s) {
+function asciiFold(s) {
   return s
     .replace(/[çÇ]/g, 'c').replace(/[ğĞ]/g, 'g').replace(/[ıI]/g, 'i').replace(/[İi]/g, 'i')
     .replace(/[öÖ]/g, 'o').replace(/[şŞ]/g, 's').replace(/[üÜ]/g, 'u')
     .toLowerCase();
 }
 
-const TURKCE_HARF = /[çğıöşüÇĞİÖŞÜ]/;
+const TURKISH_LETTER = /[çğıöşüÇĞİÖŞÜ]/;
 
 // SAF: tanımlayıcıyı parçalarına ayırır: camelCase, PascalCase, snake_case, kebab-case, nokta
 // 'gunSonuKaydi' → ['gun','sonu','kaydi'] · 'cekilme_zamani' → ['cekilme','zamani']
-function parcala(ad) {
-  return ad
+function splitWords(name) {
+  return name
     .replace(/([a-zçğıöşü0-9])([A-ZÇĞİÖŞÜ])/g, '$1 $2')
     .replace(/([A-ZÇĞİÖŞÜ]+)([A-ZÇĞİÖŞÜ][a-zçğıöşü])/g, '$1 $2')
     .split(/[\s_\-.$]+/)
     .filter(Boolean)
-    .map(asciiKatla);
+    .map(asciiFold);
 }
 
 // SAF: parça Türkçe kelime listesinde mi? Çekim ekleri için sonek toleransı:
 // 'zamani' → 'zaman', 'kaydi' listede yok (kayit var) → sonek denemesi 'kayd' de yok → yakalanmaz.
 // Tolerans bilinçli olarak dardır: yanlış alarm, kaçırmaktan pahalıdır (kural insanı yavaşlatır).
-const EKLER = ['lari', 'leri', 'lar', 'ler', 'si', 'su', 'si', 'i', 'u', 'a', 'e'];
-function turkceKelime(parca, kelimeler) {
-  if (kelimeler.has(parca)) return parca;
-  for (const ek of EKLER) {
-    if (parca.length > ek.length + 2 && parca.endsWith(ek)) {
-      const govde = parca.slice(0, -ek.length);
-      if (kelimeler.has(govde)) return govde;
+const SUFFIXES = ['lari', 'leri', 'lar', 'ler', 'si', 'su', 'si', 'i', 'u', 'a', 'e'];
+function turkishWord(part, words) {
+  if (words.has(part)) return part;
+  for (const suffix of SUFFIXES) {
+    if (part.length > suffix.length + 2 && part.endsWith(suffix)) {
+      const stem = part.slice(0, -suffix.length);
+      if (words.has(stem)) return stem;
     }
   }
   return null;
 }
 
 // SAF: bir tanımlayıcı kurala aykırı mı? → { ad, neden } ya da null
-function tanimlayiciSorunu(ad, kelimeler) {
-  if (TURKCE_HARF.test(ad)) return { ad, neden: 'Türkçe harf' };
-  for (const parca of parcala(ad)) {
-    const bulunan = turkceKelime(parca, kelimeler);
-    if (bulunan) return { ad, neden: `Türkçe kelime: ${bulunan}` };
+function identifierProblem(name, words) {
+  if (TURKISH_LETTER.test(name)) return { name, reason: 'Türkçe harf' };
+  for (const part of splitWords(name)) {
+    const bulunan = turkishWord(part, words);
+    if (bulunan) return { name, reason: `Türkçe kelime: ${bulunan}` };
   }
   return null;
+}
+
+// SAF: şablon dizgelerini (` işaretiyle yazılan) içerikleriyle birlikte atar; İÇ İÇE olanları da
+// doğru atar. Neden (ölçüm 2026-09-18): basit bir düzenli ifade, şablonun içinde ikinci bir şablon
+// açıldığında içteki yazıyı dışarıda bırakıyordu; core/propagate.js:149 satırındaki "yalnız" kelimesi
+// tanımlayıcı sanılıyordu — yanlış alarm.
+function stripTemplates(line) {
+  let out = '';
+  let depth = 0;   // kaç şablon dizgesinin içindeyiz
+  let brace = 0;   // şablon içindeki ${ } derinliği
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === '\\' && depth > 0) { i += 1; continue; }
+    if (ch === '`') {
+      depth += (depth > 0 && brace === 0) ? -1 : 1;
+      if (depth === 0) out += '``';
+      continue;
+    }
+    if (depth > 0) {
+      if (ch === '$' && line[i + 1] === '{') { brace += 1; i += 1; continue; }
+      if (ch === '}' && brace > 0) { brace -= 1; continue; }
+      continue;
+    }
+    out += ch;
+  }
+  return out;
 }
 
 // SAF: kod satırından yorum ve dizge içeriklerini ATAR; geriye yalnız tanımlayıcı taşıyan metin kalır.
 // Satır bazlıdır (diff kipinde tam dosya elde yok). Bilinen sınır: çok satırlı blok yorumun
 // ortasındaki satırlar '*' ile başlamıyorsa taranabilir; bu yüzden '*' ile başlayan satır atılır.
-function kodKismi(satir, sql) {
-  let s = satir;
+function codePart(line, sql) {
+  let s = line;
   if (/^\s*\*/.test(s)) return ''; // blok yorumun gövde satırı
   s = s.replace(/'(?:[^'\\]|\\.)*'/g, "''");          // tek tırnaklı dizge
   if (sql) {
@@ -82,101 +108,101 @@ function kodKismi(satir, sql) {
     return s;
   }
   s = s.replace(/"(?:[^"\\]|\\.)*"/g, '""');           // çift tırnaklı dizge
-  s = s.replace(/`(?:[^`\\]|\\.)*`/g, '``');           // şablon dizge (içindeki ${} de atılır)
+  s = stripTemplates(s);                               // şablon dizge (iç içe olanlar dahil)
   // Düzenli ifade (regex) gövdesi ekran yazısı taşıyabilir (testlerde getByText(/Ürün ekle/));
   // tanımlayıcı değildir. Bölme işaretiyle karışmasın diye yalnız açılış bağlamından sonra aranır.
   s = s.replace(/([(,=:[!&|?]\s*)\/(?:[^/\n]|\.)+\/[gimsuyd]*/g, '$1/re/');
   s = s.replace(/\/\/.*$/, '');                        // satır yorumu
   s = s.replace(/\/\*[\s\S]*?(\*\/|$)/g, ' ');         // blok yorum (satır içi)
-  return jsxMetniAt(s);
+  return stripJsxText(s);
 }
 
 // SAF: JSX/HTML etiketleri ARASINDAKİ yazıyı atar. Bu yazı kullanıcıya görünen Türkçe metindir,
 // tanımlayıcı değildir (GHS-Panel ölçümü 2026-09-18: `<label …>Poliçe Durumu</label>` gibi satırlar
 // 3.127 bulgunun büyük kısmını üretiyordu — yanlış alarm, kuralı kullanılamaz hale getirir).
 // Kod işareti (= ( ) { } ;) taşımayan metin parçaları atılır; taşıyanlar (ör. `{policy.name}`) korunur.
-const KOD_ISARETI = /[={};]/;
-const duzMetin = (parca) => parca.trim() !== '' && !KOD_ISARETI.test(parca);
-function jsxMetniAt(satir) {
-  let s = satir;
+const CODE_MARK = /[={};]/;
+const isPlainText = (part) => part.trim() !== '' && !CODE_MARK.test(part);
+function stripJsxText(line) {
+  let s = line;
   // 1) <etiket> ... </etiket> arasındaki düz yazı
-  s = s.replace(/>([^<>]*)</g, (tam, ic) => (duzMetin(ic) ? '><' : tam));
+  s = s.replace(/>([^<>]*)</g, (tam, ic) => (isPlainText(ic) ? '><' : tam));
   // 2) satırın sonunda, son '>' işaretinden sonra kalan yazı (metin alt satıra sarkıyor)
-  const sonKapanis = s.lastIndexOf('>');
-  if (sonKapanis >= 0 && duzMetin(s.slice(sonKapanis + 1))) s = s.slice(0, sonKapanis + 1);
+  const lastClose = s.lastIndexOf('>');
+  if (lastClose >= 0 && isPlainText(s.slice(lastClose + 1))) s = s.slice(0, lastClose + 1);
   // 3) satırın başında, ilk '<' işaretinden önce kalan yazı (metnin devamı)
   const ilkAcilis = s.indexOf('<');
-  if (ilkAcilis > 0 && duzMetin(s.slice(0, ilkAcilis))) s = s.slice(ilkAcilis);
+  if (ilkAcilis > 0 && isPlainText(s.slice(0, ilkAcilis))) s = s.slice(ilkAcilis);
   // 4) tamamen düz yazı olan satır (JSX gövdesinin ortası): kod işareti ve etiket yoksa metindir
-  if (!/[<>]/.test(s) && duzMetin(s)) return '';
+  if (!/[<>]/.test(s) && isPlainText(s)) return '';
   return s;
 }
 
-const TANIMLAYICI = /[A-Za-z_$çğıöşüÇĞİÖŞÜ][A-Za-z0-9_$çğıöşüÇĞİÖŞÜ]*/g;
+const IDENTIFIER = /[A-Za-z_$çğıöşüÇĞİÖŞÜ][A-Za-z0-9_$çğıöşüÇĞİÖŞÜ]*/g;
 
 // SAF: tek satırdaki kuralı bozan tanımlayıcılar → [{ ad, neden }]
-function satirBulgulari(satir, kelimeler, sql = false) {
-  const kod = kodKismi(satir, sql);
+function lineFindings(line, words, sql = false) {
+  const code = codePart(line, sql);
   const out = [];
-  const gorulen = new Set();
-  for (const m of kod.matchAll(TANIMLAYICI)) {
-    const ad = m[0];
-    if (gorulen.has(ad)) continue;
-    gorulen.add(ad);
-    const sorun = tanimlayiciSorunu(ad, kelimeler);
+  const seen = new Set();
+  for (const m of code.matchAll(IDENTIFIER)) {
+    const name = m[0];
+    if (seen.has(name)) continue;
+    seen.add(name);
+    const sorun = identifierProblem(name, words);
     if (sorun) out.push(sorun);
   }
   return out;
 }
 
 // SAF: dosya/klasör adı kuralı bozuyor mu? → [{ ad, neden }]
-function yolBulgulari(yol, kelimeler) {
+function pathFindings(yol, words) {
   const out = [];
-  for (const parca of yol.split('/')) {
-    const ad = parca.replace(/\.(ts|tsx|js|jsx|mjs|cjs|sql)$/, '').replace(/\.(test|spec|config)$/, '');
-    if (!ad) continue;
-    const sorun = tanimlayiciSorunu(ad, kelimeler);
-    if (sorun) out.push({ ...sorun, tur: 'yol' });
+  for (const part of yol.split('/')) {
+    const name = part.replace(/\.(ts|tsx|js|jsx|mjs|cjs|sql)$/, '').replace(/\.(test|spec|config)$/, '');
+    if (!name) continue;
+    const sorun = identifierProblem(name, words);
+    if (sorun) out.push({ ...sorun, kind: 'yol' });
   }
   return out;
 }
 
 // ─── İstisna listesi ────────────────────────────────────────────────────────
 // Proje kökünde `.snn-kod-dili.json`:
-// { "istisnalar": [ { "ad": "plaka", "gerekce": "Türkiye'ye özgü kavram, karşılığı yok (TB-012)" } ],
-//   "yollar":     [ { "yol": "supabase/migrations/2026*", "gerekce": "canlıya uygulanmış, değişmez" } ] }
+// { "exceptions": [ { "name": "plaka", "reason": "Türkiye'ye özgü kavram, karşılığı yok (TB-012)" } ],
+//   "paths":     [ { "path": "supabase/migrations/2026*", "reason": "canlıya uygulanmış, değişmez" } ] }
 // Gerekçesiz kayıt SAYILMAZ: istisna görünür ve savunulabilir olmalıdır.
-function istisnaOku(kok) {
-  const bos = { adlar: new Set(), yollar: [], uyarilar: [] };
-  let ham;
+function readExceptions(root) {
+  const empty = { names: new Set(), paths: [], warnings: [] };
+  let raw;
   try {
-    ham = JSON.parse(fs.readFileSync(path.join(kok, '.snn-kod-dili.json'), 'utf8'));
+    raw = JSON.parse(fs.readFileSync(path.join(root, '.snn-kod-dili.json'), 'utf8'));
   } catch {
-    return bos;
+    return empty;
   }
-  const uyarilar = [];
-  const adlar = new Set();
-  for (const g of ham.istisnalar || []) {
-    if (!g || !g.ad) continue;
-    if (!g.gerekce) { uyarilar.push(`istisna "${g.ad}" gerekçesiz → sayılmadı`); continue; }
-    adlar.add(asciiKatla(String(g.ad)));
+  const warnings = [];
+  const names = new Set();
+  for (const g of raw.exceptions || []) {
+    if (!g || !g.name) continue;
+    if (!g.reason) { warnings.push(`istisna "${g.name}" gerekçesiz → sayılmadı`); continue; }
+    names.add(asciiFold(String(g.name)));
   }
-  const yollar = [];
-  for (const g of ham.yollar || []) {
-    if (!g || !g.yol) continue;
-    if (!g.gerekce) { uyarilar.push(`yol istisnası "${g.yol}" gerekçesiz → sayılmadı`); continue; }
-    yollar.push(new RegExp(`^${String(g.yol).split('*').map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`));
+  const paths = [];
+  for (const g of raw.paths || []) {
+    if (!g || !g.path) continue;
+    if (!g.reason) { warnings.push(`yol istisnası "${g.path}" gerekçesiz → sayılmadı`); continue; }
+    paths.push(new RegExp(`^${String(g.path).split('*').map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`));
   }
-  return { adlar, yollar, uyarilar };
+  return { names, paths, warnings };
 }
 
-const istisnaVar = (bulgu, yol, istisna) => istisna.adlar.has(asciiKatla(bulgu.ad)) || istisna.yollar.some((r) => r.test(yol));
+const isExcepted = (finding, yol, exception) => exception.names.has(asciiFold(finding.name)) || exception.paths.some((r) => r.test(yol));
 
 // ─── Girdi kaynakları ───────────────────────────────────────────────────────
-const gitCik = (kok, args) => execFileSync('git', ['-C', kok, ...args], { encoding: 'utf8', maxBuffer: 1e9 });
+const gitOut = (root, args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', maxBuffer: 1e9 });
 
 // SAF: birleşik diff (git diff -U0) içinde yalnız EKLENEN satırlar → [{ file, line, text }]
-function eklenenSatirlar(diff) {
+function addedLines(diff) {
   const out = [];
   let file = null;
   let lineNo = 0;
@@ -194,102 +220,102 @@ function eklenenSatirlar(diff) {
   return out;
 }
 
-const taranir = (yol) => !ATLANAN_YOL.test(yol) && (KAYNAK_UZANTI.test(yol) || SQL_UZANTI.test(yol));
+const isScanned = (yol) => !SKIPPED_PATH.test(yol) && (SOURCE_EXT.test(yol) || SQL_EXT.test(yol));
 
-function kelimeKumesi() {
-  return new Set(JSON.parse(fs.readFileSync(VERI, 'utf8')).kelimeler);
+function wordSet() {
+  return new Set(JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')).words);
 }
 
 // Diff kipi: yalnız eklenen satırlar + yeni eklenen dosyaların adları
-function taraDiff(kok, taban) {
-  const kelimeler = kelimeKumesi();
-  const istisna = istisnaOku(kok);
-  const bulgular = [];
-  const diff = gitCik(kok, ['diff', '-U0', '--no-color', '--no-ext-diff', `${taban}...HEAD`]);
-  for (const { file, line, text } of eklenenSatirlar(diff)) {
-    if (!taranir(file)) continue;
-    for (const b of satirBulgulari(text, kelimeler, SQL_UZANTI.test(file))) {
-      if (!istisnaVar(b, file, istisna)) bulgular.push({ file, line, ...b });
+function scanDiff(root, taban) {
+  const words = wordSet();
+  const exception = readExceptions(root);
+  const findings = [];
+  const diff = gitOut(root, ['diff', '-U0', '--no-color', '--no-ext-diff', `${taban}...HEAD`]);
+  for (const { file, line, text } of addedLines(diff)) {
+    if (!isScanned(file)) continue;
+    for (const b of lineFindings(text, words, SQL_EXT.test(file))) {
+      if (!isExcepted(b, file, exception)) findings.push({ file, line, ...b });
     }
   }
-  const yeniDosyalar = gitCik(kok, ['diff', '--name-only', '--diff-filter=A', `${taban}...HEAD`]).split('\n').filter(Boolean);
-  for (const file of yeniDosyalar) {
-    if (!taranir(file)) continue;
-    for (const b of yolBulgulari(file, kelimeler)) {
-      if (!istisnaVar(b, file, istisna)) bulgular.push({ file, line: 0, ...b });
+  const newFiles = gitOut(root, ['diff', '--name-only', '--diff-filter=A', `${taban}...HEAD`]).split('\n').filter(Boolean);
+  for (const file of newFiles) {
+    if (!isScanned(file)) continue;
+    for (const b of pathFindings(file, words)) {
+      if (!isExcepted(b, file, exception)) findings.push({ file, line: 0, ...b });
     }
   }
-  return { bulgular, uyarilar: istisna.uyarilar };
+  return { findings, warnings: exception.warnings };
 }
 
 // Tam denetim: git'teki tüm kaynak ve SQL dosyaları
-function taraTumu(kok) {
-  const kelimeler = kelimeKumesi();
-  const istisna = istisnaOku(kok);
-  const bulgular = [];
-  const dosyalar = gitCik(kok, ['ls-files']).split('\n').filter(Boolean).filter(taranir);
-  for (const file of dosyalar) {
-    for (const b of yolBulgulari(file, kelimeler)) {
-      if (!istisnaVar(b, file, istisna)) bulgular.push({ file, line: 0, ...b });
+function scanAll(root) {
+  const words = wordSet();
+  const exception = readExceptions(root);
+  const findings = [];
+  const files = gitOut(root, ['ls-files']).split('\n').filter(Boolean).filter(isScanned);
+  for (const file of files) {
+    for (const b of pathFindings(file, words)) {
+      if (!isExcepted(b, file, exception)) findings.push({ file, line: 0, ...b });
     }
     let icerik;
-    try { icerik = fs.readFileSync(path.join(kok, file), 'utf8'); } catch { continue; }
-    const sql = SQL_UZANTI.test(file);
-    icerik.split(/\r?\n/).forEach((satir, i) => {
-      for (const b of satirBulgulari(satir, kelimeler, sql)) {
-        if (!istisnaVar(b, file, istisna)) bulgular.push({ file, line: i + 1, ...b });
+    try { icerik = fs.readFileSync(path.join(root, file), 'utf8'); } catch { continue; }
+    const sql = SQL_EXT.test(file);
+    icerik.split(/\r?\n/).forEach((line, i) => {
+      for (const b of lineFindings(line, words, sql)) {
+        if (!isExcepted(b, file, exception)) findings.push({ file, line: i + 1, ...b });
       }
     });
   }
-  return { bulgular, uyarilar: istisna.uyarilar, dosyaSayisi: dosyalar.length };
+  return { findings, warnings: exception.warnings, fileCount: files.length };
 }
 
 // SAF: rapor metni
-function rapor({ bulgular, uyarilar = [], dosyaSayisi }, kip) {
-  const satirlar = [];
-  for (const u of uyarilar) satirlar.push(`  ⚠ ${u}`);
-  if (!bulgular.length) {
-    satirlar.push(`✓ Türkçe tanımlayıcı bulunmadı${dosyaSayisi ? ` (${dosyaSayisi} dosya tarandı)` : ''}.`);
-    return satirlar.join('\n');
+function report({ findings, warnings = [], fileCount }, mode) {
+  const lines = [];
+  for (const u of warnings) lines.push(`  ⚠ ${u}`);
+  if (!findings.length) {
+    lines.push(`✓ Türkçe tanımlayıcı bulunmadı${fileCount ? ` (${fileCount} dosya tarandı)` : ''}.`);
+    return lines.join('\n');
   }
   // Aynı ad tekrar tekrar yazılmasın: ada göre topla, ilk 3 yeri göster
-  const gruplar = new Map();
-  for (const b of bulgular) {
-    const k = `${b.ad}|${b.neden}`;
-    if (!gruplar.has(k)) gruplar.set(k, { ...b, yerler: [] });
-    gruplar.get(k).yerler.push(b.line ? `${b.file}:${b.line}` : b.file);
+  const groups = new Map();
+  for (const b of findings) {
+    const k = `${b.name}|${b.reason}`;
+    if (!groups.has(k)) groups.set(k, { ...b, places: [] });
+    groups.get(k).places.push(b.line ? `${b.file}:${b.line}` : b.file);
   }
-  const sirali = [...gruplar.values()].sort((a, b) => b.yerler.length - a.yerler.length);
-  satirlar.push(`✗ ${bulgular.length} Türkçe tanımlayıcı (${sirali.length} ayrı ad)${kip === 'diff' ? ' — eklenen satırlarda' : ''}:`);
-  for (const g of sirali) {
-    const yer = g.yerler.slice(0, 3).join(', ') + (g.yerler.length > 3 ? ` … (+${g.yerler.length - 3})` : '');
-    satirlar.push(`  ✗ ${g.ad} — ${g.neden} · ${yer}`);
+  const sorted = [...groups.values()].sort((a, b) => b.places.length - a.places.length);
+  lines.push(`✗ ${findings.length} Türkçe tanımlayıcı (${sorted.length} ayrı ad)${mode === 'diff' ? ' — eklenen satırlarda' : ''}:`);
+  for (const g of sorted) {
+    const place = g.places.slice(0, 3).join(', ') + (g.places.length > 3 ? ` … (+${g.places.length - 3})` : '');
+    lines.push(`  ✗ ${g.name} — ${g.reason} · ${place}`);
   }
-  satirlar.push('');
-  satirlar.push('Kural: standartlar/kod-dili-standardi.md — tanımlayıcılar (dosya adı, değişken, fonksiyon,');
-  satirlar.push('tip, tablo, sütun, API alanı) İngilizce yazılır. Yorumlar, belgeler ve kullanıcıya giden');
-  satirlar.push('metinler Türkçe kalır.');
-  satirlar.push('Türkiye\'ye özgü, İngilizce karşılığı olmayan bir kavramsa: projenin .snn-kod-dili.json');
-  satirlar.push('dosyasına gerekçesiyle istisna yazılır.');
-  return satirlar.join('\n');
+  lines.push('');
+  lines.push('Kural: standartlar/kod-dili-standardi.md — tanımlayıcılar (dosya adı, değişken, fonksiyon,');
+  lines.push('tip, tablo, sütun, API alanı) İngilizce yazılır. Yorumlar, belgeler ve kullanıcıya giden');
+  lines.push('metinler Türkçe kalır.');
+  lines.push('Türkiye\'ye özgü, İngilizce karşılığı olmayan bir kavramsa: projenin .snn-kod-dili.json');
+  lines.push('dosyasına gerekçesiyle istisna yazılır.');
+  return lines.join('\n');
 }
 
 module.exports = {
-  asciiKatla, parcala, jsxMetniAt, turkceKelime, tanimlayiciSorunu, kodKismi, satirBulgulari,
-  yolBulgulari, istisnaOku, eklenenSatirlar, rapor, taraDiff, taraTumu,
+  asciiFold, splitWords, stripJsxText, turkishWord, identifierProblem, codePart, lineFindings,
+  pathFindings, readExceptions, addedLines, report, scanDiff, scanAll,
 };
 
 if (require.main === module) {
   const argv = process.argv.slice(2);
   const diffIdx = argv.indexOf('--diff');
-  const tumu = argv.includes('--tumu');
-  const konumlar = argv.filter((a, i) => !a.startsWith('--') && i !== diffIdx + 1);
-  const kok = path.resolve(konumlar[0] || process.cwd());
-  if (!tumu && diffIdx < 0) {
+  const all = argv.includes('--tumu');
+  const positions = argv.filter((a, i) => !a.startsWith('--') && i !== diffIdx + 1);
+  const root = path.resolve(positions[0] || process.cwd());
+  if (!all && diffIdx < 0) {
     console.error('Kullanım: node kod-dili-tarama.js --diff <taban-commit> [proje] | --tumu [proje]');
     process.exit(2);
   }
-  const sonuc = tumu ? taraTumu(kok) : taraDiff(kok, argv[diffIdx + 1]);
-  console.log(rapor(sonuc, tumu ? 'tumu' : 'diff'));
-  process.exit(sonuc.bulgular.length ? 1 : 0);
+  const result = all ? scanAll(root) : scanDiff(root, argv[diffIdx + 1]);
+  console.log(report(result, all ? 'tumu' : 'diff'));
+  process.exit(result.findings.length ? 1 : 0);
 }

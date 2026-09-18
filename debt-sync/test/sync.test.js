@@ -88,22 +88,22 @@ const hassasMd = [
   '#### 🟢 Sade Anlatım', '- **Sorun ne?** WhatsApp parolası kayda yazıldı.', '---',
   '### TB-002 — prefer-const', '- **Öncelik:** P3 (Fırsatta)',
 ].join('\n');
-const [hassasKayit, normalKayit] = parseDebts(hassasMd);
-expect('Hassas alanı okunur', [hassasKayit.hassas, normalKayit.hassas], [true, false]);
-expect('Genel Başlık okunur', hassasKayit.publicTitle, 'Güvenlik: bir bağlantı parolasının yenilenmesi');
-r = plan({ debts: [hassasKayit], archiveIds: [], issues: [], ctx: ctx() });
+const [sensitiveRecord, plainRecord] = parseDebts(hassasMd);
+expect('Hassas alanı okunur', [sensitiveRecord.hassas, plainRecord.hassas], [true, false]);
+expect('Genel Başlık okunur', sensitiveRecord.publicTitle, 'Güvenlik: bir bağlantı parolasının yenilenmesi');
+r = plan({ debts: [sensitiveRecord], archiveIds: [], issues: [], ctx: ctx() });
 expect('private + hassas → issue başlığı genel başlık', r.actions[0].title, '[TB-060] Güvenlik: bir bağlantı parolasının yenilenmesi');
 expect('private + hassas → gövdede sade anlatım YOK', r.actions[0].body.includes('WhatsApp'), false);
 expect('private + hassas → gövdede kütük linki var', r.actions[0].body.includes('docs/teknik-borc.md'), true);
-r = plan({ debts: [{ ...hassasKayit, publicTitle: null }], archiveIds: [], issues: [], ctx: ctx() });
+r = plan({ debts: [{ ...sensitiveRecord, publicTitle: null }], archiveIds: [], issues: [], ctx: ctx() });
 expect('hassas ama genel başlık yok → güvenli varsayılan başlık', r.actions[0].title, '[TB-060] Ayrıntısı kütükte (hassas kayıt)');
-r = plan({ debts: [hassasKayit], archiveIds: [], issues: [], ctx: ctx({ isPublic: true }) });
+r = plan({ debts: [sensitiveRecord], archiveIds: [], issues: [], ctx: ctx({ isPublic: true }) });
 expect('PUBLIC + hassas işaretli → hiç açılmaz', types(r), []);
-r = plan({ debts: [normalKayit], archiveIds: [], issues: [], ctx: ctx() });
+r = plan({ debts: [plainRecord], archiveIds: [], issues: [], ctx: ctx() });
 expect('hassas olmayan kayıt → kütük başlığı aynen', r.actions[0].title, '[TB-002] prefer-const');
 
 console.log('— arşiv: eski GHS biçimleri (2026-09-15 ölçümü)');
-const eskiArsiv = [
+const oldArchive = [
   '- **Kapanis:** 2026-09-14 — **TB-082: Plaka isleme.**',
   '- **Kapanis:** 2026-08-24 — **TB-017 Ondalik toplama hatasi.** Kullaniciya gorunen',
   '- **Kapanis:** 2026-08-23 — **TB-047 + TB-049: Yetki iki ayri alanda.**',
@@ -113,7 +113,7 @@ const eskiArsiv = [
   '  Tam kayit: TB-037 ile birlikte okunmali (açıklama satırı, kapanış değil)',
 ].join('\n');
 expect('tüm kapanış biçimleri okunur, açıklamadaki atıf sayılmaz',
-  parseArchiveIds(eskiArsiv).sort(), ['TB-007', 'TB-016', 'TB-017', 'TB-047', 'TB-049', 'TB-082']);
+  parseArchiveIds(oldArchive).sort(), ['TB-007', 'TB-016', 'TB-017', 'TB-047', 'TB-049', 'TB-082']);
 
 console.log('— kütüğe issue numarası geri yazma');
 const { setIssueNumber } = require('../lib/debt');
@@ -131,9 +131,9 @@ expect('var olan numara güncellenir, satır çoğalmaz', (setIssueNumber(w, 'TB
 expect('güncellenen numara doğru', parseDebts(setIssueNumber(w, 'TB-004', 22))[0].issue, 22);
 const crlf = setIssueNumber(iki.replace(/\n/g, '\r\n'), 'TB-004', 5);
 expect('CRLF dosyada satır sonu biçimi korunur', [crlf.includes('\n- **Issue:**'), crlf.includes('\r\n- **Issue:** #5\r\n')], [true, true]);
-let hata = null;
-try { setIssueNumber(iki, 'TB-999', 1); } catch (e) { hata = e.message; }
-expect('olmayan kayıt → açık hata (sessiz geçmez)', hata, 'TB-999 kütükte bulunamadı');
+let error = null;
+try { setIssueNumber(iki, 'TB-999', 1); } catch (e) { error = e.message; }
+expect('olmayan kayıt → açık hata (sessiz geçmez)', error, 'TB-999 kütükte bulunamadı');
 
 console.log('— istek hakkı (kota) kararları');
 const kota = require('../lib/quota');

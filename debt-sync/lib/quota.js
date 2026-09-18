@@ -18,8 +18,8 @@ function shouldPause(remaining, reserve = RESERVE) {
 
 function pauseMessage({ remaining, resetAt, done, left }) {
   const saat = resetAt ? new Date(resetAt).toISOString().slice(11, 16) : '?';
-  const kalan = typeof remaining === 'number' ? `kalan hak ${remaining}` : 'hak sınırına takıldı';
-  return `⏸ GitHub istek hakkı azaldı (${kalan}, yenilenme ${saat} UTC). ${done} işlem yapıldı, ${left} işlem sonraki tura kaldı — arıza değil, kaldığı yerden devam edilecek.`;
+  const quotaText = typeof remaining === 'number' ? `kalan hak ${remaining}` : 'hak sınırına takıldı';
+  return `⏸ GitHub istek hakkı azaldı (${quotaText}, yenilenme ${saat} UTC). ${done} işlem yapıldı, ${left} işlem sonraki tura kaldı — arıza değil, kaldığı yerden devam edilecek.`;
 }
 
 module.exports = { RESERVE, CHECK_EVERY, isRateLimitError, shouldPause, pauseMessage };

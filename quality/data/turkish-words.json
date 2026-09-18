@@ -1,7 +1,7 @@
 {
-  "_aciklama": "Tanımlayıcılarda (dosya adı, değişken, tablo, sütun) aranan Türkçe kelimeler. ASCII'ye katlanmış ve küçük harf yazılır: 'gözlem' → 'gozlem'. Tarayıcı kelimeyi camelCase/snake_case parçalarıyla karşılaştırır, metin içinde arama YAPMAZ; bu yüzden kısa kelimeler bile güvenlidir. Ekleme ölçütü: kelime İngilizce bir sözcükle çakışmamalı (bu yüzden 'son', 'an', 'kar', 'bas', 'at' listeye ALINMAZ — İngilizce karşılıkları vardır).",
-  "_kaynak": "SNN-Piyasa-Core olayı (2026-09-17) ve 10 projedeki tanımlayıcı taraması",
-  "kelimeler": [
+  "_description": "Tanımlayıcılarda (dosya adı, değişken, tablo, sütun) aranan Türkçe kelimeler. ASCII'ye katlanmış ve küçük harf yazılır: 'gözlem' → 'gozlem'. Tarayıcı kelimeyi camelCase/snake_case parçalarıyla karşılaştırır, metin içinde arama YAPMAZ; bu yüzden kısa kelimeler bile güvenlidir. Ekleme ölçütü: kelime İngilizce bir sözcükle çakışmamalı (bu yüzden 'son', 'an', 'kar', 'bas', 'at' listeye ALINMAZ — İngilizce karşılıkları vardır).",
+  "_source": "SNN-Piyasa-Core olayı (2026-09-17) ve 10 projedeki tanımlayıcı taraması",
+  "words": [
     "adet",
     "adim",
     "aktif",
