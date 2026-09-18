@@ -1,10 +1,10 @@
-// Unutulan iş testleri (gerçek geçici git depolarıyla). Çalıştır: node borc-senkron/test/unutulan-is.test.js
+// Unutulan iş testleri (gerçek geçici git depolarıyla). Çalıştır: node debt-sync/test/forgotten-work.test.js
 'use strict';
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { unpushedBranches, forgottenWork } = require('../lib/borc');
+const { unpushedBranches, forgottenWork } = require('../lib/debt');
 
 let fail = 0;
 const expect = (name, actual, wanted) => {

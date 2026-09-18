@@ -18,7 +18,7 @@ const expect = (name, actual, wanted) => {
   console.log(`${ok ? '✓' : '✗'} ${name}${ok ? '' : `\n    gelen: ${JSON.stringify(actual)}\n    beklenen: ${JSON.stringify(wanted)}`}`);
 };
 
-const SCRIPT = path.join(__dirname, '..', 'borc-senkron.js');
+const SCRIPT = path.join(__dirname, '..', 'debt-sync.js');
 const base = fs.mkdtempSync(path.join(os.tmpdir(), 'borc-e2e-'));
 const bin = path.join(base, 'bin');
 fs.mkdirSync(bin);

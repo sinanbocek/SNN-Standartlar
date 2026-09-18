@@ -1,7 +1,7 @@
-// Proje kurulum planı testleri (saf). Çalıştır: node kurulum/test/kurulum-plan.test.js
+// Proje kurulum planı testleri (saf). Çalıştır: node setup/test/setup-plan.test.js
 'use strict';
-const K = require('../lib/kurulum-plan');
-const { parseDebts, parseArchiveIds } = require('../../borc-senkron/lib/borc');
+const K = require('../lib/setup-plan');
+const { parseDebts, parseArchiveIds } = require('../../debt-sync/lib/debt');
 
 let fail = 0;
 const expect = (name, actual, wanted) => {

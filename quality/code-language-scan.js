@@ -21,7 +21,7 @@ const SQL_UZANTI = /\.sql$/;
 // Bu klasörler hiç taranmaz (bizim yazmadığımız ya da üretilen kod)
 const ATLANAN_YOL = /(^|\/)(node_modules|dist|build|coverage|\.next|vendor|supabase\/\.temp)(\/|$)/;
 
-const VERI = path.join(__dirname, 'veri', 'turkce-kelimeler.json');
+const VERI = path.join(__dirname, 'data', 'turkish-words.json');
 
 // SAF: Türkçe harfleri ASCII'ye katlar (karşılaştırma için; 'gözlem' → 'gozlem')
 function asciiKatla(s) {

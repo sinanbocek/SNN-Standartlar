@@ -1,6 +1,6 @@
 // Çekirdek yeni sürümünü tüketici projelere GÜNCELLEME PR'ı olarak yayar.
-// Kullanım: node cekirdek/yayilim.js --surum v3.2.0                → KURU ÇALIŞTIRMA (plan yazdırır, hiçbir şey değiştirmez)
-//           node cekirdek/yayilim.js --surum v3.2.0 --uygula       → dal açar, sürümü yükseltir, PR açar
+// Kullanım: node core/propagate.js --surum v3.2.0                → KURU ÇALIŞTIRMA (plan yazdırır, hiçbir şey değiştirmez)
+//           node core/propagate.js --surum v3.2.0 --uygula       → dal açar, sürümü yükseltir, PR açar
 //           ... --yalniz sinanbocek/SNN-Yonetici-Ozeti             → yalnız bu depo (deneme için)
 // Anahtar: GH_TOKEN (repo yetkili). Kural: bot kütüğe doğrudan yazmaz; ana sürüm kaydı PR'ın içinde gelir. Otomatik birleştirme yok.
 'use strict';
@@ -8,7 +8,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const P = require('./lib/yayilim-plan');
+const P = require('./lib/propagate-plan');
 
 const argv = process.argv.slice(2);
 const arg = (name) => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : null; };
@@ -18,7 +18,7 @@ const ONLY = arg('--yalniz');
 const OWNER = 'sinanbocek';
 // Kişisel hesap dışındaki tüketiciler (kurum depoları kullanıcı listesinde görünmez)
 const EXTRA_REPOS = ['globalhedef/global-hedef-web-platform'];
-const BRANCH = `cekirdek/abacus-core-v${String(TARGET || '').replace(/^v/, '')}`;
+const BRANCH = `core/abacus-core-v${String(TARGET || '').replace(/^v/, '')}`;
 
 const gh = (args, opts = {}) => execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 1e8, stdio: ['ignore', 'pipe', 'pipe'], ...opts });
 const ghJson = (args) => JSON.parse(gh(args));

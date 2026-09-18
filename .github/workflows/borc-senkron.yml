@@ -53,5 +53,5 @@ jobs:
           ARGS=". --ci"
           if [ "$UYGULA" = "true" ]; then ARGS="$ARGS --uygula"; fi
           set -o pipefail
-          node .snn-standartlar/borc-senkron/borc-senkron.js $ARGS 2>&1 | tee senkron.log
+          node .snn-standartlar/debt-sync/debt-sync.js $ARGS 2>&1 | tee senkron.log
           { echo '### Teknik borç senkronu'; echo '```'; cat senkron.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

@@ -1,13 +1,13 @@
 // Yeni projeyi SNN standart sistemine bağlar: kütük + arşiv + görevli akışları (tek PR), board, depo güvenlik ayarları.
-// Kullanım: node kurulum/proje-kur.js <proje-klasörü>             → ÖLÇÜM + PLAN (hiçbir şey değişmez)
-//           node kurulum/proje-kur.js <proje-klasörü> --uygula    → betiğin yapabildiği adımları uygular
+// Kullanım: node setup/setup-project.js <proje-klasörü>             → ÖLÇÜM + PLAN (hiçbir şey değişmez)
+//           node setup/setup-project.js <proje-klasörü> --uygula    → betiğin yapabildiği adımları uygular
 // Proje sahibine kalanlar (anahtar, yönetici olmayan depolarda ayarlar) sonda bağlantılarıyla listelenir.
 // Dosyalar GitHub üzerinden ayrı dala yazılır: yerel çalışma klasörüne (başka oturum çalışıyor olabilir) dokunulmaz.
 'use strict';
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const K = require('./lib/kurulum-plan');
+const K = require('./lib/setup-plan');
 
 const ROOT = path.join(__dirname, '..');
 const BRANCH = 'chore/snn-standart-kurulum';
@@ -97,9 +97,9 @@ function applyFiles(o, steps) {
   const repo = o.repo.full;
   const sha = ghJson(['api', `repos/${repo}/git/ref/heads/${o.repo.defaultBranch}`]).object.sha;
   if (!tryGh(['api', `repos/${repo}/git/ref/heads/${BRANCH}`]).ok) gh(['api', `repos/${repo}/git/refs`, '-f', `ref=refs/heads/${BRANCH}`, '-f', `sha=${sha}`]);
-  for (const [file, content, msg] of files) putFile(repo, file, content, `${msg}\n\nSNN-Standartlar/kurulum/proje-kur.js`);
+  for (const [file, content, msg] of files) putFile(repo, file, content, `${msg}\n\nSNN-Standartlar/setup/setup-project.js`);
   const body = [
-    'Projeyi SNN standart sistemine bağlar (SNN-Standartlar `kurulum/proje-kur.js`):',
+    'Projeyi SNN standart sistemine bağlar (SNN-Standartlar `setup/setup-project.js`):',
     '',
     ...files.map(([f]) => `- \`${f}\``),
     '',

@@ -1,10 +1,10 @@
-// Şema belgesi bekçisi testleri (gerçek geçici git depolarıyla). Çalıştır: node kalite/test/sema-belgesi.test.js
+// Şema belgesi bekçisi testleri (gerçek geçici git depolarıyla). Çalıştır: node quality/test/schema-doc.test.js
 'use strict';
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { isStructural, decide, measure } = require('../sema-belgesi');
+const { isStructural, decide, measure } = require('../schema-doc');
 
 let fail = 0;
 const expect = (name, actual, wanted) => {

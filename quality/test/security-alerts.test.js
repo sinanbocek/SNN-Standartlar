@@ -1,6 +1,6 @@
-// Güvenlik uyarıları testleri (saf; GitHub'a istek atmaz). Çalıştır: node kalite/test/guvenlik-uyarilari.test.js
+// Güvenlik uyarıları testleri (saf; GitHub'a istek atmaz). Çalıştır: node quality/test/security-alerts.test.js
 'use strict';
-const { summarize, message, CACHE_MS } = require('../guvenlik-uyarilari');
+const { summarize, message, CACHE_MS } = require('../security-alerts');
 
 let fail = 0;
 const expect = (name, actual, wanted) => {

@@ -1,6 +1,6 @@
-// Birleştirme kapısı testleri (saf; GitHub'a istek atmaz). Çalıştır: node kalite/test/birlestirme-kapisi.test.js
+// Birleştirme kapısı testleri (saf; GitHub'a istek atmaz). Çalıştır: node quality/test/merge-gate.test.js
 'use strict';
-const { parseMerges, bypassReason, decide, TRIGGER } = require('../birlestirme-kapisi');
+const { parseMerges, bypassReason, decide, TRIGGER } = require('../merge-gate');
 
 let fail = 0;
 const expect = (name, actual, wanted) => {

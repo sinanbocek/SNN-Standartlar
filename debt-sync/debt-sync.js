@@ -1,7 +1,7 @@
 // Kütük → GitHub Issue (+ varsa board) senkronu.
-// Kullanım: node borc-senkron.js <proje-klasörü>                 → KURU ÇALIŞTIRMA (hiçbir şey değiştirmez)
-//           node borc-senkron.js <proje-klasörü> --uygula        → GitHub'a yazar, issue numaralarını kütüğe geri yazar
-//           node borc-senkron.js <proje-klasörü> --uygula --ci   → GitHub Actions: kütüğe HİÇ yazmaz
+// Kullanım: node debt-sync.js <proje-klasörü>                 → KURU ÇALIŞTIRMA (hiçbir şey değiştirmez)
+//           node debt-sync.js <proje-klasörü> --uygula        → GitHub'a yazar, issue numaralarını kütüğe geri yazar
+//           node debt-sync.js <proje-klasörü> --uygula --ci   → GitHub Actions: kütüğe HİÇ yazmaz
 // Anahtarlar: GH_TOKEN (issue/etiket; Actions'ta github.token) · PROJECT_TOKEN (yalnız board; kişisel hesap
 // board'larına github.token yazamaz). Yerelde ikisi de yoksa gh oturumu kullanılır.
 'use strict';
@@ -9,9 +9,9 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { parseDebts, parseArchiveIds, setIssueNumber } = require('./lib/borc');
-const { plan } = require('./lib/senkron-plan');
-const kota = require('./lib/kota');
+const { parseDebts, parseArchiveIds, setIssueNumber } = require('./lib/debt');
+const { plan } = require('./lib/sync-plan');
+const kota = require('./lib/quota');
 
 const OPEN_FILE = path.join('docs', 'teknik-borc.md');
 const ARCHIVE_FILE = path.join('docs', 'teknik-borc-arsiv.md');
@@ -245,6 +245,6 @@ try {
     console.log(`  ${kota.pauseMessage({ remaining: null, resetAt: null, done: 0, left: 'tüm' })}`);
     process.exit(0);
   }
-  console.error(`borc-senkron hatası: ${msg}`);
+  console.error(`debt-sync hatası: ${msg}`);
   process.exit(1);
 }

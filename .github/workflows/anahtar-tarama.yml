@@ -45,7 +45,7 @@ jobs:
             exit 0
           fi
           set -o pipefail
-          node .snn-standartlar/kalite/anahtar-tarama.js --diff "$BASE" 2>&1 | tee tarama.log
+          node .snn-standartlar/quality/secret-scan.js --diff "$BASE" 2>&1 | tee tarama.log
           STATUS=${PIPESTATUS[0]}
           { echo '### Gizli anahtar taraması'; echo '```'; cat tarama.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           exit $STATUS

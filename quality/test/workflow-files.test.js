@@ -1,6 +1,6 @@
 // Akış (workflow) dosyası yazım denetimi. Neden (2026-09-15): bir adım adındaki tırnaksız ": " YAML'ı geçersiz kıldı;
 // GitHub "workflow file issue" deyip taramayı 9 projede hiç başlatmadı ve PR'lar yine yeşil göründü.
-// Bağımlılık indirmeden, bilinen tuzaklar denetlenir. Çalıştır: node kalite/test/akis-dosyalari.test.js
+// Bağımlılık indirmeden, bilinen tuzaklar denetlenir. Çalıştır: node quality/test/workflow-files.test.js
 'use strict';
 const fs = require('fs');
 const path = require('path');

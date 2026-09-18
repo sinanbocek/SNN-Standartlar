@@ -1,11 +1,11 @@
 // Anahtar taraması testleri. Sahte anahtarlar çalışma anında parçalardan üretilir: bu dosya taramaya kendini yakalatmaz
-// ve depoda gerçek anahtar biçiminde metin durmaz. Çalıştır: node kalite/test/anahtar-tarama.test.js
+// ve depoda gerçek anahtar biçiminde metin durmaz. Çalıştır: node quality/test/secret-scan.test.js
 'use strict';
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { scanLine, scanDiff, report, looksPlaceholder } = require('../anahtar-tarama');
+const { scanLine, scanDiff, report, looksPlaceholder } = require('../secret-scan');
 
 let fail = 0;
 const expect = (name, actual, wanted) => {
@@ -77,7 +77,7 @@ const base = execFileSync('git', ['-C', repo, 'rev-parse', 'HEAD'], { encoding: 
 g('switch', '-q', '-c', 'pr');
 fs.writeFileSync(path.join(repo, 'yeni.md'), 'temiz değişiklik\n');
 g('add', '-A'); g('commit', '-q', '-m', 'temiz');
-const cli = () => { try { execFileSync('node', [path.join(__dirname, '..', 'anahtar-tarama.js'), '--diff', base], { cwd: repo, stdio: 'pipe' }); return 0; } catch (e) { return e.status; } };
+const cli = () => { try { execFileSync('node', [path.join(__dirname, '..', 'secret-scan.js'), '--diff', base], { cwd: repo, stdio: 'pipe' }); return 0; } catch (e) { return e.status; } };
 expect('depoda eski anahtar var ama PR temiz → çıkış 0', cli(), 0);
 fs.writeFileSync(path.join(repo, 'ayar.env'), `SUPABASE_ACCESS_TOKEN=${SBP}\n`);
 g('add', '-A'); g('commit', '-q', '-m', 'anahtar eklendi');
