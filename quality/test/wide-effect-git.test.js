@@ -44,15 +44,20 @@ console.log('— dal silme');
 expect('push --delete', g.deletedBranch('git push origin --delete feat/x'), 'feat/x');
 expect('push :dal', g.deletedBranch('git push origin :feat/x'), 'feat/x');
 expect('branch -D', g.deletedBranch('git branch -D feat/x'), 'feat/x');
-expect('gh pr merge --delete-branch', g.deletedBranch('gh pr merge 17 --merge --delete-branch'), '(gh pr merge --delete-branch)');
+expect('birleştirme komutu PR numarası döndürür', g.deletedBranch('gh pr merge 17 --merge --delete-branch'), { prNumber: 17 });
 expect('silme yoksa null', g.deletedBranch('git push origin feat/x'), null);
 
-const acikPR = [{ number: 18, base: 'docs/giris' }];
+// #18 vakası: docs/giris dalı silindi, onu TABAN alan #18 kapandı
+const acikPR = [{ number: 17, base: 'main', head: 'docs/giris' }, { number: 18, base: 'docs/giris', head: 'feat/kod' }];
 expect('taban dalı silinirken engellenir', g.branchDeleteBlock('git push origin --delete docs/giris', acikPR) !== null, true);
 expect('engel mesajı PR numarasını söyler', g.branchDeleteBlock('git push origin --delete docs/giris', acikPR).includes('#18'), true);
-expect('başka dal serbest', g.branchDeleteBlock('git push origin --delete feat/baska', acikPR), null);
-expect('açık PR yoksa serbest', g.branchDeleteBlock('git push origin --delete docs/giris', []), null);
-expect('gh pr merge --delete-branch açık PR varken engellenir', g.branchDeleteBlock('gh pr merge 17 --merge --delete-branch', acikPR) !== null, true);
+expect('birleştirme: alttaki PR silinirken üstteki varsa engellenir', g.branchDeleteBlock('gh pr merge 17 --merge --delete-branch', acikPR) !== null, true);
 
+// YANLIŞ ALARM (2026-09-18): tek PR birleştirilirken kendi dalı siliniyor — engellenmemeli
+const tekPR = [{ number: 25, base: 'main', head: 'fix/tarayici' }];
+expect('kendi dalını silen birleştirme serbest', g.branchDeleteBlock('gh pr merge 25 --merge --delete-branch', tekPR), null);
+expect('başka dal serbest', g.branchDeleteBlock('git push origin --delete feat/baska', acikPR), null);
+expect('açık PR listesi boşsa serbest', g.branchDeleteBlock('git push origin --delete docs/giris', []), null);
+expect('PR listede yoksa engelleme yok', g.branchDeleteBlock('gh pr merge 99 --merge --delete-branch', tekPR), null);
 console.log(fail ? `\n${fail} test başarısız` : '\nTüm testler geçti');
 process.exit(fail ? 1 : 0);
