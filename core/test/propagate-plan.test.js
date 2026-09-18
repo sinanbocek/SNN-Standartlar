@@ -1,7 +1,7 @@
-// Çekirdek yayılım planı testleri (saf). Çalıştır: node cekirdek/test/yayilim-plan.test.js
+// Çekirdek yayılım planı testleri (saf). Çalıştır: node core/test/propagate-plan.test.js
 'use strict';
-const P = require('../lib/yayilim-plan');
-const { parseDebts } = require('../../borc-senkron/lib/borc');
+const P = require('../lib/propagate-plan');
+const { parseDebts } = require('../../debt-sync/lib/debt');
 
 let fail = 0;
 const expect = (name, actual, wanted) => {

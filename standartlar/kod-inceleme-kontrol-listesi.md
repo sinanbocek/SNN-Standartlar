@@ -26,7 +26,7 @@ Bir değişiklik birleştirilmeden önce sorulan sorular. Her madde **evet/hayı
 ## Güvenlik
 
 - [ ] Değişiklikte gizli anahtar, parola ya da erişim belirteci var mı? (Ortak anahtar taraması her PR'da çalışır; kırmızıysa birleştirilmez.)
-      → `kalite/anahtar-tarama.js`
+      → `quality/secret-scan.js`
 
 ## Doğrulama
 

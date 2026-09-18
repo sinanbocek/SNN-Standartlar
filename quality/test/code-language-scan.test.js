@@ -1,9 +1,9 @@
-// Kod dili taraması testleri. Çalıştır: node kalite/test/kod-dili-tarama.test.js
+// Kod dili taraması testleri. Çalıştır: node quality/test/code-language-scan.test.js
 'use strict';
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const t = require('../kod-dili-tarama');
+const t = require('../code-language-scan');
 
 let fail = 0;
 const expect = (name, actual, wanted) => {
@@ -11,7 +11,7 @@ const expect = (name, actual, wanted) => {
   if (!ok) fail += 1;
   console.log(`${ok ? '✓' : '✗'} ${name}${ok ? '' : `\n    gelen: ${JSON.stringify(actual)}\n    beklenen: ${JSON.stringify(wanted)}`}`);
 };
-const kelimeler = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'veri', 'turkce-kelimeler.json'), 'utf8')).kelimeler);
+const kelimeler = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'turkish-words.json'), 'utf8')).kelimeler);
 const adlar = (satir, sql = false) => t.satirBulgulari(satir, kelimeler, sql).map((b) => b.ad);
 
 console.log('— parçalama');

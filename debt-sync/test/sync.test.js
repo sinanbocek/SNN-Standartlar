@@ -1,7 +1,7 @@
 // Senkron planı testleri. Çalıştır: node ~/.claude/hooks/test/senkron.test.js
 'use strict';
-const { plan, LABELS } = require('../lib/senkron-plan');
-const { parseDebts, parseArchiveIds } = require('../lib/borc');
+const { plan, LABELS } = require('../lib/sync-plan');
+const { parseDebts, parseArchiveIds } = require('../lib/debt');
 
 let fail = 0;
 function expect(name, actual, wanted) {
@@ -116,7 +116,7 @@ expect('tüm kapanış biçimleri okunur, açıklamadaki atıf sayılmaz',
   parseArchiveIds(eskiArsiv).sort(), ['TB-007', 'TB-016', 'TB-017', 'TB-047', 'TB-049', 'TB-082']);
 
 console.log('— kütüğe issue numarası geri yazma');
-const { setIssueNumber } = require('../lib/borc');
+const { setIssueNumber } = require('../lib/debt');
 const iki = [
   '# Kütük', '', '---', '',
   '### TB-004 — Birinci', '- **Tespit Tarihi:** x', '- **Öncelik:** P3 (Fırsatta)', '', '#### 🟢 Sade Anlatım', '- a', '', '---', '',
@@ -136,7 +136,7 @@ try { setIssueNumber(iki, 'TB-999', 1); } catch (e) { hata = e.message; }
 expect('olmayan kayıt → açık hata (sessiz geçmez)', hata, 'TB-999 kütükte bulunamadı');
 
 console.log('— istek hakkı (kota) kararları');
-const kota = require('../lib/kota');
+const kota = require('../lib/quota');
 expect('GraphQL hak sınırı mesajı tanınır', kota.isRateLimitError('GraphQL: API rate limit exceeded for user ID 196833380.'), true);
 expect('ikincil sınır mesajı tanınır', kota.isRateLimitError('You have exceeded a secondary rate limit'), true);
 expect('başka hata hak sınırı sayılmaz', kota.isRateLimitError('resource not found, please check the URL'), false);

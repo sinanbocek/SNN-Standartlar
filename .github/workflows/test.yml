@@ -19,42 +19,42 @@ jobs:
         with:
           node-version: 20
       - name: Senkron testleri
-        run: node borc-senkron/test/senkron.test.js
+        run: node debt-sync/test/sync.test.js
       - name: Uçtan uca (sahte gh ile istek hakkı ve board maliyeti)
-        run: node borc-senkron/test/senkron-e2e.test.js
+        run: node debt-sync/test/sync-e2e.test.js
       - name: Rehber tazelik testleri
-        run: node kalite/test/rehber-tazelik.test.js
+        run: node quality/test/guide-freshness.test.js
       - name: Şema belgesi bekçisi testleri
-        run: node kalite/test/sema-belgesi.test.js
+        run: node quality/test/schema-doc.test.js
       - name: Birleştirme kapısı testleri
-        run: node kalite/test/birlestirme-kapisi.test.js
+        run: node quality/test/merge-gate.test.js
       - name: Unutulan iş testleri
-        run: node borc-senkron/test/unutulan-is.test.js
+        run: node debt-sync/test/forgotten-work.test.js
       - name: Güvenlik uyarıları testleri
-        run: node kalite/test/guvenlik-uyarilari.test.js
+        run: node quality/test/security-alerts.test.js
       - name: Çekirdek yayılım planı testleri
-        run: node cekirdek/test/yayilim-plan.test.js
+        run: node core/test/propagate-plan.test.js
       - name: Çekirdek yayılım sözdizimi
-        run: node --check cekirdek/yayilim.js
+        run: node --check core/propagate.js
       - name: Proje kurulum planı testleri
-        run: node kurulum/test/kurulum-plan.test.js
+        run: node setup/test/setup-plan.test.js
       - name: Proje kurulum sözdizimi
-        run: node --check kurulum/proje-kur.js
+        run: node --check setup/setup-project.js
       - name: Akış dosyası yazım denetimi
-        run: node kalite/test/akis-dosyalari.test.js
+        run: node quality/test/workflow-files.test.js
       - name: Anahtar taraması testleri
-        run: node kalite/test/anahtar-tarama.test.js
+        run: node quality/test/secret-scan.test.js
       - name: Kod dili taraması testleri
-        run: node kalite/test/kod-dili-tarama.test.js
+        run: node quality/test/code-language-scan.test.js
       - name: Bu PR'da eklenen satırlarda gizli anahtar (kendi kendini tarama)
         if: github.event_name == 'pull_request'
         run: |
           git fetch -q --depth=1 origin ${{ github.event.pull_request.base.sha }}
-          node kalite/anahtar-tarama.js --diff ${{ github.event.pull_request.base.sha }}
+          node quality/secret-scan.js --diff ${{ github.event.pull_request.base.sha }}
       - name: Sözdizimi
-        run: node --check borc-senkron/borc-senkron.js
+        run: node --check debt-sync/debt-sync.js
       - name: ESM projede çalışma (tüketen package.json "type":"module" olsa da)
         run: |
           mkdir -p /tmp/esm/.snn-standartlar && echo '{"type":"module"}' > /tmp/esm/package.json
-          cp -r borc-senkron /tmp/esm/.snn-standartlar/
-          cd /tmp/esm && node .snn-standartlar/borc-senkron/lib/senkron-plan.js
+          cp -r debt-sync /tmp/esm/.snn-standartlar/
+          cd /tmp/esm && node .snn-standartlar/debt-sync/lib/sync-plan.js

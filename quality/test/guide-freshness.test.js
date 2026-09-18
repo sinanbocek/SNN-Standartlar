@@ -1,10 +1,10 @@
-// Rehber tazelik testleri. Çalıştır: node kalite/test/rehber-tazelik.test.js
+// Rehber tazelik testleri. Çalıştır: node quality/test/guide-freshness.test.js
 'use strict';
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { pathRefs, claimedVersion, check, summary } = require('../rehber-tazelik');
+const { pathRefs, claimedVersion, check, summary } = require('../guide-freshness');
 
 let fail = 0;
 const expect = (name, actual, wanted) => {

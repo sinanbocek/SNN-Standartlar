@@ -46,7 +46,7 @@ jobs:
             exit 0
           fi
           set -o pipefail
-          node .snn-standartlar/kalite/kod-dili-tarama.js --diff "$BASE" . 2>&1 | tee kod-dili.log
+          node .snn-standartlar/quality/code-language-scan.js --diff "$BASE" . 2>&1 | tee kod-dili.log
           STATUS=${PIPESTATUS[0]}
           { echo '### Kod dili taraması (tanımlayıcılar İngilizce mi?)'; echo '```'; cat kod-dili.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           exit $STATUS

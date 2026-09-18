@@ -1,6 +1,6 @@
 // Tüm projelerin durum/borç özetini yazdırır. Kullanım: node borclar.js [--detay]
 'use strict';
-const { listProjects, projectStatus, debtLabel } = require('./lib/borc');
+const { listProjects, projectStatus, debtLabel } = require('./lib/debt');
 
 const detail = process.argv.includes('--detay');
 const rows = listProjects().map(projectStatus)

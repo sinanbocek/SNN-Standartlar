@@ -84,20 +84,20 @@ Her projenin `AI-RULES.md` / `CLAUDE.md` dosyası bu kurala **atıf yapar**, kur
 
 | Kapı | Nerede | Ne yapar |
 |---|---|---|
-| **Tarayıcı** | `kalite/kod-dili-tarama.js` | Kaynak dosyalardaki tanımlayıcıları ve `.sql` dosyalarındaki tablo/sütun adlarını tarar. Türkçe harf (`ç ğ ı ö ş ü`) içeren ya da kelime listesinde geçen adları raporlar. Yorumlar, dizgeler ve belgeler **taranmaz**. |
+| **Tarayıcı** | `quality/code-language-scan.js` | Kaynak dosyalardaki tanımlayıcıları ve `.sql` dosyalarındaki tablo/sütun adlarını tarar. Türkçe harf (`ç ğ ı ö ş ü`) içeren ya da kelime listesinde geçen adları raporlar. Yorumlar, dizgeler ve belgeler **taranmaz**. |
 | **GitHub akışı** | `.github/workflows/kod-dili.yml` (görevli) + `ornek/kod-dili.yml` (projeye kopyalanan tek dosya) | Her PR'da ve main gönderiminde **eklenen satırları** tarar; ihlalde kırılır. |
 
 ### Kullanım
 
 ```bash
 # PR kapısı: yalnız eklenen satırlar (akışın çalıştırdığı kip)
-node kalite/kod-dili-tarama.js --diff <taban-commit> <proje-klasörü>
+node quality/code-language-scan.js --diff <taban-commit> <proje-klasörü>
 
 # Tam denetim: git'teki tüm kaynak ve SQL dosyaları (göç planı çıkarmak için)
-node kalite/kod-dili-tarama.js --tumu <proje-klasörü>
+node quality/code-language-scan.js --tumu <proje-klasörü>
 
 # Testler
-node kalite/test/kod-dili-tarama.test.js
+node quality/test/code-language-scan.test.js
 ```
 
 ### Bir projeyi bağlamak
@@ -110,7 +110,7 @@ node kalite/test/kod-dili-tarama.test.js
 
 ### Kelime listesi ve istisnalar
 
-- Kelime listesi veri dosyasındadır: `kalite/veri/turkce-kelimeler.json`. Ekleme ölçütü: kelime İngilizce bir sözcükle çakışmamalı. (`plan`, `not`, `para`, `son` gibi çakışanlar bilerek **listede değildir**.)
+- Kelime listesi veri dosyasındadır: `quality/data/turkish-words.json`. Ekleme ölçütü: kelime İngilizce bir sözcükle çakışmamalı. (`plan`, `not`, `para`, `son` gibi çakışanlar bilerek **listede değildir**.)
 - Liste, tanımlayıcının **parçalarıyla** karşılaştırılır (`gunSonuKaydi` → `gun`, `sonu`, `kaydi`); metin içinde arama yapılmaz. Dar bir çekim eki toleransı vardır (`zamani` → `zaman`).
 - Proje istisnaları kökteki `.snn-kod-dili.json` dosyasındadır. **Gerekçesiz istisna sayılmaz** ve uyarı üretir:
 

@@ -61,5 +61,5 @@ jobs:
           if [ "$UYGULA" = "true" ]; then ARGS+=(--uygula); fi
           if [ -n "$YALNIZ" ]; then ARGS+=(--yalniz "$YALNIZ"); fi
           set -o pipefail
-          node cekirdek/yayilim.js "${ARGS[@]}" 2>&1 | tee yayilim.log
+          node core/propagate.js "${ARGS[@]}" 2>&1 | tee yayilim.log
           { echo '### Çekirdek yayılımı'; echo '```'; cat yayilim.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

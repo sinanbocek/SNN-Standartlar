@@ -12,7 +12,7 @@ Her proje için sırayla:
 
 | Adım | Ne yapılır | Kim yapar |
 |---|---|---|
-| 1 | **Ölçüm:** `node kalite/kod-dili-tarama.js --tumu <proje>` çalıştırılır, sayı kaydedilir | Ortak depo (bu dosya) |
+| 1 | **Ölçüm:** `node quality/code-language-scan.js --tumu <proje>` çalıştırılır, sayı kaydedilir | Ortak depo (bu dosya) |
 | 2 | **Kütük kaydı:** projenin `docs/teknik-borc.md` dosyasına geçiş kaydı açılır (§3 şablonu) | **Projenin kendi oturumu** |
 | 3 | **İstisna dosyası:** varsa `.snn-kod-dili.json` yazılır (gerekçesiz istisna sayılmaz) | Projenin kendi oturumu |
 | 4 | **Turnike:** `ornek/kod-dili.yml` → projede `.github/workflows/kod-dili.yml` olarak kopyalanır | Projenin kendi oturumu |
@@ -67,7 +67,7 @@ Her proje bu kaydı **kendi oturumunda** açar. `<PROJE>`, `<BULGU>`, `<AYRI_AD>
 - **Senden beklenen karar:** Veritabanı sütun/tablo adları değişecekse ne zaman? (Kod içi adlar karar gerektirmez, sıradan temizliktir.)
 
 #### 🔧 Teknik Detay
-- **Açıklama:** `node <standartlar>/kalite/kod-dili-tarama.js --tumu .` ölçümü (2026-09-18): **<BULGU> bulgu, <AYRI_AD> ayrı ad** (<SQL> tanesi `.sql` dosyalarında).
+- **Açıklama:** `node <standartlar>/quality/code-language-scan.js --tumu .` ölçümü (2026-09-18): **<BULGU> bulgu, <AYRI_AD> ayrı ad** (<SQL> tanesi `.sql` dosyalarında).
 - **Etki:** Çalışan üründe davranış etkisi yok; bakım ve taşınabilirlik etkisi var.
 - **Çözüm yönü:** (1) Kod içi adlar: dosya/klasör adları ve dışa açık işler önce, iç değişkenler sonra; her adım ayrı PR, testler yeşil kalmalı. (2) Veritabanı adları: ayrı ve kırıcı sürüm planıyla; canlıya uygulanmış migration düzenlenmez, yeni migration yazılır. (3) Türkiye'ye özgü, karşılığı olmayan adlar `.snn-kod-dili.json` içine gerekçesiyle istisna yazılır.
 - **Neden Şimdi Çözülmüyor:** Mekanik ve geniş bir iştir; sıradaki işlerin önüne geçmez. Yeni kod bugünden itibaren kurala uyar.
@@ -86,7 +86,7 @@ ve kullanıcıya giden metinler Türkçe.
 
 Bu projede yapılacaklar (sırayla, her adım ayrı PR):
 
-1. Ölçüm: node <SNN-Standartlar yolu>/kalite/kod-dili-tarama.js --tumu .
+1. Ölçüm: node <SNN-Standartlar yolu>/quality/code-language-scan.js --tumu .
    Beklenen mertebe (2026-09-18 ölçümü): <BULGU> bulgu / <AYRI_AD> ayrı ad.
 2. docs/teknik-borc.md dosyasına geçiş kaydını aç (şablon: SNN-Standartlar/docs/kod-dili-gecis.md §3).
    Numara projedeki en büyük TB numarasının bir fazlası olsun.
@@ -115,4 +115,4 @@ Kalan sınırlar:
 - Kelime listesi sonludur; listede olmayan Türkçe kelime, Türkçe harf içermiyorsa kaçar.
 - Tarayıcı niyet okumaz: İngilizce ama anlamsız adları (`data`, `temp`) yakalamaz — o, kod incelemesinin işidir.
 
-Yanlış alarm görülürse önce **kelime listesi** (`kalite/veri/turkce-kelimeler.json`) ve **istisna dosyası** kullanılır; kural gevşetilmez.
+Yanlış alarm görülürse önce **kelime listesi** (`quality/data/turkish-words.json`) ve **istisna dosyası** kullanılır; kural gevşetilmez.

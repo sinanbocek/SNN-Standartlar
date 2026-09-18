@@ -14,9 +14,9 @@ SNN projelerinin ortak çalışma standartları ve **teknik borç kütüphanecis
 | `standartlar/giris-alanlari-standardi.md` | Sayı ve kod girişleri: yanlış karakter yazılamaz, biçim yazarken kurulur |
 | `standartlar/kod-inceleme-kontrol-listesi.md` | Birleştirmeden önce sorulan sorular |
 | `standartlar/kod-dili-standardi.md` | Tanımlayıcılar İngilizce, belgeler ve yorumlar Türkçe |
-| `kalite/kod-dili-tarama.js` | Türkçe tanımlayıcı tarayıcısı (+ `ornek/kod-dili.yml` ile projeye bağlanır) |
+| `quality/code-language-scan.js` | Türkçe tanımlayıcı tarayıcısı (+ `ornek/kod-dili.yml` ile projeye bağlanır) |
 | `docs/kod-dili-gecis.md` | Bağlama süreci, projelerin ölçülmüş yükü, kütük kaydı şablonu ve istek metni |
-| `borc-senkron/` | Kütüğü okuyup issue ve board'u güncelleyen betik + testleri |
+| `debt-sync/` | Kütüğü okuyup issue ve board'u güncelleyen betik + testleri |
 | `.github/workflows/borc-senkron.yml` | GitHub'da çalışan ortak görevli (projeler bunu çağırır) |
 | `ornek/teknik-borc.yml` | Her projeye kopyalanacak tek bağlantı dosyası |
 
@@ -38,7 +38,7 @@ Board adı `<depo adı> · Teknik Borç`, durum sütunları `Açık / Devam / Ka
 ## Yerelde çalıştırma
 
 ```bash
-node borc-senkron/borc-senkron.js <proje-klasörü>            # kuru çalıştırma
-node borc-senkron/borc-senkron.js <proje-klasörü> --uygula   # uygula (issue numarasını kütüğe de yazar)
-node borc-senkron/test/senkron.test.js                       # testler
+node debt-sync/debt-sync.js <proje-klasörü>            # kuru çalıştırma
+node debt-sync/debt-sync.js <proje-klasörü> --uygula   # uygula (issue numarasını kütüğe de yazar)
+node debt-sync/test/sync.test.js                       # testler
 ```
