@@ -29,23 +29,23 @@ Her proje için sırayla:
 4. **En son SNN-Piyasa-Core:** şu anda İngilizceye çeviriliyor; çeviri main'e girmeden turnike takılmaz.
 5. **SNN-Standartlar (bu depo):** TB-001 kapanınca kendi turnikesini takar. Kural koyan depo, kuralı en son değil en görünür biçimde uygular.
 
-## 2. Ölçüm (2026-09-18, `--tumu`)
+## 2. Ölçüm (2026-09-18 akşamı, üçüncü kalibrasyondan sonra, `--tumu`)
 
 Tarayıcı yalnız tanımlayıcılara bakar; yorum, dizge, JSX yazısı ve düzenli ifade gövdesi taranmaz.
 
 | Proje | Bulgu | Ayrı ad | Nerede | En sık adlar | Önerilen öncelik |
 |---|---|---|---|---|---|
 | Naturapan-Web-Sitesi | **0** | 0 | — | — | Kayıt gerekmez |
-| SNN-Ihale-Maliyet-Teklif-Yonetimi | 75 | 68 | kaynak 75 | `teklif`, `birim`, `fiyat` | P3 |
-| SNN-Proje-ve-Nakit-Akis-Yonetimi | 86 | 61 | kaynak 86 | `gün`, `İhale`, `Adı` | P3 |
-| SNN-Abacus-Core | 110 | 26 | kaynak 108, yol 2 | `sonuc`, `yeniKayit`, `satir`, `gecerliHane` | P2 (kuralın kaynağı) |
-| trade-kasa | 290 | 50 | kaynak 290 | `islem`, `alanaYaz`, `kayit` | P3 |
-| SNN-Piyasa-Core | 303 | 94 | **sql 234**, kaynak 60, yol 9 | `sembol`, `kaynak`, `zaman`, `gun_sonu` | P2 (göç sürüyor) |
-| GHS-Panel | 697 | 342 | kaynak 506, **sql 134**, yol 57 | `sonuc`, `v_kalan`, `musteri`, `tablo` | P2 |
-| SNN-Portfoy-Yonetimi | 922 | 387 | kaynak 787, sql 121, yol 14 | `tarih`, `adet`, `fiyat`, `baslangic_sermaye` | P2 |
-| Gunum-Var | 1.646 | 327 | kaynak 1.551, sql 82, yol 13 | `zincirKur`, `sonuc`, `hata`, `davet` | P2 |
-| SNN-Yonetici-Ozeti | 6.740 | 425 | kaynak 6.737 | `hesapKodu`, `tablo`, `yil`, `grupKodu` | P2 |
-| SNN-Standartlar (bu depo) | 166 | 46 | kaynak 141, yol 25 | `istisna`, `bulgular`, `satirlar` | TB-001 (P2, karar verildi) |
+| SNN-Proje-ve-Nakit-Akis-Yonetimi | 22 | 20 | kaynak 22 | `İhaleler`, `Tedarikçi`, `Keşideci` | P3 |
+| SNN-Ihale-Maliyet-Teklif-Yonetimi | 60 | 51 | kaynak 60 | `satir`, `oran`, `birim` | P3 |
+| SNN-Abacus-Core | 108 | 26 | kaynak 108 | `sonuc`, `yeniKayit`, `satir`, `geriGun` | P2 (kuralın kaynağı) |
+| trade-kasa | 272 | 40 | kaynak 272 | `islem`, `alanaYaz`, `kayit` | P3 |
+| SNN-Piyasa-Core | 297 | 93 | **sql 243**, kaynak 54 | `sembol`, `kaynak`, `zaman`, `gun_sonu` | P2 (göç sürüyor) |
+| GHS-Panel | 434 | 231 | **sql 190**, kaynak 244 | `v_kalan`, `tablo`, `sonuc` | P2 |
+| SNN-Portfoy-Yonetimi | 743 | 311 | kaynak 620, **sql 123** | `tarih`, `Altın`, `adet` | P2 |
+| Gunum-Var | 1.509 | 261 | kaynak 1.412, sql 97 | `zincirKur`, `sonuc`, `hata` | P2 |
+| SNN-Yonetici-Ozeti | 6.295 | 397 | kaynak 6.295 | `hesapKodu`, `tablo`, `yil`, `grupKodu` | P2 |
+| SNN-Standartlar (bu depo) | **0** | 0 | — | TB-001 kapandı | — |
 
 **Okuma notu:** "bulgu" toplam geçiş sayısıdır, "ayrı ad" kaç farklı ad olduğudur. İş yükünü **ayrı ad** sayısı belirler; aynı ad çoğu zaman tek bir yeniden adlandırmayla düzelir.
 

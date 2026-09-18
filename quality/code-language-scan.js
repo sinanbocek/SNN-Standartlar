@@ -118,23 +118,50 @@ function codePart(line, sql) {
 }
 
 // SAF: JSX/HTML etiketleri ARASINDAKİ yazıyı atar. Bu yazı kullanıcıya görünen Türkçe metindir,
-// tanımlayıcı değildir (GHS-Panel ölçümü 2026-09-18: `<label …>Poliçe Durumu</label>` gibi satırlar
-// 3.127 bulgunun büyük kısmını üretiyordu — yanlış alarm, kuralı kullanılamaz hale getirir).
-// Kod işareti (= ( ) { } ;) taşımayan metin parçaları atılır; taşıyanlar (ör. `{policy.name}`) korunur.
-const CODE_MARK = /[={};]/;
+// tanımlayıcı değildir (GHS-Panel ölçümü 2026-09-18: <label …>Poliçe Durumu</label> gibi satırlar
+// 3.127 bulgunun büyük kısmını üretiyordu). Metin ile ifade AYNI satırda karışabilir:
+//   {metrics.count} adet ödemenin kur bilgisi girilmediği için TL
+// Bu durumda YAZI atılır, yalnız süslü parantez içindeki KOD taranır (2026-09-18 ikinci
+// kalibrasyon: İhale ve Nakit-Akış ölçümlerinde kalan bulguların çoğu bu biçimdeydi).
+const CODE_MARK = /[=;]/;
+const BRACE_EXPR = /{[^{}]*}/g;
+
+// SAF: JSX gövdesinden yalnız süslü parantezli ifadeleri bırakır (yazıyı atar)
+const keepExpressions = (part) => (part.match(BRACE_EXPR) || []).join(' ');
+
+// SAF: parça yazı mı? Atama ya da satır sonu işareti taşıyan parça koddur, dokunulmaz.
 const isPlainText = (part) => part.trim() !== '' && !CODE_MARK.test(part);
+
+// Etiket dışında kalan (sarkan) yazı için daha katı ölçüt: parantez de taşımamalı.
+// Neden: `onChange={(e) => setX(e)}` satırında `=>` işaretinden sonrası yazı sanılıyor ve
+// gerçek adlar kaçıyordu (2026-09-18 ölçümü). Etiketler ARASINDAKİ yazıda parantez serbesttir
+// ("Altın (Gram) Değişim" gibi).
+const isDanglingText = (part) => part.trim() !== '' && !/[=;()]/.test(part);
+
 function stripJsxText(line) {
   let s = line;
-  // 1) <etiket> ... </etiket> arasındaki düz yazı
-  s = s.replace(/>([^<>]*)</g, (tam, ic) => (isPlainText(ic) ? '><' : tam));
-  // 2) satırın sonunda, son '>' işaretinden sonra kalan yazı (metin alt satıra sarkıyor)
+  // 1) <etiket> … </etiket> arasındaki gövde: yazı atılır, ifade korunur
+  s = s.replace(/>([^<>]*)</g, (whole, inner) => (isPlainText(inner) ? `>${keepExpressions(inner)}<` : whole));
+  // 2) satırın sonunda, son '>' işaretinden sonra kalan gövde (metin alt satıra sarkıyor)
   const lastClose = s.lastIndexOf('>');
-  if (lastClose >= 0 && isPlainText(s.slice(lastClose + 1))) s = s.slice(0, lastClose + 1);
-  // 3) satırın başında, ilk '<' işaretinden önce kalan yazı (metnin devamı)
-  const ilkAcilis = s.indexOf('<');
-  if (ilkAcilis > 0 && isPlainText(s.slice(0, ilkAcilis))) s = s.slice(ilkAcilis);
-  // 4) tamamen düz yazı olan satır (JSX gövdesinin ortası): kod işareti ve etiket yoksa metindir
-  if (!/[<>]/.test(s) && isPlainText(s)) return '';
+  if (lastClose >= 0 && isDanglingText(s.slice(lastClose + 1))) s = `${s.slice(0, lastClose + 1)}${keepExpressions(s.slice(lastClose + 1))}`;
+  // 3) satırın başında, ilk '<' işaretinden önce kalan gövde (metnin devamı)
+  const firstOpen = s.indexOf('<');
+  if (firstOpen > 0 && isDanglingText(s.slice(0, firstOpen))) s = `${keepExpressions(s.slice(0, firstOpen))}${s.slice(firstOpen)}`;
+  // 4) tamamen gövde olan satır (JSX ortası): etiket yoksa yazı atılır, ifade kalır
+  // 4) etiketsiz satır: süslü parantez ÖNCESİ ve SONRASI yazı atılır, ifadeler kalır
+  //    ("Kurum Adı {sortField === …}" satırında "Adı" tanımlayıcı değildir)
+  if (!/[<>]/.test(s)) {
+    const firstBrace = s.indexOf('{');
+    const lastBrace = s.lastIndexOf('}');
+    if (firstBrace >= 0 && lastBrace > firstBrace) {
+      const before = s.slice(0, firstBrace);
+      const after = s.slice(lastBrace + 1);
+      if (isDanglingText(before) || isDanglingText(after)) {
+        s = (isDanglingText(before) ? '' : before) + s.slice(firstBrace, lastBrace + 1) + (isDanglingText(after) ? '' : after);
+      }
+    } else if (isPlainText(s)) return keepExpressions(s);
+  }
   return s;
 }
 
