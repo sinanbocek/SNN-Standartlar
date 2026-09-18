@@ -14,6 +14,8 @@ SNN projelerinin ortak çalışma standartları ve **teknik borç kütüphanecis
 | `standartlar/giris-alanlari-standardi.md` | Sayı ve kod girişleri: yanlış karakter yazılamaz, biçim yazarken kurulur |
 | `standartlar/kod-inceleme-kontrol-listesi.md` | Birleştirmeden önce sorulan sorular |
 | `standartlar/kod-dili-standardi.md` | Tanımlayıcılar İngilizce, belgeler ve yorumlar Türkçe |
+| `standartlar/es-zamanli-calisma-standardi.md` | Aynı depoda aynı anda çalışan oturumlar: dal, sahne, dal silme, worktree |
+| `quality/session-registry.js` · `quality/wide-effect-git.js` | Oturum defteri ve geniş etkili git komutu denetimi (bekçiler çağırır) |
 | `quality/code-language-scan.js` | Türkçe tanımlayıcı tarayıcısı (+ `ornek/kod-dili.yml` ile projeye bağlanır) |
 | `docs/kod-dili-gecis.md` | Bağlama süreci, projelerin ölçülmüş yükü, kütük kaydı şablonu ve istek metni |
 | `debt-sync/` | Kütüğü okuyup issue ve board'u güncelleyen betik + testleri |

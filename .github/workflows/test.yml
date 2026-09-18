@@ -46,6 +46,10 @@ jobs:
         run: node quality/test/secret-scan.test.js
       - name: Kod dili taraması testleri
         run: node quality/test/code-language-scan.test.js
+      - name: Oturum defteri testleri
+        run: node quality/test/session-registry.test.js
+      - name: Geniş etkili git komutu testleri
+        run: node quality/test/wide-effect-git.test.js
       - name: Bu PR'da eklenen satırlarda gizli anahtar (kendi kendini tarama)
         if: github.event_name == 'pull_request'
         run: |
