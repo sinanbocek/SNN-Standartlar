@@ -59,25 +59,6 @@ Kapanan kayıtlar: `docs/teknik-borc-arsiv.md`
 
 ---
 
-### TB-003 — Uyum eksikleri yalnız oturum açılınca görünüyor
-- **Tespit Tarihi:** 2026-09-19 (uyum ölçeri kurulurken)
-- **Öncelik:** P2 (Planlı)
-
-#### 🟢 Sade Anlatım
-- **Sorun ne?** Artık her proje kendi eksiğini oturum açılışında görüyor. Ama bir projede haftalarca oturum açılmazsa kimsenin haberi olmuyor. Dağıtımın yarısı kuruldu, yarısı eksik.
-- **Benzetme:** Apartman girişine ilan asıldı. Giren okuyor; ama üç haftadır eve uğramayan komşu ilanı hiç görmüyor.
-- **Çözülmezse ne olur?** Uyuyan projelerde eksik birikir. Bugün en görünür örneği SNN-Yonetici-Ozeti: `anahtar-tarama.yml` yok, yani sır sızıntısına karşı PR kapısı yok — ve orada oturum açılmadıkça bunu kimse görmüyor.
-- **Senden beklenen karar:** Verildi (2026-09-19): **hem oturumda hem issue.** Haftalık bir rutin, eksiği olan projelerde otomatik issue açacak; aynı eksik için tek issue, giderilince kapanır.
-
-#### 🔧 Teknik Detay
-- **Açıklama:** `quality/compliance.js` ölçüyor, `hooks/session-start.js` gösteriyor. Eksik olan: eksikleri GitHub issue'ya çeviren rutin. Altyapı hazır — `debt-sync/` kütük→issue senkronunu zaten yapıyor, `cekirdek-yayilim.yml` çok depolu erişim desenini (`PROJECT_TOKEN`) zaten kuruyor, `quality/data/family-projects.json` depo listesini tutuyor.
-- **Etki:** 11 aile projesi. 2026-09-19 ölçümü: 28 açık eksik. Dağılım: `kod-dili-akisi` 9 proje, `kod-dili-kaydi` 8, `rehber-atfi` 8, `anahtar-tarama` 2, `teknik-borc-akisi` 1.
-- **Çözüm yönü:** Haftalık akış (ya da mevcut haftalık rapor rutinine ek): her aile projesi için `compliance.check` çalıştır, eksik varsa o depoda issue aç/güncelle, eksik kapandıysa issue'yu kapat. **Önce kuru çalıştırma**, proje sahibine göster, sonra `--uygula`. Issue başlığı eksik kimliğini taşımalı ki tekrar açılmasın.
-- **Neden Şimdi Çözülmüyor:** Oturum tarafı çalışıyor ve günlük işi zaten kapsıyor; issue tarafı başka depolara yazdığı için ayrı onay ve dikkatli kuru çalıştırma istiyor.
-- **Bağlı kalemler:** Yok.
-
----
-
 ### TB-004 — Kancaların 272 satırı testsiz
 - **Tespit Tarihi:** 2026-09-19 (kancalar depoya alınırken ölçüldü)
 - **Öncelik:** P2 (Planlı)
