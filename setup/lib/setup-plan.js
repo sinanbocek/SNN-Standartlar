@@ -66,6 +66,13 @@ function plan(o) {
 
   // GitHub ayarları
   add('board', 'agent', o.board ? 'present' : 'toAdd', `"${BOARD_TITLE(o.repo.name)}" board'u (Açık / Devam / Kapandı), depoya bağlı.`);
+  // Aile listesi (quality/data/family-projects.json): haftalık uyum issue'ları ve toplu ölçüm
+  // BU LİSTEYE göre çalışır. Liste elle tutuluyordu; yeni proje eklenince yazılması unutulursa
+  // kapılar ve açılış listesi yine çalışır ama posta kutusuna hiç mektup düşmez (2026-09-19).
+  if (o.inFamily === true) add('aile-listesi', 'agent', 'present', 'Proje aile listesinde (quality/data/family-projects.json).');
+  else if (o.inFamily === 'excluded') add('aile-listesi', 'agent', 'present', 'Proje aile listesinde gerekçeli olarak DIŞLANMIŞ; ölçülmez.');
+  else if (o.inFamily === null) add('aile-listesi', 'owner', 'unmeasured', 'Aile listesi okunamadı; projenin listede olup olmadığı ölçülemedi.');
+  else add('aile-listesi', 'agent', 'toAdd', 'Proje aile listesine eklenir (SNN-Standartlar\'a ayrı PR) — haftalık uyum issue\'ları bu listeye göre açılır.');
   if (o.secret === true) add('anahtar', 'owner', 'present', 'PROJECT_TOKEN depoda tanımlı.');
   else add('anahtar', 'owner', o.secret === null ? 'unmeasured' : 'missing', `PROJECT_TOKEN depoya eklenmeli (board senkronu için): https://github.com/${o.repo.full}/settings/secrets/actions — değer sohbete yazılmaz.`);
 
@@ -85,4 +92,21 @@ function plan(o) {
 const pending = (steps) => steps.filter((s) => s.who === 'agent' && s.status === 'toAdd');
 const userTasks = (steps) => steps.filter((s) => s.who === 'owner' && s.status !== 'present');
 
-module.exports = { BOARD_TITLE, debtFileTemplate, archiveFileTemplate, plan, pending, userTasks };
+// SAF: liste içeriği + depo adı → true | false | 'excluded'
+function familyLookup(raw, full) {
+  const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  const eq = (a) => String(a || '').toLowerCase() === full.toLowerCase();
+  if ((parsed.excluded || []).some((x) => x && eq(x.repo))) return 'excluded';
+  return (parsed.projects || []).some((p) => p && eq(p.repo));
+}
+
+// SAF: listeye yeni kayıt ekler, sırayı korur, yinelemez. Döner: yeni metin ya da null.
+function familyWithEntry(raw, repo, dir) {
+  const parsed = JSON.parse(raw);
+  if ((parsed.projects || []).some((p) => p && String(p.repo).toLowerCase() === repo.toLowerCase())) return null;
+  parsed.projects = [...(parsed.projects || []), { repo, dir }];
+  return `${JSON.stringify(parsed, null, 2)}\n`;
+}
+
+
+module.exports = { familyLookup, familyWithEntry, BOARD_TITLE, debtFileTemplate, archiveFileTemplate, plan, pending, userTasks };
