@@ -10,7 +10,11 @@ name: uyum-issue
 
 on:
   schedule:
-    - cron: "23 5 * * 1" # Pazartesi 08:23 TSİ — haftalık rapordan sonra
+    # GÜNLÜK (2026-09-19, proje sahibi kararı: "uyum ölçümü günlük çalışsın").
+    # Önce haftalıktı; bir eksik en kötü durumda altı gün görünmeden kalabiliyordu.
+    # Günlük çalışmak kopya issue üretmez: plan idempotenttir — eksik sürüyorsa ve issue zaten
+    # açıksa işlem yapılmaz (testi: "eksik var, issue açık → işlem yok").
+    - cron: "23 5 * * *" # her gün 08:23 TSİ
   workflow_dispatch:
     inputs:
       apply:
