@@ -36,7 +36,7 @@ s = K.plan(base({ debt: 'standart-disi (TECH_DEBT.md)' }));
 expect('eski kütük varsa yeni kütük AÇILMAZ, karar kullanıcıda', [ids(K.pending(s)).includes('kutuk'), ids(K.userTasks(s)).includes('kutuk'), ids(s).includes('arsiv')], [false, true, false]);
 expect('eski kütük dosya adı söylenir', s.find((x) => x.id === 'kutuk').why.includes('TECH_DEBT.md'), true);
 expect('GitHub deposu yoksa tek adım: depo aç', ids(K.plan(base({ repo: null }))), ['github-deposu']);
-expect('ölçülemeyen anahtar "olculemedi" olarak kullanıcıya', K.plan(base({ secret: null })).find((x) => x.id === 'anahtar').status, 'olculemedi');
+expect('ölçülemeyen anahtar "unmeasured" olarak kullanıcıya', K.plan(base({ secret: null })).find((x) => x.id === 'anahtar').status, 'unmeasured');
 
 console.log('— şablonlar standart ayrıştırıcıyla uyumlu');
 expect('boş kütük: 0 kayıt, hata yok', parseDebts(K.debtFileTemplate()).length, 0);

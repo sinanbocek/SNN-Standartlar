@@ -82,11 +82,11 @@ console.log('— aile dışı depo hiç ölçülmez');
 expect('https adresinden slug', c.repoSlug('https://github.com/saidsurucu/ihale-mcp.git'), 'saidsurucu/ihale-mcp');
 expect('ssh adresinden slug', c.repoSlug('git@github.com:sinanbocek/trade-kasa.git'), 'sinanbocek/trade-kasa');
 expect('adres yoksa boş', c.repoSlug(''), '');
-const BOS = { ...TAM, workflowText: [], hasLedger: false, ledgerText: '', guideNames: [], guideText: '' };
-expect('dışlanan depo ölçülmez', c.evaluate({ ...BOS, repo: 'x/y' }, undefined, ['x/y']).gaps.length, 0);
-expect('dışlandığı belirtilir', c.evaluate({ ...BOS, repo: 'x/y' }, undefined, ['x/y']).excluded, true);
+const EMPTY = { ...TAM, workflowText: [], hasLedger: false, ledgerText: '', guideNames: [], guideText: '' };
+expect('dışlanan depo ölçülmez', c.evaluate({ ...EMPTY, repo: 'x/y' }, undefined, ['x/y']).gaps.length, 0);
+expect('dışlandığı belirtilir', c.evaluate({ ...EMPTY, repo: 'x/y' }, undefined, ['x/y']).excluded, true);
 // Tanimadigimiz yeni bir depo YINE olculur: dislama sessizlestirme araci degildir.
-expect('bilinmeyen depo yine ölçülür', c.evaluate({ ...BOS, repo: 'yeni/depo' }, undefined, ['x/y']).gaps.length > 0, true);
+expect('bilinmeyen depo yine ölçülür', c.evaluate({ ...EMPTY, repo: 'yeni/depo' }, undefined, ['x/y']).gaps.length > 0, true);
 expect('gerçek listede ihale-mcp dışlanmış', c.excludedRepos().includes('saidsurucu/ihale-mcp'), true);
 
 console.log('— kütük yoksa iki ölçüt birden düşer');

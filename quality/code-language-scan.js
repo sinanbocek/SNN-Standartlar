@@ -40,6 +40,11 @@ function splitWords(name) {
   return name
     .replace(/([a-zçğıöşü0-9])([A-ZÇĞİÖŞÜ])/g, '$1 $2')
     .replace(/([A-ZÇĞİÖŞÜ]+)([A-ZÇĞİÖŞÜ][a-zçğıöşü])/g, '$1 $2')
+    // Rakam sınırı da kelime sınırıdır: `satir0`, `kayit2`, `v1kur` gibi adlar aksi hâlde
+    // tek parça sayılıp kelime listesine hiç takılmıyordu (2026-09-19'da ölçüldü).
+    // `utf8` → utf + 8, `sha256` → sha + 256: parçalar Türkçe olmadığı için etkisiz.
+    .replace(/([A-Za-zÇĞİÖŞÜçğıöşü])([0-9])/g, '$1 $2')
+    .replace(/([0-9])([A-Za-zÇĞİÖŞÜçğıöşü])/g, '$1 $2')
     .split(/[\s_\-.$]+/)
     .filter(Boolean)
     .map(asciiFold);
