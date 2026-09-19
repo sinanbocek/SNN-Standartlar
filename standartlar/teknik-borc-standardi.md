@@ -27,6 +27,32 @@ Her kayıt iki kişiye yazılır:
 
 Başka ad (`tech-debt.md`, `TECHNICAL_DEBT.md`, `TECH_DEBT.md`) kullanılmaz.
 
+## Bekleyen ölçüm kütükte durmaz
+
+**Kural:** bir kayıt *"önce ölçelim, sonra karar veririz"* diyorsa o **borç değildir**, vadesi
+gelmemiş bir **ölçümdür**. Kütükten çıkarılır ve `quality/data/pending-measurements.json`
+dosyasına yazılır. Her kaydın **dört** alanı zorunludur:
+
+| Alan | Neden zorunlu |
+|---|---|
+| `question` | Neyin ölçüldüğü yazılmadan bekleme olmaz |
+| `command` | **Çalıştırılabilir** olmalı; çalıştırılamayan ölçüm, ölçüm değildir |
+| `due` | Vadesiz bekleme, unutulmuş beklemedir |
+| `decision` | Sayı gelince **ne yapılacağı önceden** yazılır; sonra tartışılmaz |
+
+**Makine zorlar, hatırlamak değil.** `quality/pending-measurements.js`:
+
+- komutun betiği **gerçekten var mı** diye bakar (yoksa kırmızı),
+- komutu izin listesine sokar (`node quality/<dosya>.js …`; serbest kabuk komutu çalıştırılmaz),
+- **vade gelince komutu çalıştırır** ve karar verilene kadar kırmızı kalır,
+- kütüğü tarar: bir kayıt *"ölçüm bekliyor"* diyorsa ve kayıtlı ölçümü yoksa **kırmızı verir**.
+
+**Gerçek olay (2026-09-19):** TB-002 *"bir hafta defter verisi beklensin"* diyordu. Ölçüldü:
+defter yalnız şu anki oturumları tutuyordu, geçmiş hiç biriktirilmiyordu — **beklenen veri hiçbir
+zaman gelmeyecekti**. Üstelik beklemeyi tetikleyen bir şey de yoktu; *"bir hafta sonra bakarız"*
+bir kontrol değil, bir niyetti. Proje sahibi: *"bu ve benzeri işlemler tamamen makine zorlamasıyla
+kontrol edilerek otomatik tetiklenen bir makine kuralı olmalı; aksi asla kabul edilemez."*
+
 ## Bir deponun iş listesi kütükten ibaret değildir
 
 **Kural:** *"iş kaldı mı?"* sorusu **iki** kaynağa birden bakılarak cevaplanır:
