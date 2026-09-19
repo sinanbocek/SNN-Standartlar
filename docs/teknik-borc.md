@@ -86,20 +86,21 @@ Kapanan kayıtlar: `docs/teknik-borc-arsiv.md`
 
 ---
 
-### TB-006 — `GOC-NOTU.md` ve beceriler hiçbir depoda sürümlenmiyor
+### TB-006 — `GOC-NOTU.md` hiçbir depoda sürümlenmiyor
 - **Tespit Tarihi:** 2026-09-19 (dayanıklılık araştırması)
 - **Öncelik:** P2 (Planlı)
 
 #### 🟢 Sade Anlatım
-- **Sorun ne?** Kancalar artık depoda. Ama sistemin nasıl kurulduğunu anlatan tek tam belge (`GOC-NOTU.md`, 39 KB) ve `~/.claude/skills` altındaki 4 beceri hâlâ yalnız bu bilgisayarda. Bilgisayar giderse bunlar da gider.
+- **Sorun ne?** Kancalar ve beceriler artık depoda. Ama sistemin nasıl kurulduğunu anlatan tek tam belge (`GOC-NOTU.md`, 39 KB) hâlâ yalnız bu bilgisayarda. Bilgisayar giderse o belge de gider.
 - **Benzetme:** Binanın tesisat planı tek nüsha ve kapıcının çekmecesinde duruyor.
 - **Çözülmezse ne olur?** Sistem çalışmaya devam eder. Ama ikinci bir bilgisayara kurmak ya da bir arızadan sonra toparlamak, tarifi olmayan bir işe dönüşür.
-- **Senden beklenen karar:** **Evet, iki soru var.** (1) `GOC-NOTU.md` herkese açık bu depoya mı girsin, yoksa gizli ayrı bir depoya mı? Dosya kişisel ve ortam bilgisi içeriyor; herkese açık depoya girerse git geçmişinden **geri alınamaz**. (2) Beceriler aynı pakete girsin mi?
+- **Senden beklenen karar:** **Evet.** `GOC-NOTU.md` kişisel bilgiler ayıklandıktan sonra herkese açık bu depoya girsin mi? Herkese açık depoya girerse git geçmişinden **geri alınamaz**. (Proje sahibi 2026-09-19'da "şimdilik kalsın" dedi.)
 
 #### 🔧 Teknik Detay
-- **Açıklama:** `GOC-NOTU.md` bilerek git dışı bırakılmış (`.git/info/exclude`). `~/.claude/skills`: 4 beceri (`borc-ekle`, `borclar`, `proje-kur`, `archify`). `~/.claude/standartlar/teknik-borc-standardi.md` yönlendirici dosyası da sürümsüz.
+- **Açıklama:** `GOC-NOTU.md` bilerek git dışı bırakılmış (`.git/info/exclude`). `~/.claude/standartlar/teknik-borc-standardi.md` yönlendirici dosyası da sürümsüz.
+- **2026-09-19 · Beceri kısmı KAPANDI (PR #57).** Dört beceri depoya alındı (`borclar`, `borc-ekle`, `proje-kur`, yeni `standart-talep`) ve `setup/setup-machine.js` kapsamına girdi. `archify` üçüncü tarafındır, kapsam dışı — silme yalnız bizim beceri klasörlerimizin içinde yapılır. Sürümsüzlüğün bedeli ölçüldü: `borclar` ve `proje-kur` **çalışmıyordu**, yeniden adlandırılmış betikleri çağırıyorlardı; kimse fark etmemişti çünkü beceriler hiçbir testin kapsamında değildi.
 - **Etki:** Makine kaybı ya da ikinci makine kurulumu.
-- **Çözüm yönü:** `GOC-NOTU.md`'nin makine kurulumu bölümü zaten `docs/makine-kurulumu.md` olarak ayrıldı. Kalanı için: sır taraması (`node quality/secret-scan.js`) çalıştırılır, kişisel/ortam bilgisi ayıklanır, sonra karar verilen yere konur. Beceriler `setup/setup-machine.js` kapsamına alınabilir (aynı kopyalama deseni).
+- **Çözüm yönü:** `GOC-NOTU.md`'nin makine kurulumu bölümü zaten `docs/makine-kurulumu.md` olarak ayrıldı. Kalanı için: sır taraması (`node quality/secret-scan.js`) çalıştırılır, kişisel/ortam bilgisi ayıklanır, sonra depoya konur.
 - **Neden Şimdi Çözülmüyor:** Herkese açık depoya yazmak geri alınamaz; proje sahibinin kararı bekleniyor.
 - **Bağlı kalemler:** TB-004 (aynı makine paketi).
 
