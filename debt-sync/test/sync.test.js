@@ -52,8 +52,35 @@ r = plan({ debts: [debt('TB-004', 'P3', { issue: 12 })], archiveIds: [], issues:
 expect('kütükte açık ama issue kapalı → yeniden açılır + uyarı', [types(r), r.warnings.length], [['reopen:TB-004'], 1]);
 
 console.log('— güvenlik ve korumalar');
+// 2026-09-19 · SNN-Abacus-Core bildirimi (#67) — KABUL: gövde metni ENGELLEMEZ, yalnız uyarır.
+// Eski davranış sessizdi ve etiketi de düşürüyordu; iki gerçek kayıt issue'suz kalmıştı.
 r = plan({ debts: [debt('TB-087', 'P1', { text: 'RLS rol kısıtları etkisiz' })], archiveIds: [], issues: [], ctx: ctx({ isPublic: true }) });
-expect('PUBLIC + hassas → issue AÇILMAZ', [types(r), r.warnings.length], [[], 1]);
+expect('PUBLIC + gövdede hassas kelime → issue AÇILIR', types(r), ['create:TB-087']);
+expect('PUBLIC + gövdede hassas kelime → yazara sorulur', r.warnings.length, 1);
+expect('uyarı yakalanan kelimeyi söyler', r.warnings[0].includes('RLS'), true);
+expect('uyarı ne yapılacağını söyler', r.warnings[0].includes('Hassas:'), true);
+
+// Bildirilen GERÇEK iki vaka: nesnenin "ayar anahtarı" ve kütüğün KENDİ öncelik tanımı.
+r = plan({ debts: [debt('TB-011', 'P3', { text: 'PURITY yalnız ayar anahtarlı: 24 → 0.995' })], archiveIds: [], issues: [], ctx: ctx({ isPublic: true }) });
+expect('“ayar anahtarı” engellemez', types(r), ['create:TB-011']);
+r = plan({ debts: [debt('TB-010', 'P1', { text: 'P1 tanımı: veri/para/güvenlik/sessiz hata' })], archiveIds: [], issues: [], ctx: ctx({ isPublic: true }) });
+expect('kütüğün kendi öncelik tanımı engellemez', types(r), ['create:TB-010']);
+
+// EN KRİTİK: engelleme etiket mantığından ÖNCE geliyordu. P2→P1 yükseltmesi panoda P2 kalıyordu.
+r = plan({
+  debts: [debt('TB-010', 'P1', { text: 'güvenlik kelimesi geçiyor', issue: 10 })],
+  archiveIds: [],
+  issues: [{ number: 10, title: '[TB-010] x', state: 'OPEN', labels: ['teknik-borç', 'P2-Planlı'] }],
+  ctx: ctx({ isPublic: true }),
+});
+expect('hassas kelime ETİKET güncellemesini engellemez', types(r), ['update:TB-010']);
+expect('P1 etiketi eklenir', r.actions[0].addLabels, ['P1-Acil']);
+expect('eski P2 etiketi kaldırılır', r.actions[0].removeLabels, ['P2-Planlı']);
+
+// Yazarın BEYANI hâlâ tek durdurucu ölçüt.
+r = plan({ debts: [debt('TB-088', 'P1', { text: 'x', hassas: true })], archiveIds: [], issues: [], ctx: ctx({ isPublic: true }) });
+expect('PUBLIC + yazar “Hassas: Evet” dedi → issue AÇILMAZ', [types(r), r.warnings.length], [[], 1]);
+expect('bu uyarı kararın yazarın olduğunu söyler', r.warnings[0].includes('yazarın kararı'), true);
 
 r = plan({ debts: [debt('TB-010', 'P3')], archiveIds: [], issues: [], ctx: ctx({ isPublic: true }) });
 expect('PUBLIC + zararsız → açılır ama gövdede sade anlatım yok', [types(r), r.actions[0].body.includes('Sade Anlatım')], [['create:TB-010'], false]);

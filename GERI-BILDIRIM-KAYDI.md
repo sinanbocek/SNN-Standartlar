@@ -33,6 +33,27 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 
 ## Kararlar
 
+### 2026-09-19 · Hassas desen issue açılmasını sessizce engelliyor — **KABUL**
+
+- **Kimden:** SNN-Abacus-Core oturumu (issue #67)
+- **Tür:** yanlış-alarm
+- **Talep:** Kütük senkronundaki hassas içerik deseni, gövdede geçen masum kelimeleri yakalayıp
+  issue açılmasını engelliyor. İki gerçek vaka: bir nesnenin **"ayar anahtarı"**, ve kütüğün
+  **kendi öncelik tanımını** (*"veri/para/güvenlik/sessiz hata"*) kaydın içinde anmak.
+- **Karar:** **Kabul.** Üç ayrı zarar doğrulandı:
+  1. **Sessizdi.** Uyarı yalnız koşum kütüğüne yazılıyordu; koşum yeşil bitiyordu. Bildiren kişi
+     ancak *"TB-011'in issue'su neden yok?"* diye özellikle arayınca buldu.
+  2. **Etiketi de düşürüyordu.** Atlama, etiket mantığından önceydi: P2'den P1'e yükseltilmiş bir
+     kayıt kütükte P1 görünüp panoda P2 kalıyordu.
+  3. **Yazarın kararını elinden alıyordu.** Kaydın zaten `- **Hassas:** Evet` beyanı var; desen
+     o beyanın üstünde çalışan ikinci ve otomatik bir mekanizmaydı.
+- **Sonuç:** Desen artık **engellemiyor, soruyor**. Tek durdurucu ölçüt yazarın beyanı.
+  Uyarılar görünür oldu: GitHub uyarı akışına ve iş özetine yazılıyor.
+  11 gerileme testi, bildirilen iki gerçek cümleyle birlikte. Sabotajda 5 test kırmızıya döndü.
+- **Tüketici doğru yaptı:** kelimeyi değiştirerek geçici olarak aştı ama **çözüm saymadı** ve
+  neden saymadığını yazdı: *"bir sonraki masum kullanım yine vuracak; hem de sessizce."*
+  Kapsamı da abartmadı — 11 deponun görünürlüğünü tek tek ölçüp "bugün fiilen 2 depo" dedi.
+
 ### 2026-09-19 · Kaçışlı bölü yanlış alarmı — **KABUL**
 
 - **Kimden:** GHS-Panel oturumu

@@ -233,6 +233,18 @@ function main() {
   if (!work.length) console.log('Yapılacak işlem yok; senkron.');
   if (board && board.skipped) console.log(`  ⚠ ${board.skipped}`);
   warnings.forEach((w) => console.log(`  ⚠ ${w}`));
+
+  // UYARI GÖRÜNÜR OLMALI. 2026-09-19'da (#67) bir uyarı yalnız koşum kütüğüne yazıldığı için
+  // kimse görmedi: koşum yeşil bitti, iki kayıt aylarca issue'suz kalabilirdi. Bildiren kişi
+  // ancak "bu kaydın issue'su neden yok?" diye ÖZELLİKLE arayınca buldu.
+  // Artık uyarılar hem iş özetine hem de GitHub'ın uyarı akışına yazılır.
+  if (warnings.length && process.env.GITHUB_STEP_SUMMARY) {
+    warnings.forEach((w) => console.log(`::warning::${w}`));
+    try {
+      fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+        `### Kütük senkronu — ${warnings.length} uyarı\n${warnings.map((w) => `- ${w}`).join('\n')}\n`);
+    } catch { /* özet yazılamazsa senkron yine de başarılı sayılır */ }
+  }
 }
 
 try {
