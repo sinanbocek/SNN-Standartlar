@@ -33,6 +33,33 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 
 ## Kararlar
 
+### 2026-09-19 · Çok satırlı şablon dizgesinin gövdesi taranıyor — **KABUL**
+
+- **Kimden:** SNN-Ihale-Maliyet-Teklif-Yonetimi oturumu (issue #76)
+- **Tür:** yanlış-alarm
+- **Talep:** `renderDemoReport.ts:66` — HTML üreten **çok satırlı** şablon dizgesinin ortasındaki
+  satır taranıyor; satırda hiç tanımlayıcı yok, yalnız Türkçe ekran metni ve `${...}` var.
+  Proje o gün geçişi bitirmişti: 32 bulgu → 3, kalan üçünün **hepsi** bu kusurdan.
+- **Kök neden:** tarayıcı satır bazlıydı; çok satırlı şablonun orta satırlarında ters tırnak
+  yoktur, o yüzden satır sıradan kod sanılıyordu.
+- **İkinci kusur (bildirimde yoktu, düzeltirken çıktı):** `${...}` içindeki **kod hiç
+  taranmıyordu**. `` `deger: ${toplamTutar}` `` satırındaki gerçek Türkçe ad **sessizce
+  kaçıyordu**. Bildirimin istediği ayrım ikisini birden çözdü: *gövde atılır, `${...}` taranır.*
+- **Sonuç:** **−22 yanlış alarm, +208 önceden kaçan gerçek ad** (11 proje).
+- **Düzeltirken çıkan üç yapısal kusur — hepsini kendi kapımız yakaladı:**
+  1. Yorumdaki ters tırnak şablon durumunu açıyordu (bu deponun kendi dosyası, 13 yanlış alarm).
+  2. `` /`([^`\s]+)`/g `` gibi **düzenli ifade** gövdesindeki ters tırnak da öyle.
+  3. Şablon içindeki **kesme işareti** (`%{pct}'si`) dizge sanılıp satırın kalanını yutuyordu;
+     ölçümde gerçek bir ad (`eskiCariStr`) böyle kayboldu.
+  Üçünün ortak sebebi **sabit sıralamaydı**: dizge, yorum ve düzenli ifade ayrı ayrı ve belirli
+  bir sırada soyuluyordu; her sıralama bir diğerini bozuyordu. Üçü **tek yürüyüşe** alındı —
+  hangi bağlamda olduğunu bilen bir geçiş, sıralama sorusunu ortadan kaldırır.
+- **Bir yapay ad:** bitişik interpolasyonlar (`${a}/${b}`) arasındaki metin atılınca adlar
+  yapışıp olmayan bir tanımlayıcı üretiyordu (`ceyrekStrt`). Ayırıcı eklendi.
+- **Tüketici doğru yaptı:** susturmayı **denemediğini** ve **neden denemediğini** yazdı
+  (2026-09-18 kararını okuyup farkını açıkladı), kendi projesindeki gerçek istisnaları ayrı
+  gerekçelendirdi, ve kapsamı **abartmadı**: *"ayrıştırarak ölçmedim — sayı vermiyorum."*
+
 ### 2026-09-19 · Beceri kaynağı tek klasör — **KABUL**
 
 - **Kimden:** SNN-Abacus-Core oturumu (issue #59)
