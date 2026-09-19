@@ -26,7 +26,7 @@ function main() {
   const lines = [];
   // Canlı kural kopyasını GitHub main'e ileri sar (6 saatte bir). Kurallar zaten yüklendiyse bir sonraki oturumda geçerli olur.
   const updateResult = require('./lib/shared').refresh();
-  if (updateResult.status === 'hata') lines.push(`⚠ Kurallar: ${updateResult.mesaj}`);
+  if (updateResult.status === 'hata') lines.push(`⚠ Kurallar: ${updateResult.message}`);
 
   if (root) {
     const p = projectStatus(root);
