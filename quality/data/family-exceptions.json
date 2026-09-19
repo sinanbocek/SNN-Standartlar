@@ -1,0 +1,28 @@
+{
+  "_description": "Aile geneli kod dili istisnalari: bu KOKLER hicbir projede bulgu sayilmaz.",
+  "_rule": "standartlar/kod-dili-standardi.md · 'Aile geneli istisna' bolumu",
+  "_decision": "2026-09-19 · proje sahibi karari (16.023 bulgu, 136 kok uzerinde yapilan teshis sonrasi)",
+  "_note": "Kok istisnasi tureyen tum adlari kapsar: 'kasa' -> tradeKasa, kasaAccounts, bistKasaTL. Gerekcesiz kayit SAYILMAZ.",
+  "roots": [
+    {
+      "root": "kasa",
+      "reason": "Urun adi: tradeKasa / bistKasaTL. Marka kodda cevrilmez.",
+      "group": "A"
+    },
+    {
+      "root": "kurus",
+      "reason": "TL'nin alt birimi. Tutarlar tam sayi kurus olarak tutuluyor; 'cents' yanlis para birimi cagristirir.",
+      "group": "B"
+    },
+    {
+      "root": "beyanname",
+      "reason": "Belirli bir Turk vergi belgesi turu. 'taxReturn' belgenin kendisini degil genel kavrami anlatir.",
+      "group": "B"
+    },
+    {
+      "root": "mizan",
+      "reason": "Belirli bir Turk muhasebe belgesi (THP tabanli). 'trialBalance' bu belge formatini karsilamiyor.",
+      "group": "B"
+    }
+  ]
+}
