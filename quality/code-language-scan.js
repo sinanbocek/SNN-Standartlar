@@ -117,7 +117,15 @@ function codePart(line, sql) {
   s = stripTemplates(s);                               // şablon dizge (iç içe olanlar dahil)
   // Düzenli ifade (regex) gövdesi ekran yazısı taşıyabilir (testlerde getByText(/Ürün ekle/));
   // tanımlayıcı değildir. Bölme işaretiyle karışmasın diye yalnız açılış bağlamından sonra aranır.
-  s = s.replace(/([(,=:[!&|?]\s*)\/(?:[^/\n]|\.)+\/[gimsuyd]*/g, '$1/re/');
+  // KAÇIŞLI BÖLÜ gövdeyi kapatmaz. İlk sürüm gövdeyi `(?:[^/\n]|\.)+` diye yazmıştı; niyet
+  // "ters bölü + herhangi karakter" idi ama `\.` düz NOKTA demektir. Bu yüzden `\/` görünce
+  // gövde erken kapanıyor ve kalanı KOD sayılıyordu. 2026-09-19'da GHS-Panel oturumu bildirdi:
+  // profiles.ts:32 `/GONDEREN AD SOYAD\/UNVAN…İŞLEM TUTARI…/` → İŞLEM, TUTARI, Açıklama
+  // yanlış alarm verdi. (Tüketici susturmadı, bildirdi — kuralın istediği davranış.)
+  //
+  // Açılış bağlamına `>` eklendi: ok fonksiyonu gövdesi `(part) => /[a-zçğıöşü]/i` hiç
+  // soyulmuyordu, çünkü `>` açılış listesinde yoktu (aynı dosya, satır 65).
+  s = s.replace(/([(,=:[!&|?>]\s*)\/(?:[^/\n\\]|\\.)+\/[gimsuyd]*/g, '$1/re/');
   s = s.replace(/\/\/.*$/, '');                        // satır yorumu
   s = s.replace(/\/\*[\s\S]*?(\*\/|$)/g, ' ');         // blok yorum (satır içi)
   return stripJsxText(s);
