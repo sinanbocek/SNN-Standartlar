@@ -63,6 +63,13 @@ node -e "console.log(require(require('os').homedir()+'/.claude/hooks/lib/shared.
 
 **PR'ları üst üste bindirme.** Yeni dalı `origin/main`'den aç. Üstünde açık PR duran bir dal silinince o PR kapanır ve tabanı değiştirilemez (#18, 2026-09-18).
 
+**Git'in varsayılanları izlenmeyen dosyayı gizler.** Bu tuzak bir haftada **iki kez** ısırdı:
+`git ls-files` yeni dosyaları hiç listelemedi (kod dili tarayıcısı), `git status --porcelain`
+yeni bir klasörü tek satırda bildirdi (`?? src/`) ve içindeki TS dosyaları tip kontrolü
+kapısından muaf kaldı. Kural: tarama ya da kapı yazarken **izlenmeyen dosyayı açıkça iste** —
+`ls-files --cached --others --exclude-standard`, `status --porcelain -uall`. Kapıyı kurduktan
+sonra **yeni bir klasörle uçtan uca dene**; iki kaçak da ancak o denemede görüldü.
+
 **Yerel klasör gerçeği göstermez.** Ölçüm `origin/main`'den yapılır. Yerel kopya geride olabilir ya da başka dalda durabilir; bu yüzden iki kez yanlış rapor üretildi.
 
 **Birleştirme kapısı kontrolleri bekler.** `gh pr checks <no> --watch -i 20` ile bekle; beklemesiz döngü istek hakkını bitirir.
