@@ -40,6 +40,7 @@ node -e "console.log(require(require('os').homedir()+'/.claude/hooks/lib/shared.
 | **eksik-kok** | Tarayıcı bir Türkçe kökü kaçırıyor |
 | **yeni-kural** | Aile çapında yeni bir kural/kapı öneriliyor |
 | **kural-degisikligi** | Var olan kural bu projede tutmuyor |
+| **belge** | Belgelenen kural yazıldığı gibi çalışmıyor (örnek yanlış, biçim başka) |
 | **soru** | Kararın gerekçesi anlaşılmadı |
 
 ---

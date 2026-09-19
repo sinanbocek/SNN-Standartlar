@@ -93,8 +93,8 @@ const exception = t.readExceptions(root);
 expect('gerekçeli ad istisnası okunur', exception.names.has('plaka'), true);
 expect('gerekçesiz istisna sayılmaz', exception.names.has('gozlem'), false);
 expect('gerekçesiz istisna uyarı üretir', exception.warnings.length, 1);
-expect('yol istisnası eşleşir', exception.paths[0].test('supabase/migrations/20260917185100_piyasa_temel.sql'), true);
-expect('yol istisnası başka yolu tutmaz', exception.paths[0].test('src/gun-sonu.ts'), false);
+expect('yol istisnası eşleşir', exception.paths[0].re.test('supabase/migrations/20260917185100_piyasa_temel.sql'), true);
+expect('yol istisnası başka yolu tutmaz', exception.paths[0].re.test('src/gun-sonu.ts'), false);
 expect('istisna dosyası yoksa boş döner', t.readExceptions(path.join(root, 'yok')).names.size, 0);
 fs.rmSync(root, { recursive: true, force: true });
 
@@ -162,6 +162,33 @@ expect('dizi alanı yakalanır', names('  kaynaklar: [],'), ['kaynaklar']);
 // Ekran yazısı bu kalıba UYMAZ (sonunda virgül yoktur); yanlış alarm üretmemeli.
 expect('ekran yazısı hâlâ atılır', names('          Durum: aktif'), []);
 expect('etiket arası yazı hâlâ atılır', names('<label className="x">Poliçe Durumu</label>'), []);
+
+console.log('— eşleşmeyen istisna (tüketici bildirimi #62, 2026-09-19)');
+// Proje istisnası TAM TANIMLAYICI adı bekler; standarttaki örnek KÖK gibi görünüyordu.
+// Bildiren kişi örneği birebir izledi: dosya geçerli, gerekçe dolu, tarayıcı SESSİZ, istisna ölü.
+{
+  const exception = { names: new Set(['plaka']), paths: [{ glob: 'x/*', re: /^x\/.*$/ }], used: new Set() };
+  const unused = t.unusedExceptions(exception);
+  expect('eşleşmeyen ad uyarı verir', unused.some((u) => u.includes('"plaka"')), true);
+  expect('uyarı doğru biçimi söyler', unused.some((u) => u.includes('TAM tanımlayıcı')), true);
+  expect('eşleşmeyen yol da uyarı verir', unused.some((u) => u.includes('"x/*"')), true);
+
+  // Eşleşen istisna uyarı VERMEZ — yoksa doğru yazan kişi de gürültüye boğulur.
+  const used = { names: new Set(['plaka_harfleri']), paths: [], used: new Set() };
+  t.isExcepted({ name: 'PLAKA_HARFLERI' }, 'src/a.ts', used);
+  expect('eşleşen istisna sessizdir', t.unusedExceptions(used), []);
+  expect('eşleşme kaydedilir', used.used.has('ad:plaka_harfleri'), true);
+
+  // ESKİ BİÇİM ÇÖKMEZ: yol istisnası 2026-09-19'da `{glob, re}` biçimine geçti. `isExcepted`
+  // uyarı kipinden de çağrılıyor ve o HER Edit'te çalışıyor; orada çökmek yazmayı durdurur.
+  const legacy = { names: new Set(), paths: [/^legacy\/.*$/], used: new Set() };
+  expect('eski biçim yol istisnası çalışır', t.isExcepted({ name: 'kayit' }, 'legacy/a.ts', legacy), true);
+
+  // Yol istisnası da kullanıldığında sessiz kalmalı.
+  const byPath = { names: new Set(), paths: [{ glob: 'supabase/*', re: /^supabase\/.*$/ }], used: new Set() };
+  expect('yol istisnası eşleşir', t.isExcepted({ name: 'kayit' }, 'supabase/x.sql', byPath), true);
+  expect('kullanılan yol sessizdir', t.unusedExceptions(byPath), []);
+}
 
 console.log('— JSX ekran yazısı (tüketici bildirimleri #28 ve #64, 2026-09-19)');
 // #64 · GHS-Panel: ÇOK SATIRLI metnin `;` taşıyan satırı yakalanıyor, alt satırı temiz geçiyordu.

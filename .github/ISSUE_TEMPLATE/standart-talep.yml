@@ -20,6 +20,7 @@ body:
         - eksik-kök (tarayıcı bir Türkçe kökü kaçırıyor)
         - yeni-kural (aile çapında yeni kural/kapı)
         - kural-değişikliği (var olan kural bu projede tutmuyor)
+        - belge (belgelenen kural yazıldığı gibi çalışmıyor)
         - soru (kararın gerekçesi anlaşılmadı)
     validations:
       required: true
