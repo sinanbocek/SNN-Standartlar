@@ -1,0 +1,41 @@
+# Açık talepler cevapsız mı? (kural: standartlar/teknik-borc-standardi.md)
+#
+# NEDEN VAR (2026-09-19): kütükteki son kayıt kapandı ve oturum "eyleme geçirilebilir borç
+# kalmadı" dedi. Aynı anda DÖRT açık talep duruyordu; biri kapıyı sessizce bozan bir kusuru
+# bildiriyordu. Proje sahibi: "bu tek başına yetmez, sadece iyi niyet göstergesidir; kurala
+# girmeli ve makine zorlaması olmalı."
+#
+# Bu akış o zorlamadır. "Bakacağım" bir kontrol değildir; kırmızı bir kontroldür.
+name: open-requests
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Kaç günlük sessizlik kırmızı sayılsın"
+        type: string
+        default: "7"
+  schedule:
+    - cron: "11 5 * * 1" # her Pazartesi 08:11 TSİ — uyum ve köprü denetimlerinin yanında
+
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cevapsız talep var mı
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DAYS: ${{ inputs.days || '7' }}
+        run: |
+          set -o pipefail
+          node quality/open-requests.js --gun "$DAYS" 2>&1 | tee talepler.log
+          STATUS=${PIPESTATUS[0]}
+          { echo '### Açık talepler'; echo '```'; cat talepler.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $STATUS
