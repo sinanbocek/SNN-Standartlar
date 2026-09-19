@@ -91,7 +91,9 @@ Oturum açılışındaki satır yalnız **o projeye girene** görünür ve oturu
 | Kayıt yok | Giderilince kendiliğinden kapanır |
 | Uyarı | Kütüktekilerle aynı yerde duran iş kalemi |
 
-Akış: `.github/workflows/compliance-issue.yml` — Pazartesi 08:23 TSİ. Elle çalıştırıldığında **varsayılan kuru çalıştırmadır**; yazmak için `apply` işaretlenir.
+Akış: `.github/workflows/compliance-issue.yml` — **her gün 08:23 TSİ** (2026-09-19'a kadar haftalıktı; proje sahibi kararıyla günlüğe alındı — haftalıkta bir eksik en kötü durumda altı gün görünmeden kalabiliyordu). Elle çalıştırıldığında **varsayılan kuru çalıştırmadır**; yazmak için `apply` işaretlenir.
+
+Günlük çalışmak **kopya issue üretmez**: plan idempotenttir. Eksik sürüyorsa ve issue zaten açıksa işlem yapılmaz; eksik giderilmişse issue kapatılır; elle kapatılmış ama eksik sürüyorsa yeniden açılır. Üçü de testlidir (`quality/test/compliance-issues.test.js`).
 
 **Elle kapatmak eksiği gidermez.** Ölçüm eksiği hâlâ görüyorsa issue bir sonraki turda yeniden açılır — kapanış yalnızca ölçümden gelir. Kütük senkronundaki kuralın aynısı.
 
