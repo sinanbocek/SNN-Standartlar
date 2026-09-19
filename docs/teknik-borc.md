@@ -34,7 +34,7 @@ Kapanan kayıtlar: `docs/teknik-borc-arsiv.md`
   - **2. aşama tamam** — iç değişken, sabit ve JSON alan adları İngilizce (`bulgular→findings`, `istisna→exception`, `satirlar→lines`; `.snn-kod-dili.json` alanları artık `exceptions / name / reason / paths / path`).
   - **Ölçüm: 166 → 0 bulgu.** Tarayıcı bu depoda temiz rapor veriyor (27 dosya tarandı).
   - Yan kazanç: göç sırasında tarayıcıda iç içe şablon dizgesi kusuru bulundu ve düzeltildi (`stripTemplates`); kendi kodumuzu tararken çıktı.
-- **Kalan:** Yalnız dışa açık akış dosyası adları (`.github/workflows/*.yml`) — 10 projenin kopyaladığı arayüz; kırıcı sürüm planıyla ayrıca ele alınacak. Ayrıca bu depoya kendi `kod-dili.yml` turnikesi takılacak (artık temiz olduğu için güvenli).
+- **Kalan:** Yalnız dışa açık akış dosyası adları (`.github/workflows/*.yml`) — 10 projenin kopyaladığı arayüz; kırıcı sürüm planıyla ayrıca ele alınacak. Bu deponun kendi kod dili kapısı **2026-09-19'da kuruldu** ama farklı biçimde: `kod-dili.yml` yalnız `workflow_call` olduğu için kendi PR'larında çalışmıyordu; tarama adımı `test.yml` içine eklendi (`--diff` kipinde, anahtar taramasının yanına).
 - **Neden Şimdi Çözülmüyor:** Kuralın kendisi ve makine kapısı öncelikliydi; adlandırma göçü mekanik bir iştir, aşamalara bölünüp ayrı PR'larla yapılır.
 - **Bağlı kalemler:** Yok.
 
@@ -55,6 +55,101 @@ Kapanan kayıtlar: `docs/teknik-borc-arsiv.md`
 - **Etki:** Yalnız aynı depoda aynı anda çalışan oturumlar; ayrı worktree kullanıldığında konu kapanır.
 - **Çözüm yönü:** Ölçümle başla: bir hafta boyunca defter kayıtlarında kaç kez "aynı proje, aynı anda, aynı dal" görüldü? Sık ise `guard-files` bekçisine dosya iddiası (claim) eklenir: oturum yazdığı dosyayı deftere işler, ikinci oturumun aynı dosyaya Write/Edit çağrısı engellenir. Seyrek ise standardın 2. maddesi (ayrı worktree) yeterlidir.
 - **Neden Şimdi Çözülmüyor:** Proje sahibi kararı (2026-09-18): ölçmeden kural konmaz. Kilit yanlış güven verir; önce gerçek çakışma görülsün.
+- **Bağlı kalemler:** Yok.
+
+---
+
+### TB-003 — Uyum eksikleri yalnız oturum açılınca görünüyor
+- **Tespit Tarihi:** 2026-09-19 (uyum ölçeri kurulurken)
+- **Öncelik:** P2 (Planlı)
+
+#### 🟢 Sade Anlatım
+- **Sorun ne?** Artık her proje kendi eksiğini oturum açılışında görüyor. Ama bir projede haftalarca oturum açılmazsa kimsenin haberi olmuyor. Dağıtımın yarısı kuruldu, yarısı eksik.
+- **Benzetme:** Apartman girişine ilan asıldı. Giren okuyor; ama üç haftadır eve uğramayan komşu ilanı hiç görmüyor.
+- **Çözülmezse ne olur?** Uyuyan projelerde eksik birikir. Bugün en görünür örneği SNN-Yonetici-Ozeti: `anahtar-tarama.yml` yok, yani sır sızıntısına karşı PR kapısı yok — ve orada oturum açılmadıkça bunu kimse görmüyor.
+- **Senden beklenen karar:** Verildi (2026-09-19): **hem oturumda hem issue.** Haftalık bir rutin, eksiği olan projelerde otomatik issue açacak; aynı eksik için tek issue, giderilince kapanır.
+
+#### 🔧 Teknik Detay
+- **Açıklama:** `quality/compliance.js` ölçüyor, `hooks/session-start.js` gösteriyor. Eksik olan: eksikleri GitHub issue'ya çeviren rutin. Altyapı hazır — `debt-sync/` kütük→issue senkronunu zaten yapıyor, `cekirdek-yayilim.yml` çok depolu erişim desenini (`PROJECT_TOKEN`) zaten kuruyor, `quality/data/family-projects.json` depo listesini tutuyor.
+- **Etki:** 11 aile projesi. 2026-09-19 ölçümü: 28 açık eksik. Dağılım: `kod-dili-akisi` 9 proje, `kod-dili-kaydi` 8, `rehber-atfi` 8, `anahtar-tarama` 2, `teknik-borc-akisi` 1.
+- **Çözüm yönü:** Haftalık akış (ya da mevcut haftalık rapor rutinine ek): her aile projesi için `compliance.check` çalıştır, eksik varsa o depoda issue aç/güncelle, eksik kapandıysa issue'yu kapat. **Önce kuru çalıştırma**, proje sahibine göster, sonra `--uygula`. Issue başlığı eksik kimliğini taşımalı ki tekrar açılmasın.
+- **Neden Şimdi Çözülmüyor:** Oturum tarafı çalışıyor ve günlük işi zaten kapsıyor; issue tarafı başka depolara yazdığı için ayrı onay ve dikkatli kuru çalıştırma istiyor.
+- **Bağlı kalemler:** Yok.
+
+---
+
+### TB-004 — Kancaların 272 satırı testsiz
+- **Tespit Tarihi:** 2026-09-19 (kancalar depoya alınırken ölçüldü)
+- **Öncelik:** P2 (Planlı)
+
+#### 🟢 Sade Anlatım
+- **Sorun ne?** Bekçilerin bir kısmının hiç testi yok. Bunların içinde en kritik dosya da var: `lib/shared.js`. O 45 satır bozulursa hiçbir bekçi ortak depoyu bulamaz ve tüm projelerde oturum açılışı durur.
+- **Benzetme:** Binadaki yangın kapılarının çoğu düzenli deneniyor, ama ana elektrik panosu hiç denenmiyor. Pano giderse kapıların hepsi birden çalışmaz.
+- **Çözülmezse ne olur?** Sessiz kalabilir. Ama 2026-09-15'te tam bu oldu: ortak depodaki bir fonksiyon adı değişti, `session-start` çöktü ve **tüm projelerde** açılış özeti durdu. O gün test olsaydı değişiklik main'e girmeden yakalanırdı.
+- **Senden beklenen karar:** Yok. Sıra önerisi: önce `lib/shared.js`, sonra `session-start.js`.
+
+#### 🔧 Teknik Detay
+- **Açıklama:** Testsiz dosyalar ve satır sayıları (2026-09-19 ölçümü): `session-start.js` 109, `stop-gate.js` 78, `lib/shared.js` 45, `guard-code-language.js` 40. Toplam 272. Mevcut `hooks/test/hooks.test.js` yalnız `guard-bash`, `guard-files` ve `stop-debt-push`'ı alt süreç olarak çalıştırıyor.
+- **Etki:** Tüm projeler — kancalar `~/.claude/settings.json` üzerinden her oturumda çalışır.
+- **Çözüm yönü:** `lib/shared.js` için: `SNN_STANDARTLAR` ortam değişkeni zaten yolu dışarıdan alıyor, bu yüzden geçici klasörle test edilebilir (`refresh()` kirli kopyada dokunmuyor, ağ yokken eski kural çalışmaya devam ediyor, damga 6 saati doldurmadan atlanıyor). `session-start.js` ve `guard-code-language.js` uçtan uca denenebilir: stdin'den JSON ver, stdout'u oku — `hooks.test.js` bu deseni zaten kullanıyor. `stop-gate.js` monolitik; önce `measure`/`decide` ayrımına bölünmeli (`schema-doc.js` deseni).
+- **Neden Şimdi Çözülmüyor:** Bugünkü 17 hatanın hiçbirini bu testler yakalamazdı (ölçüldü); dayanıklılık kapısıdır, keşif kapısı değildir. Yine de `lib/shared.js` tek nokta arızası olduğu için P2.
+- **Bağlı kalemler:** TB-006 (aynı dosyalar makine kurulumunun parçası).
+
+---
+
+### TB-005 — Bu deponun kendi rehber dosyası yok
+- **Tespit Tarihi:** 2026-09-19 (uyum ölçeri ilk çalıştığında)
+- **Öncelik:** P3 (Fırsatta)
+
+#### 🟢 Sade Anlatım
+- **Sorun ne?** Aile standardı "her projenin rehberi (`CLAUDE.md` ya da `AI-RULES.md`) aile standardına atıf yapsın" diyor. Bu depoda öyle bir dosya hiç yok. Kuralı koyan depo, kendi ölçütünü karşılamıyor.
+- **Benzetme:** Yönetmeliği yazan dairenin kapısında yönetmeliğin kendisinin asılı olmaması.
+- **Çözülmezse ne olur?** Somut arıza çıkmaz. Ama bu depoda çalışan bir ajan, projeye özgü kuralları (dal adları, PR sırası, bekçi tuzakları) her seferinde yeniden keşfediyor.
+- **Senden beklenen karar:** Yok.
+
+#### 🔧 Teknik Detay
+- **Açıklama:** `quality/compliance.js` ölçütü `rehber-atfi`; 2026-09-19 ölçümünde bu depo dahil 8 projede eksik. Bu depo için sebep atfın eksikliği değil, dosyanın hiç olmaması.
+- **Etki:** Yalnız bu depo.
+- **Çözüm yönü:** `CLAUDE.md` yazılır. İçeriği ölçülmüş olmalı, temenni değil: bugün üç kez tekrarlanan bekçi tuzağı (komut metninde yasak komut adı geçince engellenme), PR'ları üst üste bindirmeme kuralı (#18 vakası), commit mesajını dosyadan verme alışkanlığı, `git checkout -b` ile `git commit`'i ayrı komutlarda çalıştırma.
+- **Neden Şimdi Çözülmüyor:** Küçük iş ama içeriği bugünkü derslerin oturmasını bekliyor; aceleyle yazılan rehber yanlış alışkanlık kaydeder.
+- **Bağlı kalemler:** Yok.
+
+---
+
+### TB-006 — `GOC-NOTU.md` ve beceriler hiçbir depoda sürümlenmiyor
+- **Tespit Tarihi:** 2026-09-19 (dayanıklılık araştırması)
+- **Öncelik:** P2 (Planlı)
+
+#### 🟢 Sade Anlatım
+- **Sorun ne?** Kancalar artık depoda. Ama sistemin nasıl kurulduğunu anlatan tek tam belge (`GOC-NOTU.md`, 39 KB) ve `~/.claude/skills` altındaki 4 beceri hâlâ yalnız bu bilgisayarda. Bilgisayar giderse bunlar da gider.
+- **Benzetme:** Binanın tesisat planı tek nüsha ve kapıcının çekmecesinde duruyor.
+- **Çözülmezse ne olur?** Sistem çalışmaya devam eder. Ama ikinci bir bilgisayara kurmak ya da bir arızadan sonra toparlamak, tarifi olmayan bir işe dönüşür.
+- **Senden beklenen karar:** **Evet, iki soru var.** (1) `GOC-NOTU.md` herkese açık bu depoya mı girsin, yoksa gizli ayrı bir depoya mı? Dosya kişisel ve ortam bilgisi içeriyor; herkese açık depoya girerse git geçmişinden **geri alınamaz**. (2) Beceriler aynı pakete girsin mi?
+
+#### 🔧 Teknik Detay
+- **Açıklama:** `GOC-NOTU.md` bilerek git dışı bırakılmış (`.git/info/exclude`). `~/.claude/skills`: 4 beceri (`borc-ekle`, `borclar`, `proje-kur`, `archify`). `~/.claude/standartlar/teknik-borc-standardi.md` yönlendirici dosyası da sürümsüz.
+- **Etki:** Makine kaybı ya da ikinci makine kurulumu.
+- **Çözüm yönü:** `GOC-NOTU.md`'nin makine kurulumu bölümü zaten `docs/makine-kurulumu.md` olarak ayrıldı. Kalanı için: sır taraması (`node quality/secret-scan.js`) çalıştırılır, kişisel/ortam bilgisi ayıklanır, sonra karar verilen yere konur. Beceriler `setup/setup-machine.js` kapsamına alınabilir (aynı kopyalama deseni).
+- **Neden Şimdi Çözülmüyor:** Herkese açık depoya yazmak geri alınamaz; proje sahibinin kararı bekleniyor.
+- **Bağlı kalemler:** TB-004 (aynı makine paketi).
+
+---
+
+### TB-007 — Türkçe çekim eki + İngilizce gövde tarayıcıdan kaçıyor
+- **Tespit Tarihi:** 2026-09-19 (31 eksik kök eklenirken)
+- **Öncelik:** P3 (Fırsatta)
+
+#### 🟢 Sade Anlatım
+- **Sorun ne?** `manuelDeltalar`, `guncelleKur` gibi adlarda ek Türkçe ama gövde İngilizce. Tarayıcı bunları kaçırıyor. Somut kanıt: `guncel` kelime listesinde vardı, ama `guncelle` yakalanmıyordu.
+- **Benzetme:** Kapıdaki görevli yabancı pasaportları tanıyor, ama yerli soyadı alan yabancıları tanımıyor.
+- **Çözülmezse ne olur?** Az sayıda ad kaçmaya devam eder. Kaçan her kök elle bulunup listeye eklenebiliyor; bugün 31 kök böyle eklendi.
+- **Senden beklenen karar:** Yok.
+
+#### 🔧 Teknik Detay
+- **Açıklama:** `quality/code-language-scan.js` içindeki `SUFFIXES` dar tutulmuş (`lari`, `leri`, `lar`, `ler`, `si`, `su`, `i`, `u`, `a`, `e`). Fiil ekleri (`-le`, `-la`) yok.
+- **Etki:** Ölçülmedi — kaç adın bu sınıfa girdiği bilinmiyor. Bilinen örnek: 2 ad.
+- **Çözüm yönü:** İki yol var ve **ölçmeden seçilmemeli.** (a) `-le`/`-la` eklerini toleransa eklemek: `handle`→`hand`, `table`→`tab`, `module`→`modu` gibi gövdeler üretir; bunlar Türkçe listesinde olmadığı için bugün zararsız görünüyor ama liste büyüdükçe çakışabilir. (b) Ayrı bir kural: "ad Türkçe bir ekle bitiyorsa ve gövde İngilizce sözlükte varsa" — İngilizce sözlük gerektirir, depoda yok. Önce ölçüm: 11 projede bu sınıftan kaç ad var?
+- **Neden Şimdi Çözülmüyor:** Etkisi ölçülmedi ve (a) yolunun yanlış alarm riski var. Ölçüm kapısı (`aile-olcumu.yml`) artık kurulduğu için etki güvenle ölçülebilir.
 - **Bağlı kalemler:** Yok.
 
 ---
