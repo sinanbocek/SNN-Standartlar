@@ -101,7 +101,30 @@ function rewriteSettings(settingsText, renames = RENAMES) {
 
 // ─── IO ─────────────────────────────────────────────────────────────────────
 
-function measure({ sourceDir, targetDir, settingsFile }) {
+// ─── Beceriler ──────────────────────────────────────────────────────────────
+// Beceriler de ortak depoda durur ve buraya KOPYALANIR (kancalarla aynı gerekçe).
+// DİKKAT: ~/.claude/skills altında BİZİM OLMAYAN beceriler de var (ör. `archify`,
+// eklenti olarak gelen bir kısayol). Bu yüzden silme YALNIZ bizim beceri klasörlerimizin
+// içinde yapılır; klasörün kendisi dışındakine dokunulmaz (2026-09-19).
+function skillNames(dir) {
+  try {
+    return fs.readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort();
+  } catch { return []; }
+}
+
+function planSkills(sourceRoot, targetRoot, sameContent = () => false) {
+  const copy = [];
+  const remove = [];
+  for (const name of skillNames(sourceRoot)) {
+    const src = listFiles(path.join(sourceRoot, name));
+    const dst = listFiles(path.join(targetRoot, name));
+    for (const f of src) if (!dst.includes(f) || !sameContent(name, f)) copy.push(`${name}/${f}`);
+    for (const f of dst) if (!src.includes(f)) remove.push(`${name}/${f}`);
+  }
+  return { copy, remove };
+}
+
+function measure({ sourceDir, targetDir, settingsFile, skillsSource, skillsTarget }) {
   const sourceFiles = listFiles(sourceDir);
   const targetFiles = listFiles(targetDir);
   const same = (f) => {
@@ -110,8 +133,14 @@ function measure({ sourceDir, targetDir, settingsFile }) {
     } catch { return false; }
   };
   const files = planFiles(sourceFiles, targetFiles, same);
+  const sameSkill = (name, f) => {
+    try {
+      return fs.readFileSync(path.join(skillsSource, name, f), 'utf8') === fs.readFileSync(path.join(skillsTarget, name, f), 'utf8');
+    } catch { return false; }
+  };
+  const skills = planSkills(skillsSource, skillsTarget, sameSkill);
   const settingsText = (() => { try { return fs.readFileSync(settingsFile, 'utf8'); } catch { return ''; } })();
-  return { files, settings: planSettings(settingsText, sourceFiles), sourceFiles, targetFiles, settingsText };
+  return { files, skills, settings: planSettings(settingsText, sourceFiles), sourceFiles, targetFiles, settingsText, skillsSource, skillsTarget };
 }
 
 function backup(targetDir) {
@@ -121,7 +150,7 @@ function backup(targetDir) {
   return dest;
 }
 
-function apply({ sourceDir, targetDir, settingsFile }, plan) {
+function apply({ sourceDir, targetDir, settingsFile, skillsSource, skillsTarget }, plan) {
   const backupDir = fs.existsSync(targetDir) ? backup(targetDir) : null;
   for (const f of plan.files.copy) {
     const to = path.join(targetDir, f);
@@ -130,6 +159,15 @@ function apply({ sourceDir, targetDir, settingsFile }, plan) {
   }
   for (const f of plan.files.remove) {
     try { fs.rmSync(path.join(targetDir, f), { force: true }); } catch { /* yoksa sorun degil */ }
+  }
+  const skills = plan.skills || { copy: [], remove: [] };
+  for (const rel of skills.copy) {
+    const to = path.join(skillsTarget, rel);
+    fs.mkdirSync(path.dirname(to), { recursive: true });
+    fs.copyFileSync(path.join(skillsSource, rel), to);
+  }
+  for (const rel of skills.remove) {
+    try { fs.rmSync(path.join(skillsTarget, rel), { force: true }); } catch { /* yoksa sorun degil */ }
   }
   if (plan.settings.stale.length) {
     const next = rewriteSettings(plan.settingsText);
@@ -140,12 +178,17 @@ function apply({ sourceDir, targetDir, settingsFile }, plan) {
 }
 
 function report(plan) {
+  // Rapor bir GÖSTERİM işlevidir: eksik alanla çağrılırsa çökmez.
+  const skills = plan.skills || { copy: [], remove: [] };
   const lines = [];
   lines.push(`Kopyalanacak : ${plan.files.copy.length} dosya`);
   plan.files.copy.slice(0, 10).forEach((f) => lines.push(`   + ${f}`));
   if (plan.files.copy.length > 10) lines.push(`   ...ve ${plan.files.copy.length - 10} tane daha`);
   lines.push(`Silinecek    : ${plan.files.remove.length} dosya (kaynakta yok)`);
   plan.files.remove.forEach((f) => lines.push(`   - ${f}`));
+  lines.push(`Beceri       : ${skills.copy.length} kopyalanacak, ${skills.remove.length} silinecek`);
+  skills.copy.forEach((f) => lines.push(`   + skills/${f}`));
+  skills.remove.forEach((f) => lines.push(`   - skills/${f}`));
   lines.push(`settings.json: ${plan.settings.stale.length} eski ad, ${plan.settings.missing.length} eksik kayit`);
   plan.settings.stale.forEach((s) => lines.push(`   ~ ${s.from} -> ${s.to || 'KARSILIGI YOK (elle bak)'}`));
   plan.settings.missing.forEach((s) => lines.push(`   ! ${s.file} (${s.event}) settings.json'da kayitli degil`));
@@ -158,6 +201,8 @@ function main() {
     sourceDir: process.env.SNN_HOOKS_SOURCE || path.join(home, '.claude', 'standartlar-canli', 'hooks'),
     targetDir: process.env.SNN_HOOKS_TARGET || path.join(home, '.claude', 'hooks'),
     settingsFile: process.env.SNN_SETTINGS || path.join(home, '.claude', 'settings.json'),
+    skillsSource: process.env.SNN_SKILLS_SOURCE || path.join(home, '.claude', 'standartlar-canli', 'skills'),
+    skillsTarget: process.env.SNN_SKILLS_TARGET || path.join(home, '.claude', 'skills'),
   };
   if (!fs.existsSync(paths.sourceDir)) {
     console.error(`Kaynak yok: ${paths.sourceDir}\nCanli kopyayi indirin: docs/makine-kurulumu.md`);
@@ -177,4 +222,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { listFiles, planFiles, planSettings, rewriteSettings, measure, apply, report, RENAMES, REGISTRY, BACKUP_PREFIX };
+module.exports = { listFiles, planFiles, planSkills, skillNames, planSettings, rewriteSettings, measure, apply, report, RENAMES, REGISTRY, BACKUP_PREFIX };
