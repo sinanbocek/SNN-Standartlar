@@ -198,7 +198,8 @@ Bu yüzden önce **ölçülür**: bir hafta boyunca kaç uyarı çıktığı ve 
 
 - Tarayıcı **ayrıştırıcı (parser) değildir**, satır bazlı çalışır. Yorum, dizge, JSX/HTML yazısı ve düzenli ifade gövdesi satır bazında atılır; blok yorumun `*` ile başlamayan gövde satırları ve çok satırlı şablon dizgelerin ortası taranabilir. Kalibrasyon (2026-09-18, 10 proje): yanlış alarm düzeltmeleriyle Portföy 3.780 → 922, GHS 3.127 → 697 bulguya indi.
 - Kelime listesi sonludur: listede olmayan bir Türkçe kelime (ör. `nobet`) Türkçe harf içermiyorsa kaçar. Kaçan kelime listeye eklenerek kapatılır.
-- Tanımlayıcı **rakamda bölünmez**: `satir0`, `kayit2` gibi adlar kelime listesine takılmaz (`splitWords` yalnız camelCase ve alt çizgide böler). 2026-09-19'da uyarı kipi testi yazılırken ölçüldü. Düzeltilmesi tüm projelerin sayılarını değiştireceği için ayrı ele alınır.
+- ~~Tanımlayıcı rakamda bölünmez~~ — **2026-09-19'da düzeltildi**: `satir0`, `kayit2` artık yakalanıyor. `utf8`, `sha256`, `md5Hash` gibi adlarda yanlış alarm ölçülmedi.
+- **Türkçe çekim eki, İngilizce gövde:** `manuelDeltalar`, `guncelleKur` gibi adlarda ek Türkçedir ama gövde listede yoktur. Dar ek toleransı (`lari`, `leri`, `lar`, `ler`, `si`, `su`, `i`, `u`, `a`, `e`) fiil eklerini (`-le`, `-la`) kapsamaz; bu yüzden `guncelle` kökü `guncel` listede olmasına rağmen kaçıyordu. Ek listesini genişletmek İngilizce sözcükleri (`handle`, `table`, `module`) bozma riski taşır, bu yüzden kökler tek tek eklenir. 2026-09-19 ölçümü.
 - Tarayıcı **niyet okumaz**: `data` gibi İngilizce ama anlamsız adları yakalamaz. Onlar kod incelemesinin işidir.
 
 ## Kontrol listesi maddesi

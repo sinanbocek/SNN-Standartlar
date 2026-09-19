@@ -11,8 +11,8 @@ const expect = (name, actual, wanted) => {
 };
 
 const words = scan.wordSet();
-const bos = { names: new Set(), paths: [] };
-const adlar = (text, file = 'src/a.ts', exc = bos) => w.warnFindings(text, file, words, exc).map((f) => f.name);
+const empty = { names: new Set(), paths: [] };
+const adlar = (text, file = 'src/a.ts', exc = empty) => w.warnFindings(text, file, words, exc).map((f) => f.name);
 
 console.log('— yazılan metnin çıkarılması');
 expect('Write içeriği', w.writtenText({ content: 'a' }), 'a');
@@ -48,7 +48,7 @@ expect('ad istisnası susturur', adlar('const plaka = 1;', 'src/a.ts', exc), [])
 expect('yol istisnası susturur', adlar('const gunSonu = 1;', 'legacy/a.ts', exc), []);
 
 console.log('— mesaj');
-const f = w.warnFindings('const gunSonu = 1;\nconst satirlar = [];', 'src/a.ts', words, bos);
+const f = w.warnFindings('const gunSonu = 1;\nconst satirlar = [];', 'src/a.ts', words, empty);
 const m = w.warnMessage(f, 'src/a.ts');
 expect('bulgu yoksa mesaj yok', w.warnMessage([], 'src/a.ts'), '');
 expect('dosya adı görünür', m.includes('src/a.ts'), true);
@@ -63,7 +63,7 @@ expect('yanlış alarm susturulmaz uyarısı', m.includes('susturulmaz'), true);
 // bu yüzden test gerçek adlar kullanır. Bkz. kod-dili-standardi.md "Bilinen sınırlar".
 const ADLAR = ['gunSonu', 'satirlar', 'hataAdayi', 'sonucListesi', 'kayitTuru', 'dosyaAdi', 'tabloBasligi'];
 const cok = ADLAR.map((a) => `const ${a} = 1;`).join('\n');
-const mc = w.warnMessage(w.warnFindings(cok, 'src/a.ts', words, bos), 'src/a.ts');
+const mc = w.warnMessage(w.warnFindings(cok, 'src/a.ts', words, empty), 'src/a.ts');
 expect('uzun liste kırpılır', mc.includes(`${ADLAR.length - w.MAX_NAME} ad daha`), true);
 
 console.log(fail ? `\n${fail} test başarısız` : '\nTüm testler geçti');

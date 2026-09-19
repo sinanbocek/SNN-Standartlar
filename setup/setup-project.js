@@ -87,7 +87,7 @@ function putFile(repo, file, content, message) {
 }
 
 function applyFiles(o, steps) {
-  const want = (id) => steps.some((s) => s.id === id && s.who === 'ben' && s.status === 'eklenecek');
+  const want = (id) => steps.some((s) => s.id === id && s.who === 'agent' && s.status === 'toAdd');
   const files = [];
   if (want('kutuk')) files.push(['docs/teknik-borc.md', K.debtFileTemplate(), 'docs(borc): standart teknik borc kutugu']);
   if (want('arsiv')) files.push(['docs/teknik-borc-arsiv.md', K.archiveFileTemplate(), 'docs(borc): standart teknik borc arsivi']);
@@ -140,16 +140,16 @@ function main() {
   const APPLY = process.argv.includes('--uygula');
   const o = measure(dir);
   const steps = K.plan(o);
-  const icon = { var: '✅', eklenecek: '➕', eksik: '⚠', karar: '❓', olculemedi: '❔' };
+  const icon = { present: '✅', toAdd: '➕', missing: '⚠', decide: '❓', unmeasured: '❔' };
   console.log(`${APPLY ? '▶ UYGULAMA' : '🔍 ÖLÇÜM + PLAN (hiçbir şey değişmez)'} · ${o.repo ? `${o.repo.full} (${o.repo.isPublic ? 'herkese açık' : 'gizli'})` : path.basename(dir)}`);
-  steps.forEach((s) => console.log(`  ${icon[s.status] || '•'} [${s.who === 'ben' ? 'betik' : 'SEN  '}] ${s.id}: ${s.why}`));
+  steps.forEach((s) => console.log(`  ${icon[s.status] || '•'} [${s.who === 'agent' ? 'betik' : 'SEN  '}] ${s.id}: ${s.why}`));
   if (!APPLY) {
     const n = K.pending(steps).length;
     console.log(n ? `\nBetiğin yapacağı ${n} adım var. Uygulamak için: --uygula` : '\nBetiğin yapacağı adım yok.');
   } else {
     const done = [];
     const failed = [];
-    const want = (id) => steps.some((s) => s.id === id && s.who === 'ben' && s.status === 'eklenecek');
+    const want = (id) => steps.some((s) => s.id === id && s.who === 'agent' && s.status === 'toAdd');
     const attempt = (label, fn) => { try { const r = fn(); done.push(`${label}${r ? `: ${r}` : ''}`); } catch (e) { failed.push(`${label}: ${(e.stderr || e.message).toString().trim().split('\n')[0]}`); } };
     attempt('dosyalar (PR)', () => applyFiles(o, steps));
     if (want('board')) attempt('board', () => `#${applyBoard(o)}`);

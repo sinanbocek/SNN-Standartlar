@@ -66,15 +66,15 @@ expect('birleştirme komutu PR numarası döndürür', g.deletedBranch('gh pr me
 expect('silme yoksa null', g.deletedBranch('git push origin feat/x'), null);
 
 // #18 vakası: docs/giris dalı silindi, onu TABAN alan #18 kapandı
-const acikPR = [{ number: 17, base: 'main', head: 'docs/giris' }, { number: 18, base: 'docs/giris', head: 'feat/kod' }];
-expect('taban dalı silinirken engellenir', g.branchDeleteBlock('git push origin --delete docs/giris', acikPR) !== null, true);
-expect('engel mesajı PR numarasını söyler', g.branchDeleteBlock('git push origin --delete docs/giris', acikPR).includes('#18'), true);
-expect('birleştirme: alttaki PR silinirken üstteki varsa engellenir', g.branchDeleteBlock('gh pr merge 17 --merge --delete-branch', acikPR) !== null, true);
+const openPRs = [{ number: 17, base: 'main', head: 'docs/giris' }, { number: 18, base: 'docs/giris', head: 'feat/kod' }];
+expect('taban dalı silinirken engellenir', g.branchDeleteBlock('git push origin --delete docs/giris', openPRs) !== null, true);
+expect('engel mesajı PR numarasını söyler', g.branchDeleteBlock('git push origin --delete docs/giris', openPRs).includes('#18'), true);
+expect('birleştirme: alttaki PR silinirken üstteki varsa engellenir', g.branchDeleteBlock('gh pr merge 17 --merge --delete-branch', openPRs) !== null, true);
 
 // YANLIŞ ALARM (2026-09-18): tek PR birleştirilirken kendi dalı siliniyor — engellenmemeli
 const tekPR = [{ number: 25, base: 'main', head: 'fix/tarayici' }];
 expect('kendi dalını silen birleştirme serbest', g.branchDeleteBlock('gh pr merge 25 --merge --delete-branch', tekPR), null);
-expect('başka dal serbest', g.branchDeleteBlock('git push origin --delete feat/baska', acikPR), null);
+expect('başka dal serbest', g.branchDeleteBlock('git push origin --delete feat/baska', openPRs), null);
 expect('açık PR listesi boşsa serbest', g.branchDeleteBlock('git push origin --delete docs/giris', []), null);
 expect('PR listede yoksa engelleme yok', g.branchDeleteBlock('gh pr merge 99 --merge --delete-branch', tekPR), null);
 console.log('— ana dala doğrudan commit');
