@@ -13,7 +13,7 @@ Bu makine kaybolsaydı **7 kapı birden** susardı:
 | `guard-files` | `.env`, özel anahtar, servis hesabı yazımı ve 7 sır deseni serbest kalır |
 | `guard-bash` | 8 yıkıcı komut kalıbı ve birleştirme kapısı düşer |
 | `guard-code-language` | Kod dili uyarısı susar |
-| `session-start` | Açılış özeti yok — **ve canlı kopya güncellemesi buradan tetiklendiği için kurallar donar** |
+| `session-start` | Açılış özeti ve uyum ölçümü yok — **ve canlı kopya güncellemesi buradan tetiklendiği için kurallar donar** |
 | `stop-gate` | Kırmızı tiple "bitti" denebilir |
 | `stop-debt-push` | Kütük değişikliği GitHub'a ulaşmadan oturum kapanabilir |
 | `stop-schema-doc` | Şema değişip belge güncellenmeden iş biter |
@@ -28,30 +28,47 @@ Kurallar canlı kopyadan (`~/.claude/standartlar-canli`) okunur ve kendiliğinde
 
 **Güvenlik notu (ölçülmüştür, gizlenmez):** kancalar hâlihazırda canlı kopyadan `require()` ile kod çalıştırıyor (12 çağrı) ve canlı kopya oturum başında onaysız güncelleniyor. Yani "ortak depoya yazabilen, bu makinede kod çalıştırır" durumu **bugün de geçerli**. Kopyalama modeli bu yüzeyi büyütmez, küçültme fırsatı verir. Ortak depo `main`'ine yazma yetkisi bir kişiden büyükse bu ayrı bir sertleştirme kalemidir.
 
-## Kurulum (bugün: elle)
-
-> `setup/setup-machine.js` henüz yazılmadı. Bu bölüm o betik gelene kadar geçerli tarifedir.
+## Kurulum
 
 1. Node.js, `git`, `gh` kurulu olmalı; `gh auth login` yapılmış olmalı.
+
 2. Canlı kopya:
+
    ```bash
    git clone https://github.com/sinanbocek/SNN-Standartlar.git "$HOME/.claude/standartlar-canli"
    ```
-3. Kancaları kopyala:
+
+3. Kuru çalıştırma — hiçbir şey değişmez, yalnız ne yapılacağı yazılır:
+
    ```bash
-   mkdir -p "$HOME/.claude/hooks"
-   cp -r "$HOME/.claude/standartlar-canli/hooks/." "$HOME/.claude/hooks/"
+   node setup/setup-machine.js
    ```
-4. `~/.claude/settings.json` içindeki `hooks` bölümünü `ornek/claude-settings-hooks.json` şablonundan doldur. `<HOME>` yerine ev klasörünün yolu yazılır. **Şablon settings.json'un tamamı değildir**; mevcut diğer ayarlar korunur.
+
+4. Uygula:
+
+   ```bash
+   node setup/setup-machine.js --uygula
+   ```
+
+   Betiğin yaptıkları:
+   - eksik ya da içeriği değişmiş dosyaları kopyalar,
+   - **kaynakta olmayan dosyaları siler** — yeniden adlandırma artığı kalırsa `settings.json` eski dosyayı çağırmaya devam eder,
+   - `settings.json` içindeki eski kanca adlarını günceller (bozuk JSON yazmaktansa durur),
+   - uygulamadan önce `~/.claude/hooks-yedek-<zaman>` klasörüne **tam yedek** alır.
+
 5. Doğrula:
+
    ```bash
    node "$HOME/.claude/hooks/test/hooks.test.js"
-   node "$HOME/.claude/hooks/test/stop-debt-push.test.js"
    ```
+
+## Kancalar değiştiğinde
+
+Ortak depoda `hooks/` altında bir değişiklik birleştiğinde makine kopyası **kendiliğinden güncellenmez** (tasarım gereği). Kuru çalıştırma farkı gösterir.
 
 ## Bilinen eksikler
 
-- **Kurulum betiği yok.** 3. ve 4. adım elle. Planlanan: `setup/setup-machine.js` — ölçüm kipi (fark listesi) + `--uygula` (yedekle → kopyala → `settings.json` kanca bloğunu birleştir), `setup/setup-project.js` deseniyle aynı.
-- **Sürüklenme ölçülmüyor.** Çalışan `~/.claude/hooks` ile depo sürümü ayrışabilir; oturum açılışında "kancalar depo sürümünden eski" uyarısı planlanıyor.
-- **Beceriler paketin dışında.** `~/.claude/skills` altındaki beceriler bu depoda sürümlenmiyor; makine kaybında birlikte giderler.
-- **Yollar mutlak.** Şablondaki yollar `<HOME>` ile üretilir; kancaların kendisi `os.homedir()` kullanır, taşınabilir.
+- **Sürüklenme kendiliğinden ölçülmüyor.** Çalışan kopya ile depo sürümü ayrışabilir; kuru çalıştırma farkı gösterir ama kimse hatırlatmaz. Oturum açılışında uyarı planlanıyor.
+- **Beceriler paketin dışında.** `~/.claude/skills` altındaki 4 beceri bu depoda sürümlenmiyor; makine kaybında birlikte giderler.
+- **Ayarların geri kalanı paketin dışında.** Betik yalnız `hooks` bölümündeki dosya adlarını düzeltir; eksik bir kanca kaydını **bildirir ama eklemez** (şablon: `ornek/claude-settings-hooks.json`). Sebebi: `settings.json` kişisel ayarlar da içerir, körlemesine birleştirme onları bozabilir.
+- **Ayrışma penceresi.** Senkron sırasında eski dosyalar silindiği için o an açık olan oturumların belleğindeki eski yollar geçersiz kalır. Bekçiler o oturum için hata verir (iş durmaz); yeni oturumda düzelir.

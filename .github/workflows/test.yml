@@ -38,6 +38,10 @@ jobs:
         run: node --check core/propagate.js
       - name: Proje kurulum planı testleri
         run: node setup/test/setup-plan.test.js
+      - name: Makine kurulum planı testleri
+        run: node setup/test/setup-machine.test.js
+      - name: Makine kurulum sözdizimi
+        run: node --check setup/setup-machine.js
       - name: Proje kurulum sözdizimi
         run: node --check setup/setup-project.js
       - name: Akış dosyası yazım denetimi
