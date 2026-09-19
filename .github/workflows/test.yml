@@ -76,6 +76,8 @@ jobs:
         run: node hooks/test/guard-code-language.test.js
       - name: Oturum açılışı bekçisi testleri
         run: node hooks/test/session-start.test.js
+      - name: Tip kontrolü kapısı testleri
+        run: node hooks/test/stop-gate.test.js
       - name: Kütük gönderim bekçisi testleri
         run: node hooks/test/stop-debt-push.test.js
         env:
