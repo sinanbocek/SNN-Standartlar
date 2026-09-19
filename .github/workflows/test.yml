@@ -70,6 +70,8 @@ jobs:
         run: node hooks/test/hooks.test.js
         env:
           SNN_STANDARTLAR: ${{ github.workspace }}
+      - name: Canlı kopya yönlendiricisi testleri
+        run: node hooks/test/shared.test.js
       - name: Kütük gönderim bekçisi testleri
         run: node hooks/test/stop-debt-push.test.js
         env:

@@ -12,7 +12,13 @@ const { execFileSync } = require('child_process');
 
 const ROOT = process.env.SNN_STANDARTLAR || path.join(os.homedir(), '.claude', 'standartlar-canli');
 const REPO_URL = 'https://github.com/sinanbocek/SNN-Standartlar.git';
-const STAMP = path.join(ROOT, '.git', 'snn-son-updateResult');
+// Damga dosyası: son tazeleme zamanı. 6 saatlik kısıtlama buna bakar.
+// 2026-09-19: TB-001 yeniden adlandırması bu adı DİZGE İÇİNDE de değiştirdi
+// (snn-son-guncelleme → snn-son-updateResult) ve eski damga öksüz kaldı; o aralıkta
+// kısıtlama çalışmadı, her oturum tazeleme denedi. Eski adlar yazarken temizlenir.
+const STAMP_NAME = 'snn-last-refresh';
+const STAMP = path.join(ROOT, '.git', STAMP_NAME);
+const LEGACY_STAMPS = ['snn-son-guncelleme', 'snn-son-updateResult'];
 const UPDATE_EVERY_MS = 6 * 60 * 60 * 1000;
 
 function shared(rel) {
@@ -33,13 +39,16 @@ function refresh({ force = false } = {}) {
   try {
     const opts = { stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', timeout: 8000 };
     const dirty = execFileSync('git', ['-C', ROOT, 'status', '--porcelain'], opts).trim();
-    if (dirty) return { status: 'hata', mesaj: 'canlı kopyada elle yapılmış değişiklik var; güncellenmedi' };
+    if (dirty) return { status: 'hata', message: 'canlı kopyada elle yapılmış değişiklik var; güncellenmedi' };
     execFileSync('git', ['-C', ROOT, 'pull', '--ff-only', '-q', 'origin', 'main'], opts);
     fs.writeFileSync(STAMP, new Date().toISOString());
+    for (const old of LEGACY_STAMPS) {
+      try { fs.rmSync(path.join(ROOT, '.git', old), { force: true }); } catch { /* yoksa sorun değil */ }
+    }
     return { status: 'guncel' };
   } catch (e) {
-    return { status: 'hata', mesaj: `canlı kopya güncellenemedi: ${(e.stderr || e.message || '').toString().trim().split('\n')[0]}` };
+    return { status: 'hata', message: `canlı kopya güncellenemedi: ${(e.stderr || e.message || '').toString().trim().split('\n')[0]}` };
   }
 }
 
-module.exports = { ROOT, shared, refresh };
+module.exports = { ROOT, STAMP, STAMP_NAME, LEGACY_STAMPS, UPDATE_EVERY_MS, shared, refresh };
