@@ -54,8 +54,12 @@ jobs:
         run: node quality/test/code-language-warn.test.js
       - name: Kanca testleri
         run: node hooks/test/hooks.test.js
+        env:
+          SNN_STANDARTLAR: ${{ github.workspace }}
       - name: Kütük gönderim bekçisi testleri
         run: node hooks/test/stop-debt-push.test.js
+        env:
+          SNN_STANDARTLAR: ${{ github.workspace }}
       - name: Kanca sözdizimi
         run: for f in hooks/*.js hooks/lib/*.js; do node --check "$f"; done
       - name: Bu PR'da eklenen satırlarda gizli anahtar (kendi kendini tarama)
