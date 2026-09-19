@@ -36,35 +36,38 @@ jobs:
         with:
           node-version: 20
 
+      # Ara klasörler depo ağacının DIŞINDA tutulur. Neden (2026-09-19'da ölçüldü):
+      # içeride olunca "cp -r ." kendi ara klasörlerini de kopyalıyordu ve bu depo
+      # kendi ESKİ dosyalarını tarayıp 13 sahte bulgu üretti.
       - name: "Taban sürümdeki tarayıcıyı ayır"
         run: |
-          mkdir -p _base
+          mkdir -p "$RUNNER_TEMP/_base"
           git worktree add _base_tree ${{ github.event.pull_request.base.sha }}
-          cp -r _base_tree/quality _base/quality
+          cp -r _base_tree/quality "$RUNNER_TEMP/_base/quality"
           git worktree remove --force _base_tree
 
       - name: "Aile projelerini klonla"
         env:
           GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
         run: |
-          mkdir -p _projeler
+          mkdir -p "$RUNNER_TEMP/_projeler"
           node -e "
             const list = require('./quality/measure-projects.js').readList();
             console.log(list.map((p) => p.repo + ' ' + p.dir).join('\n'));
-          " > _repo-listesi.txt
+          " > "$RUNNER_TEMP/_repo-listesi.txt"
           while read -r repo dir; do
             [ -z "$repo" ] && continue
             if [ "$repo" = "${{ github.repository }}" ]; then
-              cp -r . "_projeler/$dir" 2>/dev/null || true
+              cp -r . "$RUNNER_TEMP/_projeler/$dir" 2>/dev/null || true
               continue
             fi
-            git clone --depth 1 --quiet "https://x-access-token:${GH_TOKEN}@github.com/${repo}.git" "_projeler/$dir" \
+            git clone --depth 1 --quiet "https://x-access-token:${GH_TOKEN}@github.com/${repo}.git" "$RUNNER_TEMP/_projeler/$dir" \
               || echo "KLONLANAMADI $repo"
-          done < _repo-listesi.txt
-          ls _projeler
+          done < "$RUNNER_TEMP/_repo-listesi.txt"
+          ls "$RUNNER_TEMP/_projeler"
 
       - name: "Ölç ve yorumu hazırla"
-        run: node quality/measure-projects.js _projeler --base _base/quality > _yorum.md
+        run: node quality/measure-projects.js "$RUNNER_TEMP/_projeler" --base "$RUNNER_TEMP/_base/quality" > "$RUNNER_TEMP/_yorum.md"
 
       - name: "PR'a yaz (varsa güncelle)"
         env:
@@ -72,13 +75,13 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: |
           MARKER="<!-- aile-olcumu -->"
-          printf '%s\n' "$MARKER" | cat - _yorum.md > _yorum-final.md
+          printf '%s\n' "$MARKER" | cat - "$RUNNER_TEMP/_yorum.md" > "$RUNNER_TEMP/_yorum-final.md"
           ID=$(gh api "repos/${{ github.repository }}/issues/${PR}/comments" --jq \
             ".[] | select(.body | startswith(\"$MARKER\")) | .id" | head -1)
           if [ -n "$ID" ]; then
             gh api --method PATCH "repos/${{ github.repository }}/issues/comments/${ID}" \
-              -f body="$(cat _yorum-final.md)" > /dev/null
+              -f body="$(cat "$RUNNER_TEMP/_yorum-final.md")" > /dev/null
             echo "Var olan yorum guncellendi."
           else
-            gh pr comment "$PR" --body-file _yorum-final.md
+            gh pr comment "$PR" --body-file "$RUNNER_TEMP/_yorum-final.md"
           fi
