@@ -27,6 +27,27 @@ Her kayıt iki kişiye yazılır:
 
 Başka ad (`tech-debt.md`, `TECHNICAL_DEBT.md`, `TECH_DEBT.md`) kullanılmaz.
 
+## Bir deponun iş listesi kütükten ibaret değildir
+
+**Kural:** *"iş kaldı mı?"* sorusu **iki** kaynağa birden bakılarak cevaplanır:
+
+1. **Kütük** — `docs/teknik-borc.md` (bu deponun kendi kayıtları)
+2. **Açık talepler** — `talep` etiketli açık issue'lar (başka depolardan gelen bildirimler)
+
+Yalnız kütüğe bakıp *"iş kalmadı"* demek **ölçülmemiş iddiadır** (`olcum-standardi.md` kural 1).
+
+**Gerçek olay (2026-09-19):** SNN-Standartlar'da kütükteki son kayıt kapandı ve oturum
+*"eyleme geçirilebilir borç kalmadı"* dedi. Aynı anda **dört açık talep** duruyordu; biri
+kapıyı sessizce bozan bir kusuru bildiriyordu. Talepler kütükte görünmüyor, oturum açılışında
+görünmüyor, hiçbir kapı onları saymıyordu. Proje sahibi ekran görüntüsüyle gösterdi.
+
+**Talep cevapsız bırakılmaz.** Açık bir talep 7 günden uzun süre **hiç yanıtsız** kalırsa
+(ne yorum, ne karar, ne kapanış) `quality/open-requests.js` kırmızı verir. Kural metni değil,
+kapı zorlar: *"bakacağım" bir kontrol değildir.*
+
+Karar verildiğinde — kabul ya da ret — gerekçesi `GERI-BILDIRIM-KAYDI.md`'ye yazılır ve issue
+kapatılır. Reddedilen talep gerekçesiyle durur; aynı talep ikinci kez değerlendirilmez.
+
 ## Kayıt biçimi (açık borç)
 
 ```markdown

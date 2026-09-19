@@ -98,6 +98,12 @@
       "module": "quality/workflow-callers.js",
       "vaka": "2026-09-19: akis dosyasi adlari Ingilizceye tasindi, ama eski adlar 10 projenin cagirdigi disa acik arayuzdu. Eski adlar kopruye donusturuldu; koprunun ne zaman silinebilecegi tahminle degil ANA DALDAN olculerek karara baglandi. Ayni gun yerel kopya iki projede yanlis cevap vermisti.",
       "test": "çağıranı olan hazır sayılmaz"
+    },
+    {
+      "id": "acik-talep",
+      "module": "quality/open-requests.js",
+      "vaka": "2026-09-19: kutukteki son kayit kapandi ve oturum \"eyleme gecirilebilir borc kalmadi\" dedi. Ayni anda DORT acik talep duruyordu; biri kapiyi sessizce bozan bir kusuru bildiriyordu. Talepler kutukte de, oturum acilisinda da gorunmuyordu. Proje sahibi ekran goruntusuyle gosterdi: \"bu tek basina yetmez, sadece iyi niyet gostergesidir; kurala girmeli ve makine zorlamasi olmali.\"",
+      "test": "eşiği aşmış yanıtsız talep yakalanır"
     }
   ]
 }
