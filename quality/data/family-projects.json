@@ -1,0 +1,24 @@
+{
+  "_description": "Aile projeleri. Toplu olcum ve uyum olceri bu listeye gore calisir.",
+  "_why": "Liste acik tutulur cunku (1) yerel klasor adi ile depo adi ayni degil, (2) tum depolar ayni hesapta degil, (3) yerelde duran her klasor aile projesi degil.",
+  "_measured": "2026-09-19: yerel klasorlerin uzak adresleri okunarak dogrulandi.",
+  "projects": [
+    { "repo": "sinanbocek/Gunum-Var", "dir": "Gunum-Var" },
+    { "repo": "sinanbocek/Naturapan-Web-Sitesi", "dir": "Naturapan-Web-Sitesi" },
+    { "repo": "sinanbocek/SNN-Abacus-Core", "dir": "SNN-Abacus-Core" },
+    { "repo": "sinanbocek/SNN-Ihale-Maliyet-Teklif-Yonetimi", "dir": "SNN-Ihale-Maliyet-Teklif-Yonetimi" },
+    { "repo": "sinanbocek/SNN-Piyasa-Core", "dir": "SNN-Piyasa-Core" },
+    { "repo": "sinanbocek/SNN-Portfoy-Yonetimi", "dir": "SNN-Portfoy-Yonetimi" },
+    { "repo": "sinanbocek/SNN-Proje-ve-Nakit-Akis-Yonetimi", "dir": "SNN-Proje-ve-Nakit-Akis-Yonetimi" },
+    { "repo": "sinanbocek/SNN-Standartlar", "dir": "SNN-Standartlar" },
+    { "repo": "sinanbocek/SNN-Yonetici-Ozeti", "dir": "SNN-Yonetici-Ozeti" },
+    { "repo": "sinanbocek/trade-kasa", "dir": "trade-kasa" },
+    { "repo": "globalhedef/global-hedef-web-platform", "dir": "GHS-Panel" }
+  ],
+  "excluded": [
+    {
+      "repo": "saidsurucu/ihale-mcp",
+      "reason": "Ucuncu tarafin deposu; aile kod tabani degil. Uyum olculmez, taranmaz."
+    }
+  ]
+}

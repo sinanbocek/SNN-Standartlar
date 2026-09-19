@@ -25,13 +25,15 @@ Her proje için sırayla:
 
 1. **Temiz olanlar önce:** Naturapan (0 bulgu), Nakit-Akış (22), SNN-İhale (65), Abacus Core (116).
 2. **Orta yoğunluk:** trade-kasa (382), GHS (455), Portföy (846).
-3. **Yoğun olanlar:** Gunum-Var (1.833), Yönetici Özeti (10.153).
-4. **En son SNN-Piyasa-Core:** şu anda İngilizceye çeviriliyor; çeviri main'e girmeden turnike takılmaz.
+3. **Yoğun olanlar:** Gunum-Var (1.841), Yönetici Özeti (10.153).
+4. **En son SNN-Piyasa-Core:** ana dalda 2.496 bulgu var ama çeviri `refactor/ingilizce-tanimlayicilar` dalında sürüyor (o dalda 301). Çeviri main'e girmeden turnike takılmaz.
 5. **SNN-Standartlar (bu depo):** TB-001 kapanınca kendi turnikesini takar. Kural koyan depo, kuralı en son değil en görünür biçimde uygular.
 
-## 2. Ölçüm (2026-09-19, aile geneli istisna kararından sonra)
+## 2. Ölçüm (2026-09-19, ana daldan — aile ölçümü akışı)
 
 Tarayıcı yalnız tanımlayıcılara bakar; yorum, dizge, JSX yazısı ve düzenli ifade gövdesi taranmaz.
+
+Sayılar **her projenin ana dalından** gelir ve `.github/workflows/aile-olcumu.yml` tarafından üretilir. Elle ölçüm yapılmaz: yerel klasörler çalışma dallarında olabilir ve yanlış sayı verir (aşağıya bakın).
 
 | Proje | Bulgu | Ayrı ad | Nerede | En sık adlar | Önerilen öncelik |
 |---|---|---|---|---|---|
@@ -40,14 +42,26 @@ Tarayıcı yalnız tanımlayıcılara bakar; yorum, dizge, JSX yazısı ve düze
 | SNN-Proje-ve-Nakit-Akis-Yonetimi | 22 | 20 | kaynak 22 | `İhaleler`, `Tedarikçi`, `Keşideci` | P3 |
 | SNN-Ihale-Maliyet-Teklif-Yonetimi | 65 | 55 | kaynak 65 | `satir`, `Ürün`, `oran` | P3 |
 | SNN-Abacus-Core | 116 | 29 | kaynak 116 | `sonuc`, `yeniKayit`, `satir` | P2 (kuralın kaynağı) |
-| SNN-Piyasa-Core | 301 | 94 | **sql 243**, kaynak 58 | `sembol`, `kaynak`, `zaman` | P2 (göç sürüyor) |
+| SNN-Piyasa-Core | 2.496 | 231 | ana dal | `sembol`, `kaynak`, `zaman` | P2 (çeviri dalda sürüyor) |
 | trade-kasa | 382 | 53 | kaynak 382 | `islem`, `usdTryKuru`, `kayit` | P3 |
 | GHS-Panel | 455 | 242 | **sql 191**, kaynak 264 | `v_kalan`, `tablo`, `sonuc`, `hata` | P2 |
 | SNN-Portfoy-Yonetimi | 846 | 347 | kaynak 721, **sql 125** | `tarih`, `Altın`, `pozisyonPct` | P2 |
-| Gunum-Var | 1.833 | 310 | kaynak 1.731, sql 102 | `zincirKur`, `sonuc`, `hata`, `satir` | P2 |
+| Gunum-Var | 1.841 | 313 | kaynak 1.731, sql 102 | `zincirKur`, `sonuc`, `hata`, `satir` | P2 |
 | SNN-Yonetici-Ozeti | 10.153 | 567 | kaynak 10.153 | `hesapKodu`, `grup`, `tablo`, `sinif` | P2 |
 
-**Sayılar 19 Eylül'de neden düştü?** Proje sahibi kararıyla dört kök **aile geneli istisna** oldu: `kasa`, `kurus`, `beyanname`, `mizan` (bkz. kod dili standardı, "Aile geneli istisna"). Toplam 16.023 → **14.173** (−1.850).
+**Yerel klasörden ölçüm yapılmaz (2026-09-19'da ölçüldü).** Aile ölçümü akışı ilk çalıştığında, elle aldığım sayılarla arasında fark çıktı:
+
+| Proje | Yerel klasörün dalı | Yerelde | Ana dalda |
+|---|---|---|---|
+| SNN-Piyasa-Core | `refactor/ingilizce-tanimlayicilar` | 301 | **2.496** |
+| Gunum-Var | main | 1.833 | 1.841 |
+
+Piyasa-Core'un ajanı çeviriyi **bir dalda** yapıyor; yerel klasöre bakan ölçüm o dalın (gelecekteki) durumunu gösteriyordu. Gunum-Var'daki küçük fark ise iki ölçüm arasında o projenin kendi ajanının bir PR birleştirmesinden geliyor.
+
+İkisi de aynı dersin parçası: **elle ölçüm, o anda hangi klasörün hangi dalda durduğuna bağlıdır.** Bu yüzden tablo artık akıştan gelir.
+
+
+**Sayılar 19 Eylül'de neden düştü?** Proje sahibi kararıyla dört kök **aile geneli istisna** oldu: `kasa`, `kurus`, `beyanname`, `mizan` (bkz. kod dili standardı, "Aile geneli istisna"). Etki, AYNI kopyalar üzerinde iki tarayıcı sürümüyle ölçüldü: 16.023 → **14.173** (−1.850). Bu iki sayı yerel kopyalardan alınmıştı; yukarıdaki tablo ise ana daldan gelir ve toplamı **16.376**'dır. Fark, Piyasa-Core'un çeviri dalındandır — aradaki −1.850 etkisi yine geçerlidir, çünkü ikisi de aynı kopyalarda ölçüldü.
 
 | Proje | Önce | Sonra |
 |---|---|---|

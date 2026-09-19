@@ -30,10 +30,36 @@ const listOr = (p) => {
   try { return fs.readdirSync(p); } catch { return []; }
 };
 
+// Aile listesinde GEREKCELI olarak dislanmis depolar olculmez. Neden (2026-09-19): yerelde duran
+// her klasor aile projesi degil. `ihale-mcp` ucuncu tarafin (saidsurucu) deposu ve olcer ona
+// sonsuza kadar "6 eksik" diyordu. Bosuna dirdir, kapinin guvenilirligini oldurur.
+// Yalniz ACIKCA dislananlar atlanir; tanimadigimiz yeni bir depo yine olculur.
+function excludedRepos(file = path.join(__dirname, 'data', 'family-projects.json')) {
+  try {
+    return (JSON.parse(fs.readFileSync(file, 'utf8')).excluded || [])
+      .filter((x) => x && x.repo && x.reason)
+      .map((x) => x.repo.toLowerCase());
+  } catch { return []; }
+}
+
+// SAF: uzak adresten "sahip/depo" cikarir (https ya da ssh).
+function repoSlug(remoteUrl) {
+  const m = String(remoteUrl || '').trim().match(/github\.com[:/]+([^/]+\/[^/\s]+?)(?:\.git)?$/i);
+  return m ? m[1].toLowerCase() : '';
+}
+
+function readRemote(root) {
+  try {
+    return require('child_process').execFileSync('git', ['-C', root, 'remote', 'get-url', 'origin'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch { return ''; }
+}
+
 // SAF olmayan: diskten okunur, evaluate()'e veri olarak verilir.
 function readState(root) {
   const guideNames = listOr(root).filter((f) => /^(CLAUDE|AI-RULES)\.md$/i.test(f));
   return {
+    repo: repoSlug(readRemote(root)),
     workflows: listOr(path.join(root, '.github', 'workflows')),
     workflowText: listOr(path.join(root, '.github', 'workflows'))
       .map((f) => readFileOr(path.join(root, '.github', 'workflows', f)))
@@ -134,7 +160,10 @@ const CHECKS = [
 ];
 
 // SAF: durum -> bulgular. Muaf olanlar listeden dusulur.
-function evaluate(state, exempt = exemptions(state.exemptRaw)) {
+function evaluate(state, exempt = exemptions(state.exemptRaw), excluded = excludedRepos()) {
+  if (state.repo && excluded.includes(state.repo)) {
+    return { gaps: [], warnings: [], total: CHECKS.length, exemptCount: 0, excluded: true };
+  }
   const gaps = [];
   for (const c of CHECKS) {
     if (exempt.ids.has(c.id)) continue;
@@ -165,4 +194,4 @@ function check(root) {
   return evaluate(readState(root));
 }
 
-module.exports = { CHECKS, EXEMPT_FILE, isTriggered, runsGate, readState, exemptions, evaluate, summary, check, MAX_SHOWN };
+module.exports = { CHECKS, EXEMPT_FILE, isTriggered, runsGate, repoSlug, excludedRepos, readState, exemptions, evaluate, summary, check, MAX_SHOWN };

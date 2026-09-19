@@ -1,0 +1,84 @@
+# Tarayıcı değiştiğinde 10+ projenin sayıları ne oluyor? Ölçer ve PR'a yazar.
+#
+# Neden (2026-09-19): bugünün en değerli bulgularının hepsi "gerçek projelerde ölçmekten" çıktı
+# (eksik kelime kökleri, yanlış alarmların dört turu, aile istisnasının gerçek etkisi). Ama bu
+# ölçüm bir alışkanlıktı, kapı değildi; unutulduğunda tarayıcı değişikliği 10 projenin sayısını
+# sessizce değiştirebiliyordu.
+#
+# Bu akış PR'ı KIRMAZ. Amaç karar vermek değil, değişimi görünür kılmak.
+# Kural: standartlar/kod-dili-standardi.md · Liste: quality/data/family-projects.json
+name: aile-olcumu
+
+on:
+  pull_request:
+    paths:
+      - "quality/code-language-scan.js"
+      - "quality/measure-projects.js"
+      - "quality/data/turkish-words.json"
+      - "quality/data/family-exceptions.json"
+      - "quality/data/family-projects.json"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  olcum:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: "PR sürümünü al"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: "Taban sürümdeki tarayıcıyı ayır"
+        run: |
+          mkdir -p _base
+          git worktree add _base_tree ${{ github.event.pull_request.base.sha }}
+          cp -r _base_tree/quality _base/quality
+          git worktree remove --force _base_tree
+
+      - name: "Aile projelerini klonla"
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          mkdir -p _projeler
+          node -e "
+            const list = require('./quality/measure-projects.js').readList();
+            console.log(list.map((p) => p.repo + ' ' + p.dir).join('\n'));
+          " > _repo-listesi.txt
+          while read -r repo dir; do
+            [ -z "$repo" ] && continue
+            if [ "$repo" = "${{ github.repository }}" ]; then
+              cp -r . "_projeler/$dir" 2>/dev/null || true
+              continue
+            fi
+            git clone --depth 1 --quiet "https://x-access-token:${GH_TOKEN}@github.com/${repo}.git" "_projeler/$dir" \
+              || echo "KLONLANAMADI $repo"
+          done < _repo-listesi.txt
+          ls _projeler
+
+      - name: "Ölç ve yorumu hazırla"
+        run: node quality/measure-projects.js _projeler --base _base/quality > _yorum.md
+
+      - name: "PR'a yaz (varsa güncelle)"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          MARKER="<!-- aile-olcumu -->"
+          printf '%s\n' "$MARKER" | cat - _yorum.md > _yorum-final.md
+          ID=$(gh api "repos/${{ github.repository }}/issues/${PR}/comments" --jq \
+            ".[] | select(.body | startswith(\"$MARKER\")) | .id" | head -1)
+          if [ -n "$ID" ]; then
+            gh api --method PATCH "repos/${{ github.repository }}/issues/comments/${ID}" \
+              -f body="$(cat _yorum-final.md)" > /dev/null
+            echo "Var olan yorum guncellendi."
+          else
+            gh pr comment "$PR" --body-file _yorum-final.md
+          fi

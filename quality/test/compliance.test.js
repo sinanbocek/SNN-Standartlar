@@ -59,6 +59,20 @@ expect('tetiklenmeyen turnike eksik sayılır', ids(CAGRILAMAZ).includes('kod-di
 // Turnike başka bir akış dosyasının içinden de çalışabilir (bu depoda test.yml böyle yapar).
 expect('taramayı çağıran başka akış sayılır', ids({ ...TAM, workflowText: ['on:\n  pull_request:\njobs:\n  x:\n    run: node quality/code-language-scan.js --diff'] }).includes('kod-dili-akisi'), false);
 
+console.log('— aile dışı depo hiç ölçülmez');
+// 2026-09-19: yerelde duran her klasor aile projesi degil. ihale-mcp ucuncu tarafin
+// (saidsurucu) deposu; olcer ona sonsuza kadar "6 eksik" diyordu. Bosuna dirdir,
+// kapinin guvenilirligini oldurur. Yalniz ACIKCA dislananlar atlanir.
+expect('https adresinden slug', c.repoSlug('https://github.com/saidsurucu/ihale-mcp.git'), 'saidsurucu/ihale-mcp');
+expect('ssh adresinden slug', c.repoSlug('git@github.com:sinanbocek/trade-kasa.git'), 'sinanbocek/trade-kasa');
+expect('adres yoksa boş', c.repoSlug(''), '');
+const BOS = { ...TAM, workflowText: [], hasLedger: false, ledgerText: '', guideNames: [], guideText: '' };
+expect('dışlanan depo ölçülmez', c.evaluate({ ...BOS, repo: 'x/y' }, undefined, ['x/y']).gaps.length, 0);
+expect('dışlandığı belirtilir', c.evaluate({ ...BOS, repo: 'x/y' }, undefined, ['x/y']).excluded, true);
+// Tanimadigimiz yeni bir depo YINE olculur: dislama sessizlestirme araci degildir.
+expect('bilinmeyen depo yine ölçülür', c.evaluate({ ...BOS, repo: 'yeni/depo' }, undefined, ['x/y']).gaps.length > 0, true);
+expect('gerçek listede ihale-mcp dışlanmış', c.excludedRepos().includes('saidsurucu/ihale-mcp'), true);
+
 console.log('— kütük yoksa iki ölçüt birden düşer');
 expect('kütük + kayıt', ids({ ...TAM, hasLedger: false, ledgerText: '' }), ['kod-dili-kaydi', 'kutuk']);
 
