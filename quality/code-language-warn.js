@@ -38,8 +38,13 @@ function warnFindings(text, file, words, exception) {
   const sql = /\.sql$/i.test(file);
   const out = [];
   const seen = new Set();
+  // Şablon durumu satırdan satıra taşınır: tek bir Edit çağrısı çok satırlı bir şablonun
+  // tamamını taşıyabilir; orta satırlar ekran metnidir, kod değil (#76).
+  let stack = [];
   for (const line of String(text).split(/\r?\n/)) {
-    for (const b of scan.lineFindings(line, words, sql)) {
+    const findings = scan.lineFindings(line, words, sql, stack);
+    stack = scan.codePartAt(line, sql, stack).stack;
+    for (const b of findings) {
       if (seen.has(b.name)) continue;
       if (scan.isExcepted(b, file, exception)) continue;
       seen.add(b.name);

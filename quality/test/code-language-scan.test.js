@@ -221,5 +221,37 @@ expect('gerçek yayma işleci koddur', names('  const yeniKayit = { ...eskiKayit
 expect('yazı atılır, ifadedeki ad kalır', names('  Pozisyon limiti aşıldı (max %{fmtDecimal(maxPozisyonYuzdesi, 0)})'), ['maxPozisyonYuzdesi']);
 expect('varlık arasındaki ad kalır', names('  HESAP KODU (veri): &quot;{k.hesapKodu}&quot;'), ['hesapKodu']);
 
+console.log('— çok satırlı şablon (tüketici bildirimi #76, 2026-09-19)');
+// Şablon durumu SATIRLAR ARASINDA taşınır. Orta satırlarda ters tırnak yoktur; eski sürüm o
+// satırı sıradan kod sanıyor ve ekran metnini tanımlayıcı olarak yakalıyordu.
+const fileNames = (lines, sql = false) => t.fileFindings(lines, words, sql).map((b) => `${b.line}:${b.name}`);
+const REPORTED = [
+  '    return `',
+  '      <section>',
+  '        <p>Teklif bedeli <b>${amount(run.outputPrice)}</b> ·',
+  '          cetvel toplamı ${amount(run.fittedTotal)} · iki haneli birim fiyat artığı ${amount(run.residual)}',
+  '          (her satırı ayrı yuvarlasaydık ${amount(run.naiveResidual)})</p>',
+  '    `;',
+];
+expect('bildirilen şablon gövdesi taranmaz', fileNames(REPORTED), []);
+// Şablon kapandıktan SONRAKİ satır yine taranmalı — durum yapışıp kalmamalı.
+expect('şablon kapanınca tarama sürer', fileNames([...REPORTED, 'const toplamKayit = 1;']), ['7:toplamKayit']);
+
+// ESKİDEN KAÇAN: `${...}` içindeki kod hiç taranmıyordu. Bu kaçak aynı düzeltmeyle kapandı.
+expect('interpolasyondaki gerçek ad yakalanır', names('const s = `deger: ${toplamTutar}`;'), ['toplamTutar']);
+expect('şablon metni ile ad birlikte', names('const s = `Toplam tutar: ${toplamKurus} TL`;'), ['toplamKurus']);
+// `${a}/${b}` — aradaki metin atılınca adlar YAPIŞIP olmayan bir ad üretiyordu ("ceyrekStrt").
+expect('bitişik interpolasyonlar yapışmaz', names('const k = `${ceyrekStr}/${t.yil}`;').sort(), ['ceyrekStr', 'yil']);
+
+console.log('— tek yürüyüş: dizge, yorum, düzenli ifade');
+// Üçü ayrı ayrı ve sabit sırayla soyulunca her sıralama bir diğerini bozuyordu.
+expect('yorumdaki ters tırnak durumu bozmaz', fileNames(['// ornek: `deger: ${yorumdakiAd}` boyle', 'const gercekAd = 1;']), []);
+expect('düzenli ifadedeki ters tırnak durumu bozmaz', fileNames(['for (const m of text.matchAll(/`([^`\\s]+)`/g)) {', '  const satirSayisi = 1;', '}']), ['2:satirSayisi']);
+expect('şablondaki // yorum sanılmaz', names('const u = `http://ornek/${yolAdi}`;'), ['yolAdi']);
+// İnterpolasyon KOD bağlamıdır: içindeki dizge metni tanımlayıcı sanılmamalı.
+expect('interpolasyon içindeki dizge soyulur', names("const m = `${ok ? 'Türkçe metin' : ''}`;"), []);
+// Kapanmamış tırnak Türkçe kesme işaretidir; satırın kalanı atılırsa GERÇEK ad düşer.
+expect('kesme işareti satırı yutmaz', names("  <span>Oran %{pct}'si {eskiCariStr}</span>"), ['eskiCariStr']);
+
 console.log(fail ? `\n${fail} test başarısız` : '\nTüm testler geçti');
 process.exit(fail ? 1 : 0);

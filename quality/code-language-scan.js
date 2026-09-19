@@ -79,24 +79,121 @@ function identifierProblem(name, words) {
 // doğru atar. Neden (ölçüm 2026-09-18): basit bir düzenli ifade, şablonun içinde ikinci bir şablon
 // açıldığında içteki yazıyı dışarıda bırakıyordu; core/propagate.js:149 satırındaki "yalnız" kelimesi
 // tanımlayıcı sanılıyordu — yanlış alarm.
-function stripTemplates(line) {
+// Şablon durumu SATIRLAR ARASINDA taşınır: `stack` her şablon seviyesi için o seviyedeki
+// açık `${` sayısını tutar. Boş dizi = şablonun dışındayız.
+//
+// İKİ KUSUR BİRDEN (SNN-Ihale bildirimi #76, 2026-09-19):
+//   1. ÇOK SATIRLI şablonun ORTA satırlarında ters tırnak yoktur; eski sürüm o satırı sıradan
+//      kod sanıyor ve içindeki Türkçe EKRAN METNİ tanımlayıcı olarak yakalanıyordu.
+//      Bildirilen satır: `… iki haneli birim fiyat artığı ${amount(run.residual)}` → 3 yanlış alarm.
+//   2. `${...}` içindeki KOD hiç taranmıyordu: eski sürüm şablonun içinde her şeyi atıyordu.
+//      `` `deger: ${toplamTutar}` `` satırındaki gerçek Türkçe ad SESSİZCE KAÇIYORDU.
+// Doğrusu bildirimde yazdığı gibi: gövde atılır, `${...}` içi taranır.
+function stripTemplates(line, stack = []) {
+  const level = [...stack];
   let out = '';
-  let depth = 0;   // kaç şablon dizgesinin içindeyiz
-  let brace = 0;   // şablon içindeki ${ } derinliği
   for (let i = 0; i < line.length; i += 1) {
     const ch = line[i];
-    if (ch === '\\' && depth > 0) { i += 1; continue; }
-    if (ch === '`') {
-      depth += (depth > 0 && brace === 0) ? -1 : 1;
-      if (depth === 0) out += '``';
+    if (!level.length) {
+      if (ch === '`') { level.push(0); continue; }
+      out += ch;
       continue;
     }
-    if (depth > 0) {
-      if (ch === '$' && line[i + 1] === '{') { brace += 1; i += 1; continue; }
-      if (ch === '}' && brace > 0) { brace -= 1; continue; }
+    const top = level.length - 1;
+    if (level[top] === 0) {                                  // şablonun METİN kısmı
+      if (ch === '\\') { i += 1; continue; }                 // kaçışlı karakter (ör. \`)
+      if (ch === '`') { level.pop(); if (!level.length) out += '``'; continue; }
+      // AYIRICI ŞART: `${a}/${b}` satırında aradaki metin atılınca iki ad birbirine yapışıp
+      // olmayan bir tanımlayıcı üretiyordu (`${ceyrekStr}/${t.yil}` → "ceyrekStrt"). Ölçümde
+      // görüldü (2026-09-19).
+      if (ch === '$' && line[i + 1] === '{') { level[top] = 1; i += 1; out += ' '; continue; }
+      continue;                                              // ekran metni: atılır
+    }
+    // `${ … }` içi: KOD. Taranması gerekir.
+    if (ch === '`') { level.push(0); continue; }             // iç içe şablon
+    if (ch === '{') { level[top] += 1; out += ch; continue; }
+    if (ch === '}') { level[top] -= 1; if (level[top] > 0) out += ch; continue; }
+    out += ch;
+  }
+  return { code: out, stack: level };
+}
+
+// SAF: satır yorumunu keser — ama ŞABLONUN İÇİNDEKİ `//` kesilmez.
+//
+// NEDEN AYRI (2026-09-19): şablon soyma yorumdan ÖNCE çalışıyordu. Bir yorumun içinde ters tırnak
+// geçerse (bu dosyanın kendi açıklamaları gibi) şablon durumu yanlış açılıyor ve SONRAKİ SATIRLARA
+// taşıyordu. Kendi kapımız yakaladı: bu dosya 14 yanlış alarm verdi.
+// Tersi de yanlıştır: `` `http://x` `` satırında yorum önce kesilirse şablon bozulur. Bu yüzden
+// karakter karakter yürünür ve `//` yalnız ŞABLON DIŞINDAYKEN kesilir.
+const REGEX_OPENERS = /[(,=:[!&|?>]/;
+
+function cutLineComment(line, stack = []) {
+  const level = [...stack];
+  let out = '';
+  let prev = '';
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (level.length) {                                  // şablonun içi: olduğu gibi aktarılır
+      const top = level.length - 1;
+      if (level[top] === 0) {
+        if (ch === '\\') { out += line.slice(i, i + 2); i += 1; continue; }
+        if (ch === '`') level.pop();
+        else if (ch === '$' && line[i + 1] === '{') { level[top] = 1; out += '${'; i += 1; continue; }
+      } else if (ch === "'" || ch === '"') {
+        // `${ x ? 'Türkçe metin' : '' }` — interpolasyon KOD bağlamıdır, dizgesi de soyulur.
+        // Aksi hâlde şablon içindeki dizge metni tanımlayıcı sanılır (2026-09-19 ölçümü: 28 bulgu).
+        let j = i + 1;
+        while (j < line.length && line[j] !== ch) j += (line[j] === '\\' ? 2 : 1);
+        // KAPANMAMIŞ tırnak dizge DEĞİLDİR — Türkçe kesme işaretidir ("%{pct}'si"). Satırın
+        // kalanını atmak gerçek adları da düşürür: ölçümde `eskiCariStr` böyle kayboldu.
+        if (j >= line.length) { out += ch; continue; }
+        out += ch + ch;
+        i = j;
+        continue;
+      } else if (ch === '`') level.push(0);
+      else if (ch === '{') level[top] += 1;
+      else if (ch === '}') level[top] -= 1;
+      out += ch;
       continue;
+    }
+    if (ch === '`') { level.push(0); out += ch; continue; }
+    if (ch === "'" || ch === '"') {
+      // DİZGE de bu yürüyüşte soyulur. Eskiden en başta düz bir değiştirmeyle soyuluyordu ve
+      // ŞABLONUN İÇİNDEKİ kesme işaretini de dizge sanıyordu: `${n}'inin VADESİ` yazan bir iç
+      // şablonda tırnak, iç şablonun ters tırnağını yutuyor ve durum bozuluyordu. Kendi
+      // kapımız yakaladı (`pending-measurements.js:94`, 2026-09-19).
+      let j = i + 1;
+      while (j < line.length && line[j] !== ch) j += (line[j] === '\\' ? 2 : 1);
+      if (j < line.length) { out += ch + ch; i = j; prev = ch; continue; }
+      // KAPANMAMIŞ tırnak dizge DEĞİLDİR — Türkçe kesme işareti olabilir ("%{pct}'si").
+      // Satırın kalanını atmak gerçek adları düşürür (ölçümde `eskiCariStr` böyle kayboldu).
+      out += ch;
+      continue;
+    }
+    if (ch === '/' && (line[i + 1] === '/' || line[i + 1] === '*')) return out;   // satır/blok yorumu
+    if (ch === '/' && REGEX_OPENERS.test(prev)) {
+      // DÜZENLİ İFADE GÖVDESİ atlanır. `[` … `]` içindeki `/` gövdeyi KAPATMAZ — eski dizge
+      // temelli kural bunu bilmiyordu ve `/`([^`\s]+)`/g` gibi bir gövdeyi yarıda kesiyordu.
+      let j = i + 1;
+      let inClass = false;
+      while (j < line.length) {
+        const c = line[j];
+        if (c === '\\') { j += 2; continue; }
+        if (inClass) { if (c === ']') inClass = false; j += 1; continue; }
+        if (c === '[') { inClass = true; j += 1; continue; }
+        if (c === '/') break;
+        j += 1;
+      }
+      if (j < line.length) {
+        out += '/re/';
+        i = j;
+        while (/[gimsuyd]/.test(line[i + 1] || '')) i += 1;
+        prev = '/';
+        continue;
+      }
     }
     out += ch;
+    if (!/\s/.test(ch)) prev = ch;
   }
   return out;
 }
@@ -104,7 +201,13 @@ function stripTemplates(line) {
 // SAF: kod satırından yorum ve dizge içeriklerini ATAR; geriye yalnız tanımlayıcı taşıyan metin kalır.
 // Satır bazlıdır (diff kipinde tam dosya elde yok). Bilinen sınır: çok satırlı blok yorumun
 // ortasındaki satırlar '*' ile başlamıyorsa taranabilir; bu yüzden '*' ile başlayan satır atılır.
-function codePart(line, sql) {
+// Eski imza (durumsuz): tek satırı kendi başına tarar.
+function codePart(line, sql, stack = []) {
+  return codePartAt(line, sql, stack).code;
+}
+
+// Durumu TAŞIYAN sürüm: { code, stack } döner. Çok satırlı şablonu doğru izlemek için gerekir.
+function codePartAt(line, sql, stack = []) {
   // CRLF SOYULUR — ÖNCE. Yorum soyma kuralları `.*$` ile biter; JavaScript'te `.` satır sonunu
   // (\r dahil) EŞLEŞTİRMEZ ve `$` dizgenin sonunu ister. Satır `\r` ile bitiyorsa `--.*$` ve
   // `//.*$` hiç eşleşmez, yani YORUM HİÇ SOYULMAZ ve içindeki Türkçe düzyazı tanımlayıcı
@@ -112,15 +215,28 @@ function codePart(line, sql) {
   // Ölçüldü (2026-09-19, 11 proje / 2.684 dosya): 26.060 bulgunun 9.938'i (%38,1) bu kaynaktan.
   // CI Linux'ta (LF) görünmüyordu; yalnız Windows çalışma kopyasında çıkıyordu.
   let s = String(line).replace(/\r+$/, '');
-  if (/^\s*\*/.test(s)) return ''; // blok yorumun gövde satırı
-  s = s.replace(/'(?:[^'\\]|\\.)*'/g, "''");          // tek tırnaklı dizge
+  // ŞABLONUN İÇİNDEYSEK yorum ve dizge kuralları geçerli değildir: orada `//` de `--` de
+  // ekran metninin parçasıdır, kod değil.
+  if (stack.length) {
+    const inside = stripTemplates(s, stack);
+    return { code: stripJsxText(inside.code), stack: inside.stack };
+  }
+  if (/^\s*\*/.test(s)) return { code: '', stack: [] }; // blok yorumun gövde satırı
   if (sql) {
+    s = s.replace(/'(?:[^'\\]|\\.)*'/g, "''");        // SQL dizgesi (SQL'de şablon yoktur)
     s = s.replace(/--.*$/, '');                        // SQL satır yorumu
     s = s.replace(/\/\*[\s\S]*?(\*\/|$)/g, ' ');
-    return s;
+    return { code: s, stack: [] };
   }
-  s = s.replace(/"(?:[^"\\]|\\.)*"/g, '""');           // çift tırnaklı dizge
-  s = stripTemplates(s);                               // şablon dizge (iç içe olanlar dahil)
+  // DİZGE, YORUM ve DÜZENLİ İFADE tek yürüyüşte soyulur. Eskiden üçü ayrı ayrı ve sabit sırayla
+  // değiştiriliyordu; her sıralama bir diğerini bozuyordu (üçü de 2026-09-19'da ölçüldü):
+  //   - tırnak önce soyulunca, şablon içindeki kesme işareti iç şablonu yutuyordu,
+  //   - şablon önce soyulunca, yorumdaki ters tırnak durumu açıyordu,
+  //   - düzenli ifade dizgeyle soyulunca, `[^/]` içindeki bölü gövdeyi erken kapatıyordu.
+  // Tek yürüyüş, hangi bağlamda olduğumuzu bildiği için sıralama sorusunu ortadan kaldırır.
+  s = cutLineComment(s, stack);
+  const tpl = stripTemplates(s, stack);                // şablon dizge (satırlar arası durum taşınır)
+  s = tpl.code;
   // Düzenli ifade (regex) gövdesi ekran yazısı taşıyabilir (testlerde getByText(/Ürün ekle/));
   // tanımlayıcı değildir. Bölme işaretiyle karışmasın diye yalnız açılış bağlamından sonra aranır.
   // KAÇIŞLI BÖLÜ gövdeyi kapatmaz. İlk sürüm gövdeyi `(?:[^/\n]|\.)+` diye yazmıştı; niyet
@@ -134,7 +250,7 @@ function codePart(line, sql) {
   s = s.replace(/([(,=:[!&|?>]\s*)\/(?:[^/\n\\]|\\.)+\/[gimsuyd]*/g, '$1/re/');
   s = s.replace(/\/\/.*$/, '');                        // satır yorumu
   s = s.replace(/\/\*[\s\S]*?(\*\/|$)/g, ' ');         // blok yorum (satır içi)
-  return stripJsxText(s);
+  return { code: stripJsxText(s), stack: tpl.stack };
 }
 
 // SAF: JSX/HTML etiketleri ARASINDAKİ yazıyı atar. Bu yazı kullanıcıya görünen Türkçe metindir,
@@ -252,8 +368,8 @@ function stripJsxText(line) {
 const IDENTIFIER = /[A-Za-z_$çğıöşüÇĞİÖŞÜ][A-Za-z0-9_$çğıöşüÇĞİÖŞÜ]*/g;
 
 // SAF: tek satırdaki kuralı bozan tanımlayıcılar → [{ ad, neden }]
-function lineFindings(line, words, sql = false) {
-  const code = codePart(line, sql);
+function lineFindings(line, words, sql = false, stack = []) {
+  const code = codePart(line, sql, stack);
   const out = [];
   const seen = new Set();
   for (const m of code.matchAll(IDENTIFIER)) {
@@ -264,6 +380,33 @@ function lineFindings(line, words, sql = false) {
     if (sorun) out.push(sorun);
   }
   return out;
+}
+
+// SAF: bir DOSYANIN tüm satırları — şablon durumu satırdan satıra taşınır.
+// Çok satırlı şablonun orta satırları ancak böyle doğru değerlendirilir (#76).
+function fileFindings(lines, words, sql = false) {
+  let stack = [];
+  const out = [];
+  lines.forEach((line, i) => {
+    const { code, stack: next } = codePartAt(line, sql, stack);
+    const seen = new Set();
+    for (const m of code.matchAll(IDENTIFIER)) {
+      const name = m[0];
+      if (seen.has(name)) continue;
+      seen.add(name);
+      const problem = identifierProblem(name, words);
+      if (problem) out.push({ line: i + 1, ...problem });
+    }
+    stack = next;
+  });
+  return out;
+}
+
+// SAF: dosyanın ilk `upto` satırından sonra şablon durumu ne? (diff kipinde bağlam kurar)
+function stackBefore(lines, upto, sql = false) {
+  let stack = [];
+  for (let i = 0; i < upto && i < lines.length; i += 1) stack = codePartAt(lines[i], sql, stack).stack;
+  return stack;
 }
 
 // SAF: dosya/klasör adı kuralı bozuyor mu? → [{ ad, neden }]
@@ -405,9 +548,22 @@ function scanDiff(root, taban) {
   const exception = readExceptions(root);
   const findings = [];
   const diff = gitOut(root, ['diff', '-U0', '--no-color', '--no-ext-diff', `${taban}...HEAD`]);
+  // ŞABLON BAĞLAMI: eklenen satır, çok satırlı bir şablonun ORTASINDA olabilir. Tek başına
+  // bakıldığında ekran metni kod sanılır (#76). Dosyanın o satıra kadarki hâli okunarak bağlam
+  // kurulur. Dosya okunamazsa eski davranışa düşülür — kapı yine çalışır, yalnız bağlamsız.
+  const fileLines = new Map();
+  const linesOf = (file) => {
+    if (!fileLines.has(file)) {
+      try { fileLines.set(file, fs.readFileSync(path.join(root, file), 'utf8').split(/\r?\n/)); } catch { fileLines.set(file, null); }
+    }
+    return fileLines.get(file);
+  };
   for (const { file, line, text } of addedLines(diff)) {
     if (!isScanned(file)) continue;
-    for (const b of lineFindings(text, words, SQL_EXT.test(file))) {
+    const sql = SQL_EXT.test(file);
+    const all = linesOf(file);
+    const stack = all ? stackBefore(all, line - 1, sql) : [];
+    for (const b of lineFindings(text, words, sql, stack)) {
       if (!isExcepted(b, file, exception)) findings.push({ file, line, ...b });
     }
   }
@@ -434,11 +590,10 @@ function scanAll(root) {
     let icerik;
     try { icerik = fs.readFileSync(path.join(root, file), 'utf8'); } catch { continue; }
     const sql = SQL_EXT.test(file);
-    icerik.split(/\r?\n/).forEach((line, i) => {
-      for (const b of lineFindings(line, words, sql)) {
-        if (!isExcepted(b, file, exception)) findings.push({ file, line: i + 1, ...b });
-      }
-    });
+    // Şablon durumu satırdan satıra taşınır: çok satırlı şablonun gövdesi ekran metnidir (#76).
+    for (const { line, ...rest } of fileFindings(icerik.split(/\r?\n/), words, sql)) {
+      if (!isExcepted(rest, file, exception)) findings.push({ file, line, ...rest });
+    }
   }
   return { findings, warnings: [...exception.warnings, ...unusedExceptions(exception)], fileCount: files.length };
 }
@@ -477,7 +632,7 @@ module.exports = {
   asciiFold, splitWords, stripJsxText, turkishWord, identifierProblem, codePart, lineFindings,
   pathFindings, readExceptions, addedLines, report, scanDiff, scanAll,
   familyExceptions, familyRoots, wordSet,
-  isScanned, isExcepted, unusedExceptions,
+  isScanned, isExcepted, unusedExceptions, codePartAt, fileFindings, stackBefore,
 };
 
 if (require.main === module) {
