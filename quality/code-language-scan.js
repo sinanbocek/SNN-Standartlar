@@ -302,12 +302,46 @@ function readExceptions(root) {
   for (const g of raw.paths || []) {
     if (!g || !g.path) continue;
     if (!g.reason) { warnings.push(`yol istisnası "${g.path}" gerekçesiz → sayılmadı`); continue; }
-    paths.push(new RegExp(`^${String(g.path).split('*').map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`));
+    paths.push({ glob: String(g.path), re: new RegExp(`^${String(g.path).split('*').map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`) });
   }
-  return { names, paths, warnings };
+  // `used`: hangi istisna GERÇEKTEN bir bulguyu susturdu? Eşleşmeyen istisna, yazarın
+  // "yazdım sandığı ama yazamadığı" istisnadır (SNN-Abacus-Core bildirimi #62, 2026-09-19).
+  return { names, paths, warnings, used: new Set() };
 }
 
-const isExcepted = (finding, yol, exception) => exception.names.has(asciiFold(finding.name)) || exception.paths.some((r) => r.test(yol));
+const isExcepted = (finding, yol, exception) => {
+  const name = asciiFold(finding.name);
+  if (exception.names.has(name)) {
+    if (exception.used) exception.used.add(`ad:${name}`);
+    return true;
+  }
+  // `p.re || p`: yol istisnası 2026-09-19'da `{glob, re}` biçimine geçti. Eski biçim (düz düzenli
+  // ifade) gelirse ÇÖKMEZ — bu işlev uyarı kipinden de çağrılıyor ve o her Edit'te çalışıyor.
+  const hit = exception.paths.find((p) => (p.re || p).test(yol));
+  if (!hit) return false;
+  if (exception.used) exception.used.add(`yol:${hit.glob || String(hit)}`);
+  return true;
+};
+
+// SAF: hiçbir bulguyla eşleşmemiş istisnalar → uyarı satırları.
+//
+// NEDEN (SNN-Abacus-Core bildirimi #62, 2026-09-19): proje istisnası TAM TANIMLAYICI adı bekler
+// (`PLAKA_HARFLERI`), ama standarttaki örnek KÖK gibi görünen bir kelime gösteriyordu (`plaka`).
+// Bildiren kişi örneği birebir izledi; dosya geçerli JSON, gerekçe dolu, tarayıcı sessiz —
+// ve istisna hiçbir şey yapmadı. Yanlış yazan kişi, önce/sonra sayıyı karşılaştırmadıkça
+// hatasını göremiyordu. Artık görüyor.
+function unusedExceptions(exception) {
+  const out = [];
+  for (const name of exception.names) {
+    if (exception.used.has(`ad:${name}`)) continue;
+    out.push(`istisna "${name}" hiçbir bulguyla eşleşmedi → TAM tanımlayıcı adı bekleniyor (ör. PLAKA_HARFLERI), kök (plaka) değil; ya da bu istisna artık gerekmiyor`);
+  }
+  for (const { glob } of exception.paths) {
+    if (exception.used.has(`yol:${glob}`)) continue;
+    out.push(`yol istisnası "${glob}" hiçbir bulguyla eşleşmedi → yol yanlış olabilir ya da artık gerekmiyor`);
+  }
+  return out;
+}
 
 // ─── Girdi kaynakları ───────────────────────────────────────────────────────
 const gitOut = (root, args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', maxBuffer: 1e9 });
@@ -384,7 +418,7 @@ function scanDiff(root, taban) {
       if (!isExcepted(b, file, exception)) findings.push({ file, line: 0, ...b });
     }
   }
-  return { findings, warnings: exception.warnings };
+  return { findings, warnings: [...exception.warnings, ...unusedExceptions(exception)] };
 }
 
 // Tam denetim: git'teki tüm kaynak ve SQL dosyaları
@@ -406,7 +440,7 @@ function scanAll(root) {
       }
     });
   }
-  return { findings, warnings: exception.warnings, fileCount: files.length };
+  return { findings, warnings: [...exception.warnings, ...unusedExceptions(exception)], fileCount: files.length };
 }
 
 // SAF: rapor metni
@@ -443,7 +477,7 @@ module.exports = {
   asciiFold, splitWords, stripJsxText, turkishWord, identifierProblem, codePart, lineFindings,
   pathFindings, readExceptions, addedLines, report, scanDiff, scanAll,
   familyExceptions, familyRoots, wordSet,
-  isScanned, isExcepted,
+  isScanned, isExcepted, unusedExceptions,
 };
 
 if (require.main === module) {

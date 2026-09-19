@@ -33,6 +33,26 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 
 ## Kararlar
 
+### 2026-09-19 · Proje istisnası sessizce ölü kalıyor — **KABUL**
+
+- **Kimden:** SNN-Abacus-Core oturumu (issue #62)
+- **Tür:** belge (bu türü de bildiren önerdi; listeye eklendi)
+- **Talep:** Standardın belgelediği örnek `{ "name": "plaka" }` biçiminde, yani **kök** gibi
+  görünüyor. Tarayıcı ise **tam tanımlayıcı** eşleştiriyor (`PLAKA_HARFLERI`). Bildiren kişi örneği
+  birebir izledi; dosya geçerli JSON, gerekçe dolu, tarayıcı sessiz — **ve istisna hiçbir şey yapmadı.**
+- **Ölçüm (bildirimden):** istisna dosyası yokken 43 ayrı ad; `{ "name": "plaka" }` yazıldıktan
+  sonra **yine 43**. Beş adı tam tanımlayıcı olarak yazınca 38'e düştü.
+- **Tuzağın kaynağı:** iki dosya, aynı alan adı, farklı anlam. Aile dosyası **kök** listeler ve
+  bunu kendi içinde yazar; proje dosyası **tam ad** ister. Belgelenen örnek kök gibi görünen bir
+  kelime taşıyordu.
+- **Karar:** **Kabul.** Tam ad kuralı korundu (proje istisnası dar olmalı), ama iki şey düzeltildi:
+  1. **Belgedeki örnek** gerçek biçimi gösteriyor ve iki dosyanın farkı açıkça yazıldı.
+  2. **Sessizlik bitti:** hiçbir bulguyla eşleşmeyen istisna artık uyarı veriyor ve doğru biçimi
+     söylüyor. Bulgu sayısı değişmedi (aile genelinde 0 düşüş / 0 artış) — yalnız uyarı eklendi.
+- **Tüketici doğru yaptı:** "sessiz kalması en pahalı kısım" diyerek asıl zararı adlandırdı ve
+  bunu ancak **önce/sonra sayıyı karşılaştırdığı için** fark ettiğini yazdı. Susturma talebiyle
+  karıştırılmasın diye 2026-09-18'deki reddedilen kaydı okuyup farkını da açıkladı.
+
 ### 2026-09-19 · JSX ekran yazısı tanımlayıcı sanılıyor — **KABUL** (iki bildirim)
 
 - **Kimden:** GHS-Panel oturumu (#64) ve SNN-Proje-ve-Nakit-Akis oturumu (#28)

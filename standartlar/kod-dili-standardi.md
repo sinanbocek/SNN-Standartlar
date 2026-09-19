@@ -113,12 +113,22 @@ node quality/test/code-language-scan.test.js
 
 - Kelime listesi veri dosyasındadır: `quality/data/turkish-words.json`. Ekleme ölçütü: kelime İngilizce bir sözcükle çakışmamalı. (`plan`, `not`, `para`, `son` gibi çakışanlar bilerek **listede değildir**.)
 - Liste, tanımlayıcının **parçalarıyla** karşılaştırılır (`gunSonuKaydi` → `gun`, `sonu`, `kaydi`); metin içinde arama yapılmaz. Dar bir çekim eki toleransı vardır (`zamani` → `zaman`).
-- Proje istisnaları kökteki `.snn-kod-dili.json` dosyasındadır. **Gerekçesiz istisna sayılmaz** ve uyarı üretir:
+- Proje istisnaları kökteki `.snn-kod-dili.json` dosyasındadır. **Gerekçesiz istisna sayılmaz** ve uyarı üretir.
+
+> **`name` alanına TAM TANIMLAYICI adı yazılır, kök değil.** Aile dosyası
+> (`quality/data/family-exceptions.json`) **kök** listeler; proje dosyası **tam ad** ister.
+> İkisi aynı alan adını kullanır, farklı şey bekler.
+>
+> 2026-09-19'da bu belgedeki örnek kök gibi görünen bir kelime (`plaka`) gösteriyordu; bir proje
+> örneği birebir izledi ve istisna **hiçbir şey yapmadı** — dosya geçerli JSON, gerekçe dolu,
+> tarayıcı sessiz. Örnek düzeltildi ve tarayıcı artık **hiçbir bulguyla eşleşmeyen istisnayı
+> uyarıyor** (SNN-Abacus-Core bildirimi #62).
 
 ```json
 {
   "exceptions": [
-    { "name": "plaka", "reason": "Türkiye tescil plakası; 'plate' kavramı taşımıyor (TB-012)" }
+    { "name": "PLAKA_HARFLERI", "reason": "Türkiye tescil plakası; 'plate' kavramı taşımıyor (TB-012)" },
+    { "name": "PLAKA_AYRACLARI", "reason": "aynı sabit kümesi (TB-012)" }
   ],
   "paths": [
     { "path": "supabase/migrations/2026*", "reason": "canlıya uygulanmış migration değişmez (AI-RULES §5.6)" }
