@@ -21,6 +21,7 @@ const TAM = {
   guideNames: ['AI-RULES.md'],
   guideText: 'Aile standartları: sinanbocek/SNN-Standartlar deposuna bakılır.',
   exemptRaw: null,
+  findings: 382, // işi olan ve kaydını açmış bir proje
 };
 const ids = (state, ex) => c.evaluate(state, ex).gaps.map((g) => g.id);
 
@@ -58,6 +59,21 @@ const CAGRILAMAZ = { ...TAM, workflowText: [] };
 expect('tetiklenmeyen turnike eksik sayılır', ids(CAGRILAMAZ).includes('kod-dili-akisi'), true);
 // Turnike başka bir akış dosyasının içinden de çalışabilir (bu depoda test.yml böyle yapar).
 expect('taramayı çağıran başka akış sayılır', ids({ ...TAM, workflowText: ['on:\n  pull_request:\njobs:\n  x:\n    run: node quality/code-language-scan.js --diff'] }).includes('kod-dili-akisi'), false);
+
+console.log('— temiz projeden kayıt istenmez');
+// 2026-09-19: ilk surum her projeden "kod dili kaydi" istiyordu. Naturapan'in 0 bulgusu
+// var; olmayan bir is icin kayit istemek yanlis alarmdir ve kapinin guvenilirligini oldurur.
+// Tarama yapilmamasinin gerekcesi "pahali" varsayimiydi; olcum curuttu (en kotu 445 ms).
+const TEMIZ = { ...TAM, ledgerText: '## TB-001 · başka iş', findings: 0 };
+expect('0 bulgulu projeden kayıt istenmez', ids(TEMIZ).includes('kod-dili-kaydi'), false);
+expect('bulgu varsa kayıt istenir', ids({ ...TEMIZ, findings: 382 }), ['kod-dili-kaydi']);
+// Tarama calismazsa (null) BILMIYORUZ demektir; bilmiyorken dirdir edilmez.
+expect('tarama çalışmazsa istenmez', ids({ ...TEMIZ, findings: null }).includes('kod-dili-kaydi'), false);
+// Kayit varsa bulgu sayisi ne olursa olsun eksik degildir.
+expect('kayıt varsa eksik yok', ids({ ...TAM, findings: 9999 }).includes('kod-dili-kaydi'), false);
+// Eksik mesaji bulgu sayisini gosterir: "kac is var" sorusu acilista cevaplanir.
+const gapDetail = c.evaluate({ ...TEMIZ, findings: 1841 }).gaps.find((g) => g.id === 'kod-dili-kaydi');
+expect('mesajda bulgu sayısı var', gapDetail.detail.includes('1.841'), true);
 
 console.log('— aile dışı depo hiç ölçülmez');
 // 2026-09-19: yerelde duran her klasor aile projesi degil. ihale-mcp ucuncu tarafin
