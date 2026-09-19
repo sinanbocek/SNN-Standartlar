@@ -104,6 +104,48 @@ expect('bozuk JSON iş durdurmaz', c.exemptions('{bozuk').ids.size, 0);
 expect('bozuk JSON uyarır', c.exemptions('{bozuk').warnings.length, 1);
 expect('dosya yoksa sessiz', c.exemptions(null).warnings.length, 0);
 
+console.log('— ANA DALDAN okur, çalışma klasöründen değil');
+// 2026-09-19: ilk sürüm çalışma klasörünü okuyordu. Naturapan'a "sır tarama kapısı yok",
+// Yönetici-Özeti'ne "kütüğü senkronlanmıyor" dedi — İKİSİ DE YANLIŞTI; dosyalar ana dalda
+// vardı, yerel kopyalar 3 ve 7 commit gerideydi. Üç proje de kendi çalışma dalındaydı.
+{
+  const path = require('path');
+  const fs2 = require('fs');
+  const os2 = require('os');
+  const cp = require('child_process');
+  const repo = fs2.mkdtempSync(path.join(os2.tmpdir(), 'snn-uyum-'));
+  const git = (...a) => cp.execFileSync('git', ['-C', repo, ...a], { stdio: ['ignore', 'pipe', 'ignore'] });
+  git('init', '-q', '-b', 'main');
+  fs2.mkdirSync(path.join(repo, '.github', 'workflows'), { recursive: true });
+  fs2.writeFileSync(path.join(repo, '.github', 'workflows', 'anahtar-tarama.yml'), 'on:\n  pull_request:\njobs:\n  x:\n    uses: a/b/.github/workflows/anahtar-tarama.yml@main');
+  fs2.writeFileSync(path.join(repo, 'AI-RULES.md'), 'Aile standartları: sinanbocek/SNN-Standartlar');
+  git('add', '.github/workflows/anahtar-tarama.yml', 'AI-RULES.md');
+  git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-q', '-m', 'ilk');
+  // "origin/main" taklidi: uzak dal olarak aynı commit'i işaretle
+  git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+
+  expect('uzak ana dal bulunur', c.hasMain(repo), true);
+  // KÖK için `origin/main:.` GEÇERSİZDİR; ilk sürüm onu kullandı ve rehber listesi hep
+  // boş döndü → üç projeye yanlış "rehber yok" dedi.
+  expect('kök listesi boş dönmez', c.listAt(repo, '.', true).includes('AI-RULES.md'), true);
+  expect('alt klasör listesi okunur', c.listAt(repo, '.github/workflows', true), ['anahtar-tarama.yml']);
+  expect('ana daldaki dosya okunur', c.readAt(repo, 'AI-RULES.md', true).includes('SNN-Standartlar'), true);
+  expect('olmayan dosya boş döner', c.readAt(repo, 'yok.md', true), '');
+
+  // Çalışma klasöründeki dosya ana dalda YOKSA sayılmaz: kapı main'i ölçer.
+  fs2.writeFileSync(path.join(repo, '.github', 'workflows', 'kod-dili.yml'), 'on:\n  pull_request:\njobs:\n  x:\n    uses: a/b/.github/workflows/kod-dili.yml@main');
+  expect('commit edilmemiş akış ana dalda görünmez', c.listAt(repo, '.github/workflows', true), ['anahtar-tarama.yml']);
+  expect('çalışma klasöründe ise görünür', c.listAt(repo, '.github/workflows', false).sort(), ['anahtar-tarama.yml', 'kod-dili.yml']);
+
+  const state = c.readState(repo);
+  expect('durum ana daldan okundu', state.fromMain, true);
+  expect('ana daldaki akış sayılır', state.workflows, ['anahtar-tarama.yml']);
+  expect('anahtar taraması eksik değil', ids(state).includes('anahtar-tarama'), false);
+  expect('rehber atfı eksik değil', ids(state).includes('rehber-atfi'), false);
+
+  fs2.rmSync(repo, { recursive: true, force: true });
+}
+
 console.log('— özet metni');
 expect('eksik yoksa satır yok', c.summary({ gaps: [], warnings: [] }), []);
 const uc = c.evaluate({ ...TAM, workflowText: [], hasLedger: false, ledgerText: '', guideNames: [], guideText: '' });

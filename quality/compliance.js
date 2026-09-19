@@ -60,18 +60,61 @@ function readRemote(root) {
 }
 
 // SAF olmayan: diskten okunur, evaluate()'e veri olarak verilir.
+// ANA DALDAN OKUMA (2026-09-19'da ölçüldü — bu ölçer önce yanlış yapıyordu).
+//
+// İlk sürüm çalışma klasörünü okuyordu. Sonuç: Naturapan'a "sır tarama kapısı yok",
+// Yönetici-Özeti'ne "kütüğü hiç issue'ya senkronlanmıyor" dedi. İkisi de YANLIŞTI —
+// dosyalar ana dalda vardı, yerel kopyalar 3 ve 7 commit gerideydi. Üstelik projelerin
+// üçü o an kendi çalışma dallarındaydı, yani klasörün içeriği main'i hiç göstermiyordu.
+//
+// Bu ders göç notunun 11.0 bölümünde 2026-09-15'te zaten yazılıydı:
+// "rapor ve denetimler GitHub'dan okumalı, yerel klasörden değil". Yazılı kural tutmadı.
+//
+// SINIR: `origin/main` en son ÇEKİLDİĞİ andaki hâlidir; ölçüm burada ağa çıkmaz
+// (oturum açılışı bütçesi). Uzak dal yoksa çalışma klasörüne düşülür.
+const gitOut = (root, args) => {
+  try {
+    return require('child_process').execFileSync('git', ['-C', root, ...args],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 5000 }).trim();
+  } catch { return null; }
+};
+
+const hasMain = (root) => gitOut(root, ['rev-parse', '--verify', '--quiet', 'origin/main']) !== null;
+
+// Ana daldaki bir klasörün dosya adları (yoksa çalışma klasörü)
+// KÖK için `origin/main:.` GEÇERSİZDİR ("Not a valid object name"); kökte `origin/main:`
+// kullanılır. İlk sürüm `:.` yazdı, rehber listesi hep boş döndü ve üç projeye yanlış
+// "rehber yok" dedi — 2026-09-19'da ölçüldü.
+function listAt(root, dir, fromMain) {
+  if (!fromMain) return listOr(path.join(root, dir));
+  const ref = dir === '.' || dir === '' ? 'origin/main:' : `origin/main:${dir}`;
+  const out = gitOut(root, ['ls-tree', '--name-only', ref]);
+  return out === null ? [] : out.split('\n').filter(Boolean);
+}
+
+// Ana daldaki bir dosyanın içeriği (yoksa çalışma klasörü)
+function readAt(root, file, fromMain) {
+  if (!fromMain) return readFileOr(path.join(root, file));
+  const out = gitOut(root, ['show', `origin/main:${file}`]);
+  return out === null ? '' : out;
+}
+
 function readState(root) {
-  const guideNames = listOr(root).filter((f) => /^(CLAUDE|AI-RULES)\.md$/i.test(f));
+  const fromMain = hasMain(root);
+  const WF = '.github/workflows';
+  const workflows = listAt(root, WF, fromMain);
+  const guideNames = (fromMain ? listAt(root, '.', fromMain) : listOr(root))
+    .filter((f) => /^(CLAUDE|AI-RULES)\.md$/i.test(f));
+  const ledgerText = readAt(root, 'docs/teknik-borc.md', fromMain);
   return {
     repo: repoSlug(readRemote(root)),
-    workflows: listOr(path.join(root, '.github', 'workflows')),
-    workflowText: listOr(path.join(root, '.github', 'workflows'))
-      .map((f) => readFileOr(path.join(root, '.github', 'workflows', f)))
-      .filter((t) => isTriggered(t)),
-    hasLedger: fs.existsSync(path.join(root, 'docs', 'teknik-borc.md')),
-    ledgerText: readFileOr(path.join(root, 'docs', 'teknik-borc.md')),
+    fromMain,
+    workflows,
+    workflowText: workflows.map((f) => readAt(root, `${WF}/${f}`, fromMain)).filter((t) => isTriggered(t)),
+    hasLedger: fromMain ? ledgerText !== '' : fs.existsSync(path.join(root, 'docs', 'teknik-borc.md')),
+    ledgerText,
     guideNames,
-    guideText: guideNames.map((f) => readFileOr(path.join(root, f))).join('\n'),
+    guideText: guideNames.map((f) => readAt(root, f, fromMain)).join('\n'),
     exemptRaw: readFileOr(path.join(root, EXEMPT_FILE), null),
     findings: countFindings(root),
   };
@@ -212,4 +255,4 @@ function check(root) {
   return evaluate(readState(root));
 }
 
-module.exports = { CHECKS, EXEMPT_FILE, isTriggered, runsGate, repoSlug, excludedRepos, readState, exemptions, evaluate, summary, check, MAX_SHOWN };
+module.exports = { CHECKS, EXEMPT_FILE, isTriggered, runsGate, repoSlug, excludedRepos, listAt, readAt, hasMain, readState, exemptions, evaluate, summary, check, MAX_SHOWN };
