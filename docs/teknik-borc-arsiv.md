@@ -6,6 +6,65 @@
 
 ## Kapanan Kalemler
 
+### TB-006 — `GOC-NOTU.md` hiçbir depoda sürümlenmiyor
+- **Tespit Tarihi:** 2026-09-19 (dayanıklılık araştırması)
+- **Kapanış:** 2026-09-19 — TB-006 kapandı. Karar: **belge yayımlanmadı**; karar değeri taşıyan kısmı ayıklanıp `docs/degerlendirilen-kalemler.md` olarak depoya alındı.
+- **Öncelik (kapanışta):** P2 (Planlı)
+
+#### 🟢 Sade Anlatım
+- **Sorun ne?** Kancalar ve beceriler artık depoda. Ama sistemin nasıl kurulduğunu anlatan tek tam belge (`GOC-NOTU.md`, 39 KB) hâlâ yalnız bu bilgisayarda. Bilgisayar giderse o belge de gider.
+- **Benzetme:** Binanın tesisat planı tek nüsha ve kapıcının çekmecesinde duruyor.
+- **Çözülmezse ne olur?** Sistem çalışmaya devam eder. Ama ikinci bir bilgisayara kurmak ya da bir arızadan sonra toparlamak, tarifi olmayan bir işe dönüşür.
+- **Senden beklenen karar:** Yok. Proje sahibi kararı devretti (2026-09-19: *"risk ve sorumluluk sende"*); karar ölçümle verildi ve aşağıda gerekçesiyle yazıldı.
+
+#### 🔧 Teknik Detay
+- **Açıklama:** `GOC-NOTU.md` bilerek git dışı bırakılmış (`.git/info/exclude`). `~/.claude/standartlar/teknik-borc-standardi.md` yönlendirici dosyası da sürümsüz.
+- **2026-09-19 · Beceri kısmı KAPANDI (PR #57).** Dört beceri depoya alındı (`borclar`, `borc-ekle`, `proje-kur`, yeni `standart-talep`) ve `setup/setup-machine.js` kapsamına girdi. `archify` üçüncü tarafındır, kapsam dışı — silme yalnız bizim beceri klasörlerimizin içinde yapılır. Sürümsüzlüğün bedeli ölçüldü: `borclar` ve `proje-kur` **çalışmıyordu**, yeniden adlandırılmış betikleri çağırıyorlardı; kimse fark etmemişti çünkü beceriler hiçbir testin kapsamında değildi.
+- **Etki:** Makine kaybı ya da ikinci makine kurulumu.
+- **Çözüm yönü:** `GOC-NOTU.md`'nin makine kurulumu bölümü zaten `docs/makine-kurulumu.md` olarak ayrıldı. Kalanı için: sır taraması (`node quality/secret-scan.js`) çalıştırılır, kişisel/ortam bilgisi ayıklanır, sonra depoya konur.
+- **Neden yayımlanmadı:** aşağıdaki dört ölçüm.
+- **Bağlı kalemler:** TB-004 (aynı makine paketi).
+
+#### 📏 Karar ölçümü (2026-09-19)
+
+Belge tarandı ve dört engel çıktı. İlk üçü ayıklanabilirdi; **dördüncüsü ayıklamayla çözülmez.**
+
+| Bulgu | Adet | Değerlendirme |
+|---|---|---|
+| Sır (anahtar/parola) | **0** | `secret-scan` temiz |
+| Ev klasörü yolu · makine adı | 11 + 3 satır | Ayıklanabilir (`<ev>` deseni becerilerde zaten kullanılıyor) |
+| Kişisel e-posta | 2 satır | Ayıklanabilir |
+| **Eskimiş yol atfı** | **22 atıf** | `ortak.js`, `kurulum/proje-kur.js`, `borc-senkron`, `kalite/`, `cekirdek/`… hepsi TB-001 göçünde yeniden adlandırıldı |
+| **Depoların güvenlik duruşu** | 1 satır | *Hangi üç depoda yazılı erişim anahtarı olduğunu* söylüyor |
+| Üçüncü taraf hesabın deposuna ait kod kalitesi ve açık kütüphane bilgisi | birkaç satır | Bizim açıklayacağımız bilgi değil |
+
+**Belirleyici iki gerekçe:**
+
+1. **Güvenlik duruşu yayımlanmaz.** "Şu üç depoda yazılı erişim anahtarı var" cümlesi, herkese
+   açık bir depoda saldırgana verilmiş bir yol haritasıdır. Aynı şey üçüncü taraf hesabın
+   deposuna ait açık kütüphane bilgisi için de geçerlidir: o bilgi bizim değildir.
+2. **Eskimiş belge yayımlamak zararlıdır.** 22 atıf bugün yanlış yolları gösteriyor. Bu maliyet
+   varsayım değil, **ölçülmüş**: `borclar` ve `proje-kur` becerileri tam olarak eskimiş yol
+   çağırdıkları için sessizce bozulmuştu (TB-006'nın beceri kısmı, PR #57).
+
+#### ✅ Borcun aslı nasıl kapandı
+
+Borç "belge yayımlansın" değil, **"dayanıklı bilgi hiçbir depoda yok"** idi. O bilgi artık depoda:
+
+| Belgenin bölümü | Nereye gitti |
+|---|---|
+| Makine kurulumu (§3.3, §7) | `docs/makine-kurulumu.md` (PR #47) |
+| Bekçi ve beceri kodu | `hooks/`, `skills/` (PR #47, #57) |
+| Öğrenilen dersler (§6) | `CLAUDE.md` → "Bilinen tuzaklar" |
+| Eksik rehber (§8) | `CLAUDE.md` yazıldı (TB-005) |
+| **Değerlendirilecek 5 kalem + ölçümleri (§9)** | **`docs/degerlendirilen-kalemler.md`** ← bu kayıtla |
+| Tarihli oturum devri (§4, §5, §10, §11) | Yayımlanmadı — o günün anlık durumu, bugün geçersiz |
+
+`GOC-NOTU.md` makinede kalır: tarihli bir çalışma notudur, kalıcı kaynak değildir.
+Kalıcı olması gereken her şey artık sürümlü.
+
+---
+
 ### TB-007 — Türkçe çekim eki + İngilizce gövde tarayıcıdan kaçıyor
 - **Tespit Tarihi:** 2026-09-19 (31 eksik kök eklenirken)
 - **Kapanış:** 2026-09-19 — TB-007 ölçüldü ve önerilen çözüm **REDDEDİLDİ**; ölçüm sırasında tarayıcıda iki gerçek kusur bulundu ve düzeltildi.
@@ -42,8 +101,10 @@ TB-001 göçünde İngilizceye taşınmıştı. Kayıt, örneklerin hâlâ var o
 #### 🔎 Ölçümün ortaya çıkardığı iki gerçek kusur
 
 **1. CRLF satır sonu yorum soymayı tamamen devre dışı bırakıyordu.**
-Yorum soyma kuralları `--.*$` ve `//.*$` biçiminde. JavaScript'te `.` satır sonunu (`` dahil)
-eşleştirmez ve `$` dizgenin sonunu ister. Satır `` ile bitince kural **hiç eşleşmiyor**, yorum
+Yorum soyma kuralları `--.*$` ve `//.*$` biçiminde. JavaScript'te `.` satır sonunu (`
+` dahil)
+eşleştirmez ve `$` dizgenin sonunu ister. Satır `
+` ile bitince kural **hiç eşleşmiyor**, yorum
 soyulmuyor ve içindeki Türkçe düzyazı tanımlayıcı sanılıyordu.
 
 | | |
