@@ -36,7 +36,10 @@ function measureAll(baseDir, scanner, projects = readList()) {
     if (!fs.existsSync(path.join(dir, '.git'))) { rows.push({ dir: p.dir, missing: true }); continue; }
     try {
       const r = scanner.scanAll(dir);
-      rows.push({ dir: p.dir, findings: r.findings.length, names: new Set(r.findings.map((f) => f.name)).size });
+      // SQL ayrı sayılır: veritabanı adları DIŞA AÇIK arayüzdür, kırıcı sürüm planı ister.
+      // Kod içi adlar proje içinde kalır ve tek PR'da düzelebilir; planlama farkı buradan çıkar.
+      const sql = r.findings.filter((f) => /\.sql$/i.test(f.file)).length;
+      rows.push({ dir: p.dir, findings: r.findings.length, sql, names: new Set(r.findings.map((f) => f.name)).size });
     } catch (e) {
       rows.push({ dir: p.dir, error: e.message.split('\n')[0] });
     }
@@ -72,8 +75,8 @@ function commentBody(rows, { changed = true } = {}) {
     lines.push('');
   }
   const hasDelta = rows.some((r) => r.delta !== null && r.delta !== undefined);
-  lines.push(hasDelta ? '| Proje | Önce | Sonra | Fark | Ayrı ad |' : '| Proje | Bulgu | Ayrı ad |');
-  lines.push(hasDelta ? '|---|---:|---:|---:|---:|' : '|---|---:|---:|');
+  lines.push(hasDelta ? '| Proje | Önce | Sonra | Fark | Ayrı ad | SQL |' : '| Proje | Bulgu | Ayrı ad | SQL |');
+  lines.push(hasDelta ? '|---|---:|---:|---:|---:|---:|' : '|---|---:|---:|---:|');
   let sumBefore = 0;
   let sumAfter = 0;
   for (const r of rows) {
@@ -83,12 +86,12 @@ function commentBody(rows, { changed = true } = {}) {
     if (typeof r.before === 'number') sumBefore += r.before;
     const d = r.delta === null || r.delta === undefined ? '' : (r.delta === 0 ? '0' : (r.delta > 0 ? `+${fmt(r.delta)}` : fmt(r.delta)));
     lines.push(hasDelta
-      ? `| ${r.dir} | ${fmt(r.before)} | ${fmt(r.findings)} | ${d} | ${fmt(r.names)} |`
-      : `| ${r.dir} | ${fmt(r.findings)} | ${fmt(r.names)} |`);
+      ? `| ${r.dir} | ${fmt(r.before)} | ${fmt(r.findings)} | ${d} | ${fmt(r.names)} | ${r.sql ? fmt(r.sql) : '—'} |`
+      : `| ${r.dir} | ${fmt(r.findings)} | ${fmt(r.names)} | ${r.sql ? fmt(r.sql) : '—'} |`);
   }
   if (hasDelta) {
     const total = sumAfter - sumBefore;
-    lines.push(`| **Toplam** | **${fmt(sumBefore)}** | **${fmt(sumAfter)}** | **${total > 0 ? '+' : ''}${fmt(total)}** | |`);
+    lines.push(`| **Toplam** | **${fmt(sumBefore)}** | **${fmt(sumAfter)}** | **${total > 0 ? '+' : ''}${fmt(total)}** | | |`);
   }
   lines.push('');
   lines.push('Bu ölçüm **PR\'ı kırmaz**. Sayının artması çoğu zaman doğrudur (eksik bir kök eklenince artar).');

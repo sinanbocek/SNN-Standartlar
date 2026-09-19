@@ -48,6 +48,14 @@ const duz = m.commentBody(m.compare(SONRA), { changed: false });
 expect('fark yoksa sade tablo', duz.includes('| Fark |'), false);
 expect('tarayıcı değişmediğini söyler', duz.includes('tarayıcıyı değiştirmedi'), true);
 
+console.log('— SQL sütunu');
+// SQL ayrı sayılır: veritabanı adları dışa açık arayüzdür, kırıcı sürüm planı ister.
+// Kod içi adlar proje içinde kalır; planlama farkı buradan çıkar.
+const sqlText = m.commentBody(m.compare([{ dir: 'A', findings: 300, sql: 243, names: 94 }]));
+expect('SQL sütunu başlıkta', sqlText.includes('| SQL |'), true);
+expect('SQL sayısı yazılır', sqlText.includes('243'), true);
+expect('SQL yoksa tire', m.commentBody(m.compare([{ dir: 'B', findings: 5, sql: 0, names: 2 }])).includes('| — |'), true);
+
 console.log('— hatalı satırlar tabloyu bozmaz');
 const bozuk = m.commentBody(m.compare([{ dir: 'X', missing: true }, { dir: 'Y', error: 'izin yok' }, { dir: 'Z', findings: 3, names: 1 }]));
 expect('klonlanamayan görünür', bozuk.includes('klonlanamadı'), true);
