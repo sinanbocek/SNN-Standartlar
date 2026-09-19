@@ -360,6 +360,7 @@ module.exports = {
   asciiFold, splitWords, stripJsxText, turkishWord, identifierProblem, codePart, lineFindings,
   pathFindings, readExceptions, addedLines, report, scanDiff, scanAll,
   familyExceptions, familyRoots, wordSet,
+  isScanned, isExcepted,
 };
 
 if (require.main === module) {

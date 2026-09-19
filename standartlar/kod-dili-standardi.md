@@ -86,6 +86,7 @@ Her projenin `AI-RULES.md` / `CLAUDE.md` dosyası bu kurala **atıf yapar**, kur
 |---|---|---|
 | **Tarayıcı** | `quality/code-language-scan.js` | Kaynak dosyalardaki tanımlayıcıları ve `.sql` dosyalarındaki tablo/sütun adlarını tarar. Türkçe harf (`ç ğ ı ö ş ü`) içeren ya da kelime listesinde geçen adları raporlar. Yorumlar, dizgeler ve belgeler **taranmaz**. |
 | **GitHub akışı** | `.github/workflows/kod-dili.yml` (görevli) + `ornek/kod-dili.yml` (projeye kopyalanan tek dosya) | Her PR'da ve main gönderiminde **eklenen satırları** tarar; ihlalde kırılır. |
+| **Uyarı kipi (yazma anı)** | `quality/code-language-warn.js` + `guard-code-language` bekçisi | Ajan bir kaynak dosyaya Türkçe tanımlayıcı **yazarken** not düşer. **Engellemez.** Yalnız yeni yazılan metni denetler; dosyanın geri kalanını değil. Tüm projelerde çalışır, kurulum gerekmez. |
 
 ### Kullanım
 
@@ -178,10 +179,26 @@ Liste sonludur; Türkçe harf taşımayan bir kök (ör. `kasa`, `kur`, `hedef`)
 
 **Neden tek kaynak:** kök listesi projeye göre değişirse aynı ad bir projede geçer, diğerinde kalır; "aile standardı" olmaktan çıkar.
 
+
+### Uyarı kipi — neden engel değil
+
+Kapı 2026-09-19'da kurulduğunda dört projede altı ajan çalışıyordu. Yazma anında engelleyen bir kapı, yarım kalmış bir işin ortasında açılırsa üç zarar üretir:
+
+1. Yeni dosyalar engellenir, eskiler kalır → **yarısı bir dilde, yarısı ötekinde** kod.
+2. Ajan neden engellendiğini anlamaz, aynı yazmayı birkaç kez dener.
+3. Pes edip adları toplu değiştirir → geçmiş temizliğini projenin kendi kütüğünde yapma kuralı istemeden çiğnenir.
+
+Bu yüzden önce **ölçülür**: bir hafta boyunca kaç uyarı çıktığı ve kaçının yanlış alarm olduğu görülür, sonra engele çevrilir. Yanlış alarm PR'da can sıkar; yazma anında **işi durdurur**.
+
+**Bekçi asla `allow` döndürmez.** Uyarı vermek için izin kararı döndürmek, normalde onay soracak yazmaları da sessizce onaylardı; uyarı kipi güvenliği gevşetmez. Kural dosyası yüklenemezse bekçi sessizce çekilir — bu yalnız bir uyarı katmanıdır, iş durdurmaz.
+
+**Uyarı mesajı ne söyler:** hangi adlar, hangi kök, engel olmadığı, geçmişi toplu değiştirmemesi ve yanlış alarmın `.snn-kod-dili.json` ile susturulmayacağı.
+
 ### Bilinen sınırlar (ölçülmüştür, gizlenmez)
 
 - Tarayıcı **ayrıştırıcı (parser) değildir**, satır bazlı çalışır. Yorum, dizge, JSX/HTML yazısı ve düzenli ifade gövdesi satır bazında atılır; blok yorumun `*` ile başlamayan gövde satırları ve çok satırlı şablon dizgelerin ortası taranabilir. Kalibrasyon (2026-09-18, 10 proje): yanlış alarm düzeltmeleriyle Portföy 3.780 → 922, GHS 3.127 → 697 bulguya indi.
 - Kelime listesi sonludur: listede olmayan bir Türkçe kelime (ör. `nobet`) Türkçe harf içermiyorsa kaçar. Kaçan kelime listeye eklenerek kapatılır.
+- Tanımlayıcı **rakamda bölünmez**: `satir0`, `kayit2` gibi adlar kelime listesine takılmaz (`splitWords` yalnız camelCase ve alt çizgide böler). 2026-09-19'da uyarı kipi testi yazılırken ölçüldü. Düzeltilmesi tüm projelerin sayılarını değiştireceği için ayrı ele alınır.
 - Tarayıcı **niyet okumaz**: `data` gibi İngilizce ama anlamsız adları yakalamaz. Onlar kod incelemesinin işidir.
 
 ## Kontrol listesi maddesi
