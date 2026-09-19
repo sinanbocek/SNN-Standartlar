@@ -63,6 +63,39 @@ function write(file, sessions) {
   }
 }
 
+// SAF: bir buluşma kaydı → günlüğe yazılacak satır.
+//
+// NEDEN GÜNLÜK VAR (2026-09-19): TB-002 "bir hafta defter verisi toplansın" diyordu, ama defter
+// YALNIZ ŞU ANKİ oturumları tutuyor — `upsert` 2 saatten eski kaydı siliyor. Yani beklenen veri
+// hiçbir zaman gelmeyecekti. Proje sahibi "TB-002 neyi bekliyor?" diye sorunca ölçüldü ve
+// görüldü. Kayıt tutulmayan bir ölçüm, ölçüm değildir.
+//
+// Günlük DAR: yalnız "aynı projede ikinci bir oturum görüldü" olayı, dallarıyla. Dosya adı,
+// komut, içerik yazılmaz.
+const meetingLine = (root, branch, list, now = Date.now()) => JSON.stringify({
+  at: new Date(now).toISOString(),
+  project: String(root).replace(/[\\/]+$/, '').split(/[\\/]/).pop(),
+  branch: branch || null,
+  others: list.map((e) => e.branch || null),
+  sameBranch: list.some((e) => e.branch && e.branch === branch),
+});
+
+// Buluşma günlüğü: her satır bir olay. Dosya sınırı aşılırsa yazmayı bırakır (disk şişmez).
+const MEETING_LOG = '_cakisma-gunlugu.jsonl';
+const MEETING_LOG_MAX = 512 * 1024;
+
+function logMeeting({ dir, root, branch, list, now = Date.now() }) {
+  if (!dir || !list || !list.length) return false;
+  try {
+    const file = path.join(dir, MEETING_LOG);
+    if (fs.existsSync(file) && fs.statSync(file).size > MEETING_LOG_MAX) return false;
+    fs.appendFileSync(file, `${meetingLine(root, branch, list, now)}\n`);
+    return true;
+  } catch {
+    return false; // günlük yazılamazsa oturum açılışı yine de sürer
+  }
+}
+
 // Kendini deftere yaz, diğer canlı oturumları döndür. Hata durumunda boş liste (oturum açılışı bozulmaz).
 function announce({ dir, root, sessionId, branch, now = Date.now() }) {
   if (!dir || !root || !sessionId) return [];
@@ -70,6 +103,7 @@ function announce({ dir, root, sessionId, branch, now = Date.now() }) {
   const entries = read(file);
   const list = others(entries, sessionId, now);
   write(file, upsert(entries, { sessionId, root, branch }, now));
+  logMeeting({ dir, root, branch, list, now });
   return list;
 }
 
@@ -80,4 +114,4 @@ function leave({ dir, root, sessionId }) {
   return write(file, read(file).filter((e) => e.sessionId !== sessionId));
 }
 
-module.exports = { STALE_MS, registryFile, upsert, others, message, read, write, announce, leave };
+module.exports = { STALE_MS, registryFile, upsert, others, message, read, write, announce, leave, meetingLine, logMeeting, MEETING_LOG };
