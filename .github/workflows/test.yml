@@ -72,6 +72,10 @@ jobs:
           SNN_STANDARTLAR: ${{ github.workspace }}
       - name: Canlı kopya yönlendiricisi testleri
         run: node hooks/test/shared.test.js
+      - name: Kod dili uyarı bekçisi testleri
+        run: node hooks/test/guard-code-language.test.js
+      - name: Oturum açılışı bekçisi testleri
+        run: node hooks/test/session-start.test.js
       - name: Kütük gönderim bekçisi testleri
         run: node hooks/test/stop-debt-push.test.js
         env:

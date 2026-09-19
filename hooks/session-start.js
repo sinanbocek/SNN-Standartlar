@@ -1,11 +1,26 @@
 // SessionStart: açılan projenin durumunu ve diğer projelerdeki uyarıları bağlama ekler.
 'use strict';
 const path = require('path');
-const debt = require('./lib/debt');
-const { projectStatus, listProjects, findProjectRoot, debtLabel } = debt;
-// Ortak depo yerelde eski bir dalda olabilir; yeni fonksiyon yoksa özellik atlanır, açılış özeti çökmez
-// (2026-09-15: ortak depo başka dala geçince "forgottenWork is not a function" ile açılış özeti tamamen durdu)
-const forgottenWork = typeof debt.forgottenWork === 'function' ? debt.forgottenWork : () => [];
+
+// Ortak depo yerelde eski bir dalda olabilir ya da HİÇ OLMAYABİLİR.
+// 2026-09-15: ortak depo başka dala geçince "forgottenWork is not a function" ile açılış
+// özeti tamamen durdu. O gün eksik FONKSİYONA karşı koruma yazıldı — ama eksik MODÜLE karşı
+// değil. 2026-09-19'da ilk test yazılırken görüldü: canlı kopya yoksa bu satır ÜST DÜZEYDE
+// patlıyor ve bekçi çıkış kodu 1 ile çöküyordu; hiçbir try/catch'e ulaşmıyordu.
+// Artık modül yüklenemezse özet kütüksüz sürer ve sebep kullanıcıya yazılır.
+let debt = null;
+let debtLoadError = null;
+try {
+  debt = require('./lib/debt');
+} catch (e) {
+  debtLoadError = (e.message || '').split('\n')[0];
+}
+const NO_DEBT = { format: 'okunamadı', items: [], count: null };
+const projectStatus = debt ? debt.projectStatus : (dir) => ({ name: path.basename(dir), dir, debts: NO_DEBT, dirty: { count: 0, ageDays: 0 }, branches: [] });
+const listProjects = debt ? debt.listProjects : () => [];
+const findProjectRoot = debt ? debt.findProjectRoot : (cwd) => cwd || null;
+const debtLabel = debt ? debt.debtLabel : () => 'okunamadı';
+const forgottenWork = debt && typeof debt.forgottenWork === 'function' ? debt.forgottenWork : () => [];
 
 const STALE_DIRTY_DAYS = 3;
 const TOP_DEBTS = 5;
@@ -25,6 +40,7 @@ function main() {
   const root = findProjectRoot(input.cwd || process.cwd());
   const lines = [];
   // Canlı kural kopyasını GitHub main'e ileri sar (6 saatte bir). Kurallar zaten yüklendiyse bir sonraki oturumda geçerli olur.
+  if (debtLoadError) lines.push(`⚠ Kütük okuyucusu yüklenemedi: ${debtLoadError}`);
   const updateResult = require('./lib/shared').refresh();
   if (updateResult.status === 'hata') lines.push(`⚠ Kurallar: ${updateResult.message}`);
 
