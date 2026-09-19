@@ -39,6 +39,16 @@ expect('biri giderilmiş → biri kapanır', types({
   issues: IKI.map((g, i) => ({ number: i + 1, title: s.issueTitle(g), state: 'OPEN' })),
 }), ['close']);
 
+console.log('— proje süzgeci (kademeli uygulama)');
+// 27 issue 11 depoya aynı anda düşerse, yanlış bir şey varsa 27 kez temizlik gerekir.
+// Önce tek projede denenir. Süzgeç hem klasör adını hem depo adını kabul eder.
+const PROJECTS = [{ repo: 'a/bir', dir: 'bir' }, { repo: 'a/iki', dir: 'iki' }];
+const pick = (only) => PROJECTS.filter((p) => !only || p.dir === only || p.repo === only).map((p) => p.dir);
+expect('süzgeçsiz hepsi', pick(null), ['bir', 'iki']);
+expect('klasör adıyla süzülür', pick('iki'), ['iki']);
+expect('depo adıyla da süzülür', pick('a/bir'), ['bir']);
+expect('tanınmayan ad hiçbirini seçmez', pick('yok'), []);
+
 console.log('— gövde');
 const body = s.issueBody(GAP);
 expect('ölçüt kimliği görünür', body.includes('kod-dili-akisi'), true);
