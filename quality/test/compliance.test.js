@@ -9,9 +9,13 @@ const expect = (name, actual, wanted) => {
   console.log(`${ok ? '✓' : '✗'} ${name}${ok ? '' : `\n    gelen: ${JSON.stringify(actual)}\n    beklenen: ${JSON.stringify(wanted)}`}`);
 };
 
+// Tetiklenen (PR'da gerçekten çalışan) bir akış dosyasının metni.
+const akis = (cagri) => `on:\n  pull_request:\n    branches: [main]\njobs:\n  x:\n    uses: sinanbocek/SNN-Standartlar/.github/workflows/${cagri}@main`;
+
 // Tam uyumlu bir projenin durumu
 const TAM = {
   workflows: ['kod-dili.yml', 'teknik-borc.yml', 'anahtar-tarama.yml'],
+  workflowText: [akis('kod-dili.yml'), akis('teknik-borc.yml'), akis('anahtar-tarama.yml')],
   hasLedger: true,
   ledgerText: '## TB-012 · Kod dili geçişi\nP2 · 382 bulgu',
   guideNames: ['AI-RULES.md'],
@@ -25,9 +29,9 @@ expect('eksik yok', ids(TAM), []);
 expect('ölçüt sayısı', c.CHECKS.length, 6);
 
 console.log('— tek tek eksikler');
-expect('turnike yok', ids({ ...TAM, workflows: ['teknik-borc.yml', 'anahtar-tarama.yml'] }), ['kod-dili-akisi']);
-expect('teknik borç akışı yok', ids({ ...TAM, workflows: ['kod-dili.yml', 'anahtar-tarama.yml'] }), ['teknik-borc-akisi']);
-expect('anahtar tarama yok', ids({ ...TAM, workflows: ['kod-dili.yml', 'teknik-borc.yml'] }), ['anahtar-tarama']);
+expect('turnike yok', ids({ ...TAM, workflowText: [akis('teknik-borc.yml'), akis('anahtar-tarama.yml')] }), ['kod-dili-akisi']);
+expect('teknik borç akışı yok', ids({ ...TAM, workflowText: [akis('kod-dili.yml'), akis('anahtar-tarama.yml')] }), ['teknik-borc-akisi']);
+expect('anahtar tarama yok', ids({ ...TAM, workflowText: [akis('kod-dili.yml'), akis('teknik-borc.yml')] }), ['anahtar-tarama']);
 expect('kütükte kod dili kaydı yok', ids({ ...TAM, ledgerText: '## TB-001 · başka iş' }), ['kod-dili-kaydi']);
 expect('rehber yok', ids({ ...TAM, guideNames: [], guideText: '' }), ['rehber-atfi']);
 // Genel "standartlar" kelimesi atıf SAYILMAZ: Gunum-Var'da ölçüldü (2026-09-19), oradaki
@@ -39,12 +43,28 @@ expect('CLAUDE.md de sayılır', ids({ ...TAM, guideNames: ['CLAUDE.md'] }), [])
 expect('depo adı olmadan aile atfı sayılır', ids({ ...TAM, guideText: 'Kod dili: İngilizce (SNN aile standardı).' }), []);
 expect('küçük harfli aile atfı sayılır', ids({ ...TAM, guideText: 'aile standardina uyulur' }), []);
 
+console.log('— kapı VARLIĞI değil, ÇALDIĞI ölçülür');
+// 2026-09-19: ilk sürüm yalnız dosya adına bakıyordu. SNN-Standartlar'ın kod-dili.yml dosyası
+// `on: workflow_call` — başka depolar çağırır, KENDİ deposunda hiçbir şey yapmaz. Ölçer
+// "turnike var" diyordu: YANLIŞ GEÇİŞ. Üstelik tam da o boşluk, aynı gün bir Türkçe adın
+// main'e girmesine izin vermişti. Ölçüt artık tetiklenmeyen akışı saymaz.
+expect('yalnız workflow_call tetiklenmiş sayılmaz', c.isTriggered('on:\n  workflow_call:\n    inputs:\njobs:\n  x:'), false);
+expect('pull_request tetikler', c.isTriggered('on:\n  pull_request:\n    branches: [main]\njobs:'), true);
+expect('push tetikler', c.isTriggered('on:\n  push:\njobs:'), true);
+// `jobs:` içindeki metin tetikleyici sayılmaz: sadece başlık bölümüne bakılır.
+expect('jobs içindeki söz tetikleyici değil', c.isTriggered('on:\n  workflow_call:\njobs:\n  x:\n    if: pull_request:'), false);
+
+const CAGRILAMAZ = { ...TAM, workflowText: [] };
+expect('tetiklenmeyen turnike eksik sayılır', ids(CAGRILAMAZ).includes('kod-dili-akisi'), true);
+// Turnike başka bir akış dosyasının içinden de çalışabilir (bu depoda test.yml böyle yapar).
+expect('taramayı çağıran başka akış sayılır', ids({ ...TAM, workflowText: ['on:\n  pull_request:\njobs:\n  x:\n    run: node quality/code-language-scan.js --diff'] }).includes('kod-dili-akisi'), false);
+
 console.log('— kütük yoksa iki ölçüt birden düşer');
 expect('kütük + kayıt', ids({ ...TAM, hasLedger: false, ledgerText: '' }), ['kod-dili-kaydi', 'kutuk']);
 
 console.log('— muafiyet');
 const muaf = JSON.stringify({ exempt: [{ check: 'kod-dili-akisi', reason: 'dışarıdan tüketilen MCP sunucusu' }] });
-expect('gerekçeli muafiyet düşer', ids({ ...TAM, workflows: [] }, c.exemptions(muaf)).includes('kod-dili-akisi'), false);
+expect('gerekçeli muafiyet düşer', ids({ ...TAM, workflowText: [] }, c.exemptions(muaf)).includes('kod-dili-akisi'), false);
 // Gerekçesiz muafiyet SAYILMAZ — istisna kurallarının aynısı. Sabotaj testi.
 const gerekcesiz = JSON.stringify({ exempt: [{ check: 'anahtar-tarama' }] });
 const ex2 = c.exemptions(gerekcesiz);
@@ -56,7 +76,7 @@ expect('dosya yoksa sessiz', c.exemptions(null).warnings.length, 0);
 
 console.log('— özet metni');
 expect('eksik yoksa satır yok', c.summary({ gaps: [], warnings: [] }), []);
-const uc = c.evaluate({ ...TAM, workflows: [], hasLedger: false, ledgerText: '', guideNames: [], guideText: '' });
+const uc = c.evaluate({ ...TAM, workflowText: [], hasLedger: false, ledgerText: '', guideNames: [], guideText: '' });
 const s = c.summary(uc);
 expect('başlıkta sayı var', s[0].includes(`${uc.gaps.length} eksik`), true);
 // Açılış özeti rapor değildir: uzun liste kırpılır, ama ilk düzeltme komutu hep görünür.
