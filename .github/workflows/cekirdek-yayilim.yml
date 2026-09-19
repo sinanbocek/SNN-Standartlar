@@ -1,65 +1,43 @@
-# Ortak görevli: çekirdekte (SNN-Abacus-Core) yeni sürüm etiketi çıkınca, çekirdeği kullanan her projeye güncelleme PR'ı açar.
-# Çekirdek deposu bunu kendi .github/workflows/cekirdek-yayilim.yml dosyasından çağırır (ornek/cekirdek-yayilim.yml).
-name: cekirdek-yayilim
+# ESKİ AD — UYUMLULUK KÖPRÜSÜ (2026-09-19, TB-001)
+#
+# Gerçek iş `core-propagate.yml` içindedir. Bu dosya yalnız çağrıyı oraya iletir.
+# Ana dalda 1 proje (çekirdek deposu) bu adla çağırıyor (2026-09-19 ölçümü).
+# Silme koşulu: `node quality/workflow-callers.js` sıfır çağıran gösterdiğinde.
+name: cekirdek-yayilim (eski ad)
 
 on:
   workflow_call:
     inputs:
       surum:
-        description: "Yayılacak çekirdek sürümü (ör. v3.3.0)"
+        description: "ESKİ AD — yerine `core-propagate.yml` + `version` kullanın"
         type: string
         required: true
       uygula:
-        description: "false ise yalnız plan yazdırılır"
+        description: "ESKİ AD — yerine `apply` kullanın"
         type: boolean
         default: true
       yalniz:
-        description: "Boş değilse yalnız bu depo (ör. sinanbocek/SNN-Yonetici-Ozeti)"
+        description: "ESKİ AD — yerine `only` kullanın"
         type: string
         default: ""
       standart_surumu:
-        description: "SNN-Standartlar deposundan kullanılacak dal/etiket"
+        description: "ESKİ AD — yerine `standards_ref` kullanın"
         type: string
         default: main
     secrets:
       PROJECT_TOKEN:
-        description: "Tüketici depolarda dal ve PR açabilen anahtar (klasik PAT, repo yetkisi)"
+        description: "Tüketici depolarda dal ve PR açabilen anahtar"
         required: true
 
 jobs:
-  yay:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+  bridge:
     permissions:
       contents: read
-    steps:
-      - name: Ortak görevliyi al
-        uses: actions/checkout@v4
-        with:
-          repository: sinanbocek/SNN-Standartlar
-          ref: ${{ inputs.standart_surumu }}
-
-      # Node 24 = npm 11. npm 10 sabit etiketli git bağımlılığını (#v2.7.0 → #v3.2.0) kilit dosyasına işlemiyor ve
-      # npm 11'in yazdığı libc satırlarını siliyor (2026-09-15 ölçümü: Gunum-Var PR açılamadı, Ihale/Portföy'de gürültü)
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
-      - name: npm sürümü en az 11 olmalı
-        run: |
-          npm --version
-          [ "$(npm --version | cut -d. -f1)" -ge 11 ] || { echo "npm 11 gerekli"; exit 1; }
-
-      - name: Çekirdek sürümünü projelere yay
-        env:
-          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
-          SURUM: ${{ inputs.surum }}
-          UYGULA: ${{ inputs.uygula }}
-          YALNIZ: ${{ inputs.yalniz }}
-        run: |
-          ARGS=(--surum "$SURUM")
-          if [ "$UYGULA" = "true" ]; then ARGS+=(--uygula); fi
-          if [ -n "$YALNIZ" ]; then ARGS+=(--yalniz "$YALNIZ"); fi
-          set -o pipefail
-          node core/propagate.js "${ARGS[@]}" 2>&1 | tee yayilim.log
-          { echo '### Çekirdek yayılımı'; echo '```'; cat yayilim.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+    uses: sinanbocek/SNN-Standartlar/.github/workflows/core-propagate.yml@main
+    with:
+      version: ${{ inputs.surum }}
+      apply: ${{ inputs.uygula }}
+      only: ${{ inputs.yalniz }}
+      standards_ref: ${{ inputs.standart_surumu }}
+    secrets:
+      PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}

@@ -27,8 +27,8 @@ concurrency:
 
 jobs:
   senkron:
-    uses: sinanbocek/SNN-Standartlar/.github/workflows/borc-senkron.yml@main
+    uses: sinanbocek/SNN-Standartlar/.github/workflows/debt-sync.yml@main
     with:
-      uygula: ${{ github.event_name != 'workflow_dispatch' || inputs.uygula }}
+      apply: ${{ github.event_name != 'workflow_dispatch' || inputs.uygula }}
     secrets:
       PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}

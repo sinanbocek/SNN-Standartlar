@@ -91,7 +91,7 @@ Oturum açılışındaki satır yalnız **o projeye girene** görünür ve oturu
 | Kayıt yok | Giderilince kendiliğinden kapanır |
 | Uyarı | Kütüktekilerle aynı yerde duran iş kalemi |
 
-Akış: `.github/workflows/uyum-issue.yml` — Pazartesi 08:23 TSİ. Elle çalıştırıldığında **varsayılan kuru çalıştırmadır**; yazmak için `uygula` işaretlenir.
+Akış: `.github/workflows/compliance-issue.yml` — Pazartesi 08:23 TSİ. Elle çalıştırıldığında **varsayılan kuru çalıştırmadır**; yazmak için `apply` işaretlenir.
 
 **Elle kapatmak eksiği gidermez.** Ölçüm eksiği hâlâ görüyorsa issue bir sonraki turda yeniden açılır — kapanış yalnızca ölçümden gelir. Kütük senkronundaki kuralın aynısı.
 

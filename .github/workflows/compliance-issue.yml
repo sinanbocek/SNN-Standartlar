@@ -4,7 +4,7 @@
 # kapanınca kaybolur, "yapıldı mı?" kaydı tutulmaz ve proje sahibi 11 projenin durumunu
 # tek yerde göremezdi. Issue kalır, panodan hepsi birden görünür, giderilince kapanır.
 #
-# VARSAYILAN KURU ÇALIŞTIRMADIR. Yazmak için `uygula` işaretlenir.
+# VARSAYILAN KURU ÇALIŞTIRMADIR. Yazmak için `apply` işaretlenir.
 # Kural: docs/uyum-olcumu.md · Liste: quality/data/family-projects.json
 name: uyum-issue
 
@@ -13,7 +13,7 @@ on:
     - cron: "23 5 * * 1" # Pazartesi 08:23 TSİ — haftalık rapordan sonra
   workflow_dispatch:
     inputs:
-      uygula:
+      apply:
         description: "İşaretsizse yalnız kuru çalıştırma (hiçbir issue açılmaz)"
         type: boolean
         default: false
@@ -58,7 +58,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
         run: |
-          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.uygula }}" = "true" ]; then
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.apply }}" = "true" ]; then
             node quality/compliance-issues.js "$RUNNER_TEMP/_projeler" --uygula
           else
             node quality/compliance-issues.js "$RUNNER_TEMP/_projeler"

@@ -30,10 +30,10 @@ concurrency:
 
 jobs:
   yay:
-    uses: sinanbocek/SNN-Standartlar/.github/workflows/cekirdek-yayilim.yml@main
+    uses: sinanbocek/SNN-Standartlar/.github/workflows/core-propagate.yml@main
     with:
-      surum: ${{ github.event_name == 'push' && github.ref_name || inputs.surum }}
-      uygula: ${{ github.event_name == 'push' || inputs.uygula }}
-      yalniz: ${{ github.event_name == 'push' && '' || inputs.yalniz }}
+      version: ${{ github.event_name == 'push' && github.ref_name || inputs.surum }}
+      apply: ${{ github.event_name == 'push' || inputs.uygula }}
+      only: ${{ github.event_name == 'push' && '' || inputs.yalniz }}
     secrets:
       PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}

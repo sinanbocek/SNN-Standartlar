@@ -6,6 +6,85 @@
 
 ## Kapanan Kalemler
 
+### TB-001 — Ortak deponun kendi kodu Türkçe adlandırılmış
+- **Tespit Tarihi:** 2026-09-17 (kod dili standardı ve tarayıcısı yazılırken)
+- **Kapanış:** 2026-09-19 — TB-001 kapandı. Akış dosyası adları ve girdileri İngilizce; eski adlar **uyumluluk köprüsü** olarak duruyor, hiçbir tüketici deposuna dokunulmadı.
+- **Öncelik (kapanışta):** P2 (Planlı)
+
+#### 🟢 Sade Anlatım
+- **Sorun ne?** Yeni yazdığımız kural "kodda adlar İngilizce olsun" diyor, ama bu deponun kendi betikleri Türkçe adlarla yazılmış (`taraDiff`, `bulgular`, `kelimeKumesi` gibi). Kuralı koyan, kurala uymuyor.
+- **Benzetme:** Apartman girişine "ayakkabılar kapıda çıkarılır" yazısını asan kapıcının kendi ayakkabıyla dolaşması. Kural geçerli ama inandırıcılığı zayıflıyor.
+- **Çözülmezse ne olur?** Somut bir arıza çıkmaz; bu kod yalnız bizim bekçilerimizdir, kimse tüketmez. Ama yeni gelen kişi "demek ki esnetilebilir" diye okur ve kural aşınır.
+- **Senden beklenen karar:** Verildi (2026-09-18): **betikler İngilizce adlara taşınacak.** İstisna yolu kapandı; kural koyan depo da kurala uyacak.
+
+#### 🔧 Teknik Detay
+- **Açıklama:** `node quality/code-language-scan.js --tumu .` çıktısı: 64 bulgu, 33 ayrı ad (2026-09-17 ölçümü). Aynı tarama SNN-Abacus-Core'da 122 bulgu / 27 ayrı ad veriyor — kuralın kaynağı olan depo da tam uyumlu değil (`yeniKayit`, `gecerliHane`, `satirlar`).
+- **Etki:** Yalnız geliştirme araçları; çalışan üründe etkisi yok. PR kapısı yalnız eklenen satırları taradığı için günlük iş kırmızıya dönmez.
+- **Çözüm yönü:** Proje sahibi kararı: İngilizceye taşınır. Sıra: (1) dışa açık modül işleri (`module.exports` ile verilen adlar) ve dosya adları, (2) iç değişkenler, (3) test adları. Her adım ayrı PR; her PR'da tüm test takımı yeşil kalmalı ve bekçilerin (`~/.claude/hooks`) çağırdığı adlar aynı commit'te güncellenmeli — canlı kopya bu depodan okuduğu için bir ad yarım kalırsa oturum açılışı tüm projelerde durur (2026-09-15'te bir kez yaşandı). Dosya adı değişiklikleri `git mv` ile yapılır; `ornek/*.yml` içindeki yollar aynı PR'da düzeltilir.
+- **İlerleme (2026-09-18):**
+  - **1. aşama tamam** — klasör ve dosya adları İngilizce (`borc-senkron→debt-sync`, `kalite→quality`, `cekirdek→core`, `kurulum→setup` ve içlerindeki 24 dosya). Bekçiler için kurulan eski→yeni ad köprüsü, canlı kopya geçtikten ve `~/.claude/hooks` çağrıları güncellendikten sonra **kaldırıldı**.
+  - **2. aşama tamam** — iç değişken, sabit ve JSON alan adları İngilizce (`bulgular→findings`, `istisna→exception`, `satirlar→lines`; `.snn-kod-dili.json` alanları artık `exceptions / name / reason / paths / path`).
+  - **Ölçüm: 166 → 0 bulgu.** Tarayıcı bu depoda temiz rapor veriyor (27 dosya tarandı).
+  - Yan kazanç: göç sırasında tarayıcıda iç içe şablon dizgesi kusuru bulundu ve düzeltildi (`stripTemplates`); kendi kodumuzu tararken çıktı.
+- **3. aşama tamam (2026-09-19):** akış dosyası adları. Ayrıntı aşağıda. Bu deponun kendi kod dili kapısı **2026-09-19'da kuruldu** ama farklı biçimde: `kod-dili.yml` yalnız `workflow_call` olduğu için kendi PR'larında çalışmıyordu; tarama adımı `test.yml` içine eklendi (`--diff` kipinde, anahtar taramasının yanına).
+- **Neden aşamalara bölündü:** Kuralın kendisi ve makine kapısı öncelikliydi; adlandırma göçü mekanik bir iştir, aşamalara bölünüp ayrı PR'larla yapılır.
+- **Bağlı kalemler:** Yok.
+
+#### 🚧 3. aşama — dışa açık akış adları (2026-09-19)
+
+**Sorun neden diğerlerinden farklıydı:** bu adlar bizim iç kodumuz değil, **10 projenin çağırdığı
+arayüz**. Adı doğrudan değiştirmek 10 projenin kapısını aynı anda kırardı — ve düzeltmek için
+10 ayrı depoya dokunmak gerekirdi, ki bu kırmızı çizgidir.
+
+**Ölçüm — ana daldan (yerel kopya iki projede YANLIŞ cevap verdi):**
+
+| Akış | Çağıran |
+|---|---|
+| `anahtar-tarama.yml` | **10 proje (hepsi)** |
+| `borc-senkron.yml` | 1 |
+| `cekirdek-yayilim.yml` | 1 |
+| `kod-dili.yml` | 1 |
+
+**Çözüm — köprü deseni.** Gerçek iş İngilizce adlı dosyaya taşındı; eski ad, çağrıyı oraya ileten
+ince bir köprüye dönüştü. Eski girdi adları (`standart_surumu`, `uygula`, `yalniz`, `surum`)
+köprüde korunuyor ve İngilizce karşılıklarına (`standards_ref`, `apply`, `only`, `version`)
+çevriliyor.
+
+| Eski ad (köprü) | Gerçek iş |
+|---|---|
+| `anahtar-tarama.yml` | `secret-scan.yml` |
+| `borc-senkron.yml` | `debt-sync.yml` |
+| `cekirdek-yayilim.yml` | `core-propagate.yml` |
+| `kod-dili.yml` | `code-language.yml` |
+
+İç akışlar doğrudan yeniden adlandırıldı (çağıranı yok): `aile-olcumu` → `family-measure`,
+`teknik-borc` → `debt`, `uyum-issue` → `compliance-issue`.
+
+**Sonuç: hiçbir tüketici deposunda tek satır değişmedi.** `ornek/` şablonları artık yeni adları
+gösteriyor; yeni kurulan projeler doğrudan İngilizce yola bağlanır.
+
+#### 🧪 "Köprü çalışıyor" iddiası nasıl sınandı
+
+İki katman, çünkü yapı testi bir YAML'ın GitHub tarafından gerçekten çözülebildiğini göstermez:
+
+1. **Yapı testi** (`quality/test/workflow-callers.test.js`, 16 test): her köprü var olan tek bir
+   hedefe gidiyor mu, canlı denetim doğru köprüleri çağırıyor mu.
+2. **Canlı denetim** (`.github/workflows/bridge-check.yml`): tüketicinin yaptığı çağrının
+   **aynısını** yapar — tam yolla, `@main` ile, eski girdi adlarıyla. Haftalık da çalışır.
+   `cekirdek-yayilim` bilerek dışarıda: çalıştırmak tüketici depolarda PR açmayı denerdi.
+
+#### 📅 Köprü ne zaman silinir
+
+Tahminle değil, ölçümle: `node quality/workflow-callers.js` **ana dallardan** okur ve sıfır
+çağıranı kalan köprüyü bildirir. Bugün dördünün de çağıranı var. Tüketiciler kendi tempolarında
+yeni adlara geçtikçe köprüler düşer. Bu ölçer `quality/data/gates.json`'da 16. kapı olarak kayıtlı.
+
+**Neden bu bir "yarım iş" değil:** borç *"kural koyan deponun kendi kodu Türkçe adlandırılmış"*
+idi. Bugün bu deponun kodu — dosya adları, girdi adları, iş adları — İngilizce. Köprü kod değil,
+**geriye dönük uyumluluk sözleşmesidir**; silinme koşulu yazılı ve ölçülebilir.
+
+---
+
 ### TB-006 — `GOC-NOTU.md` hiçbir depoda sürümlenmiyor
 - **Tespit Tarihi:** 2026-09-19 (dayanıklılık araştırması)
 - **Kapanış:** 2026-09-19 — TB-006 kapandı. Karar: **belge yayımlanmadı**; karar değeri taşıyan kısmı ayıklanıp `docs/degerlendirilen-kalemler.md` olarak depoya alındı.

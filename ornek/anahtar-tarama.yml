@@ -13,4 +13,4 @@ permissions:
 
 jobs:
   tara:
-    uses: sinanbocek/SNN-Standartlar/.github/workflows/anahtar-tarama.yml@main
+    uses: sinanbocek/SNN-Standartlar/.github/workflows/secret-scan.yml@main

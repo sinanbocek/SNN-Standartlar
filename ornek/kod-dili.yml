@@ -14,4 +14,4 @@ permissions:
 
 jobs:
   tara:
-    uses: sinanbocek/SNN-Standartlar/.github/workflows/kod-dili.yml@main
+    uses: sinanbocek/SNN-Standartlar/.github/workflows/code-language.yml@main
