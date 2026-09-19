@@ -309,7 +309,7 @@ function scanAll(root) {
   const words = wordSet();
   const exception = readExceptions(root);
   const findings = [];
-  const files = gitOut(root, ['ls-files']).split('\n').filter(Boolean).filter(isScanned);
+  const files = gitOut(root, ['ls-files', '--cached', '--others', '--exclude-standard']).split('\n').filter(Boolean).filter(isScanned);
   for (const file of files) {
     for (const b of pathFindings(file, words)) {
       if (!isExcepted(b, file, exception)) findings.push({ file, line: 0, ...b });

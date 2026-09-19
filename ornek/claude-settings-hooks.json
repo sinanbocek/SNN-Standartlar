@@ -1,0 +1,40 @@
+{
+  "_aciklama": "Kanca kayitlari sablonu. ~/.claude/settings.json icindeki 'hooks' bolumune girer.",
+  "_kullanim": "<HOME> yerine kullanicinin ev klasoru yazilir (or. C:/Users/sboce). Yollar mutlak olmali.",
+  "_kaynak": "Kancalarin kendisi: SNN-Standartlar/hooks/ · Kural: docs/makine-kurulumu.md",
+  "_uyari": "Bu dosya settings.json'un TAMAMI degildir; yalnizca 'hooks' anahtarinin icerigidir. Mevcut settings.json'daki diger ayarlar (tema, eklentiler, autoMode) korunur.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          { "type": "command", "command": "node \"<HOME>/.claude/hooks/session-start.js\"", "timeout": 30 }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          { "type": "command", "command": "node \"<HOME>/.claude/hooks/guard-files.js\"", "timeout": 10 },
+          { "type": "command", "command": "node \"<HOME>/.claude/hooks/guard-code-language.js\"", "timeout": 10 }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          { "type": "command", "command": "node \"<HOME>/.claude/hooks/guard-bash.js\"", "timeout": 10 }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"<HOME>/.claude/hooks/stop-gate.js\"", "timeout": 180 },
+          { "type": "command", "command": "node \"<HOME>/.claude/hooks/stop-debt-push.js\"", "timeout": 20 },
+          { "type": "command", "command": "node \"<HOME>/.claude/hooks/stop-schema-doc.js\"", "timeout": 20 }
+        ]
+      }
+    ]
+  }
+}

@@ -50,11 +50,22 @@ jobs:
         run: node quality/test/session-registry.test.js
       - name: Geniş etkili git komutu testleri
         run: node quality/test/wide-effect-git.test.js
+      - name: Kod dili uyarı kipi testleri
+        run: node quality/test/code-language-warn.test.js
+      - name: Kanca testleri
+        run: node hooks/test/hooks.test.js
+      - name: Kütük gönderim bekçisi testleri
+        run: node hooks/test/stop-debt-push.test.js
+      - name: Kanca sözdizimi
+        run: for f in hooks/*.js hooks/lib/*.js; do node --check "$f"; done
       - name: Bu PR'da eklenen satırlarda gizli anahtar (kendi kendini tarama)
         if: github.event_name == 'pull_request'
         run: |
           git fetch -q --depth=1 origin ${{ github.event.pull_request.base.sha }}
           node quality/secret-scan.js --diff ${{ github.event.pull_request.base.sha }}
+      - name: Bu PR'da eklenen satırlarda Türkçe tanımlayıcı (kendi kendini tarama)
+        if: github.event_name == 'pull_request'
+        run: node quality/code-language-scan.js --diff ${{ github.event.pull_request.base.sha }}
       - name: Sözdizimi
         run: node --check debt-sync/debt-sync.js
       - name: ESM projede çalışma (tüketen package.json "type":"module" olsa da)

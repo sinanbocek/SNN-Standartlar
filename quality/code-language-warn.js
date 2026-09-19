@@ -52,11 +52,11 @@ function warnFindings(text, file, words, exception) {
 // SAF: ajana gosterilecek not. Engel degil; ne yapilacagini soyler ve yanlis alarm yolunu acik tutar.
 function warnMessage(findings, file) {
   if (!findings.length) return '';
-  const liste = findings.slice(0, MAX_NAME).map((f) => `  ${f.name}  (${f.reason})`).join('\n');
-  const fazla = findings.length > MAX_NAME ? `\n  ...ve ${findings.length - MAX_NAME} ad daha` : '';
+  const lines = findings.slice(0, MAX_NAME).map((f) => `  ${f.name}  (${f.reason})`).join('\n');
+  const more = findings.length > MAX_NAME ? `\n  ...ve ${findings.length - MAX_NAME} ad daha` : '';
   return [
     `[kod dili · uyari] ${file} icine Turkce tanimlayici yaziliyor:`,
-    liste + fazla,
+    lines + more,
     '',
     'Aile standardi: tanimlayicilar Ingilizce yazilir (standartlar/kod-dili-standardi.md).',
     'Bu bir ENGEL degildir; yazma islemi surdu. Bundan SONRAKI adlari Ingilizce sec;',
