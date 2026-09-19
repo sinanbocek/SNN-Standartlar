@@ -73,6 +73,14 @@ Kapanan kayıtlar: `docs/teknik-borc-arsiv.md`
 - **Açıklama:** Testsiz dosyalar ve satır sayıları (2026-09-19 ölçümü): `session-start.js` 109, `stop-gate.js` 78, `lib/shared.js` 45, `guard-code-language.js` 40. Toplam 272. Mevcut `hooks/test/hooks.test.js` yalnız `guard-bash`, `guard-files` ve `stop-debt-push`'ı alt süreç olarak çalıştırıyor.
 - **Etki:** Tüm projeler — kancalar `~/.claude/settings.json` üzerinden her oturumda çalışır.
 - **Çözüm yönü:** `lib/shared.js` için: `SNN_STANDARTLAR` ortam değişkeni zaten yolu dışarıdan alıyor, bu yüzden geçici klasörle test edilebilir (`refresh()` kirli kopyada dokunmuyor, ağ yokken eski kural çalışmaya devam ediyor, damga 6 saati doldurmadan atlanıyor). `session-start.js` ve `guard-code-language.js` uçtan uca denenebilir: stdin'den JSON ver, stdout'u oku — `hooks.test.js` bu deseni zaten kullanıyor. `stop-gate.js` monolitik; önce `measure`/`decide` ayrımına bölünmeli (`schema-doc.js` deseni).
+- **İlerleme (2026-09-19):** 272 satırın **232'si** test altına alındı; 3 test dosyası, 56 test, hepsi CI'da ve makineden de yeşil.
+  - `lib/shared.js` (45) — sahte uzak depo + klon ile 23 test: yol çözme, damga, 6 saat kısıtlaması, ileri sarma, **kirli kopyaya dokunulmaz**, **ağ/uzak yokken patlamaz**.
+  - `session-start.js` (109) — 16 test; çoğu "çökmez" üzerine.
+  - `guard-code-language.js` (40) — 17 test; **asla engellemez**, **asla `allow` demez**.
+- **Test yazarken bulunan iki gerileme (ikisi de düzeltildi):**
+  1. **Damga adı.** TB-001 yeniden adlandırması `snn-son-guncelleme` → `snn-son-updateResult` değişimini **dizge içinde** de yaptı. Canlı kopyada iki damga yan yana kaldı; o aralıkta 6 saatlik kısıtlama çalışmadı, her oturum tazeleme denedi. Ad artık `snn-last-refresh`; eski adlar yazarken temizlenir.
+  2. **Açılış bekçisi çöküyordu.** `session-start.js:4` üst düzey `require('./lib/debt')` canlı kopyaya yönlendiriyor; canlı kopya yoksa bekçi **çıkış kodu 1** ile çöküyordu — hiçbir `try/catch`'e ulaşmadan. Dosyanın başlığı 2026-09-15 olayını anlatıp "açılış özeti çökmez" diyordu, ama o koruma **eksik fonksiyona** karşıydı, **eksik modüle** karşı değil. Artık özet kütüksüz sürer ve sebep yazılır.
+- **Kalan:** `stop-gate.js` (78 satır). Monolitik; önce `measure`/`decide` ayrımına bölünmeli (`schema-doc.js` deseni). Bölünmeden yazılacak test, kabuk çağrısına ve TypeScript kurulumuna bağımlı olur.
 - **Neden Şimdi Çözülmüyor:** Bugünkü 17 hatanın hiçbirini bu testler yakalamazdı (ölçüldü); dayanıklılık kapısıdır, keşif kapısı değildir. Yine de `lib/shared.js` tek nokta arızası olduğu için P2.
 - **Bağlı kalemler:** TB-006 (aynı dosyalar makine kurulumunun parçası).
 
