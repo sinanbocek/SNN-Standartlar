@@ -99,5 +99,32 @@ expect('bulgu yoksa yeşil', t.report({ findings: [] }, 'diff').includes('✓'),
 expect('bulgu varsa kırmızı ve ad görünür', t.report({ findings: [{ file: 'a.ts', line: 3, name: 'gunSonu', reason: 'Türkçe kelime: gun' }] }, 'diff').includes('gunSonu'), true);
 expect('rapor kural dosyasına yönlendirir', t.report({ findings: [{ file: 'a.ts', line: 3, name: 'x', reason: 'y' }] }, 'diff').includes('kod-dili-standardi.md'), true);
 
+console.log('— aile geneli kök istisnası');
+{
+  const aile = t.familyExceptions();
+  expect('karar verilen dört kök istisnada', ['kasa', 'kurus', 'beyanname', 'mizan'].every((r) => aile.roots.has(r)), true);
+  expect('gerekçesiz kayıt yok', aile.warnings.length, 0);
+
+  const words = t.wordSet();
+  expect('istisna kökü kelime listesinden düşer', words.has('kasa'), false);
+  expect('istisna dışı kök listede kalır', words.has('hesap'), true);
+
+  // Kök istisnası TÜREYEN adları da kapsar: karar ad değil kök bazındadır.
+  expect('tradeKasa temiz', t.identifierProblem('tradeKasa', words), null);
+  expect('bistKasaTL temiz', t.identifierProblem('bistKasaTL', words), null);
+  expect('kurusFormat temiz', t.identifierProblem('kurusFormat', words), null);
+
+  // ...ama adın İKİNCİ Türkçe kökü hâlâ yakalanır: istisna adı toptan affetmez.
+  expect('bakiyeKurus hâlâ bulgu', (t.identifierProblem('bakiyeKurus', words) || {}).reason, 'Türkçe kelime: bakiye');
+  expect('MizanSatiri hâlâ bulgu', (t.identifierProblem('MizanSatiri', words) || {}).reason, 'Türkçe kelime: satir');
+
+  // Sabotaj: gerekçesiz kayıt kök listesine GİRMEMELİ, yoksa istisna sessizce genişler.
+  const bozuk = t.familyRoots({ roots: [{ root: 'hesap' }, { root: 'kasa', reason: 'var' }] });
+  expect('gerekçesiz kök sayılmaz', bozuk.roots.has('hesap'), false);
+  expect('gerekçeli kök sayılır', bozuk.roots.has('kasa'), true);
+  expect('gerekçesizlik uyarı üretir', bozuk.warnings.length, 1);
+}
+
+
 console.log(fail ? `\n${fail} test başarısız` : '\nTüm testler geçti');
 process.exit(fail ? 1 : 0);

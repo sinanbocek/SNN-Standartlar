@@ -22,6 +22,7 @@ const SQL_EXT = /\.sql$/;
 const SKIPPED_PATH = /(^|\/)(node_modules|dist|build|coverage|\.next|vendor|supabase\/\.temp)(\/|$)/;
 
 const DATA_FILE = path.join(__dirname, 'data', 'turkish-words.json');
+const FAMILY_FILE = path.join(__dirname, 'data', 'family-exceptions.json');
 
 // SAF: Türkçe harfleri ASCII'ye katlar (karşılaştırma için; 'gözlem' → 'gozlem')
 function asciiFold(s) {
@@ -249,8 +250,36 @@ function addedLines(diff) {
 
 const isScanned = (yol) => !SKIPPED_PATH.test(yol) && (SOURCE_EXT.test(yol) || SQL_EXT.test(yol));
 
-function wordSet() {
-  return new Set(JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')).words);
+// Aile geneli kok istisnalari: bu kokler HICBIR projede bulgu sayilmaz. Proje istisnasindan farki:
+// karar ailenindir, tek dosyada durur ve 10 projeye ayni anda uygulanir.
+// Gerekcesiz kayit SAYILMAZ; istisna gorunur ve savunulabilir olmalidir.
+// Kural: standartlar/kod-dili-standardi.md · Karar: 2026-09-19 teshisi (16.023 bulgu / 136 kok).
+// SAF: ayristirma. Gerekcesiz kayit SAYILMAZ; istisna gorunur ve savunulabilir olmalidir.
+function familyRoots(raw) {
+  const roots = new Set();
+  const warnings = [];
+  for (const g of (raw && raw.roots) || []) {
+    if (!g || !g.root) continue;
+    if (!g.reason) { warnings.push(`aile istisnasi "${g.root}" gerekcesiz -> sayilmadi`); continue; }
+    roots.add(asciiFold(String(g.root)));
+  }
+  return { roots, warnings };
+}
+
+function familyExceptions() {
+  try {
+    return familyRoots(JSON.parse(fs.readFileSync(FAMILY_FILE, 'utf8')));
+  } catch {
+    return { roots: new Set(), warnings: [] };
+  }
+}
+
+// Kelime listesi eksi aile istisnalari. Cikarma tek yerde yapilir ki scanAll, scanDiff ve uyari
+// kipi ayni karari gorsun; ayri ayri uygulanirsa kapilar zamanla birbirinden ayrisir.
+function wordSet(family = familyExceptions()) {
+  const words = new Set(JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')).words);
+  for (const r of family.roots) words.delete(r);
+  return words;
 }
 
 // Diff kipi: yalnız eklenen satırlar + yeni eklenen dosyaların adları
@@ -330,6 +359,7 @@ function report({ findings, warnings = [], fileCount }, mode) {
 module.exports = {
   asciiFold, splitWords, stripJsxText, turkishWord, identifierProblem, codePart, lineFindings,
   pathFindings, readExceptions, addedLines, report, scanDiff, scanAll,
+  familyExceptions, familyRoots, wordSet,
 };
 
 if (require.main === module) {

@@ -129,6 +129,45 @@ node quality/test/code-language-scan.test.js
 
 **Yanlış alarm `paths` ile susturulmaz.** Tarayıcı bir ekran yazısını ya da yorumu tanımlayıcı sanıyorsa, o satır **kurala aykırı değildir** — muafiyet yazmak iki zarar üretir: (1) doğru olan bir şeye muafiyet yazmak kaydı kirletir, (2) dosyayı toptan muaf tutmak yarın aynı dosyaya girecek **gerçek** bir Türkçe tanımlayıcıyı da kör eder. Yapılacak olan: durumu SNN-Standartlar'a bildirmek; tarayıcı düzeltilir ve düzeltme tüm projelere aynı anda ulaşır. `paths` yalnız **gerçekten istisna olan gerçek adlar** içindir (canlıya uygulanmış migration, dış kaynağın alan adı gibi).
 
+### Aile geneli istisna (kök bazında)
+
+Bazı Türkçe kökler **her projede** bilinçli olarak korunur. Bunlar projeye bırakılmaz; tek dosyada durur ve 10 projeye aynı anda uygulanır: `quality/data/family-exceptions.json`.
+
+| Kök | Küme | Neden korunuyor |
+|---|---|---|
+| `kasa` | Ürün adı | `tradeKasa`, `bistKasaTL` — marka kodda çevrilmez |
+| `kurus` | Mevzuat | TL'nin alt birimi; tutarlar tam sayı kuruş tutulur, `cents` yanlış para birimi çağrıştırır |
+| `beyanname` | Mevzuat | Belirli bir Türk vergi belgesi; `taxReturn` genel kavramı anlatır, belgeyi değil |
+| `mizan` | Mevzuat | THP tabanlı belirli bir Türk muhasebe belgesi; `trialBalance` bu formatı karşılamaz |
+
+**İstisna kök bazındadır, ad bazında değil.** `kasa` istisnası `tradeKasa`, `kasaAccounts`, `bistKasaTL` adlarının hepsini kapsar — tek tek yazmak gerekmez.
+
+**Ama adın ikinci Türkçe kökü hâlâ yakalanır.** İstisna, adı toptan affetmez; yalnız o kökü affeder:
+
+```
+bakiyeKurus     → balanceKurus      (kurus kalır, bakiye çevrilir)
+cariDonemKurus  → currentPeriodKurus
+MizanSatiri     → MizanRow
+```
+
+Bileşik adlarda alana özgü kök korunur, genel kısım İngilizceye geçer. Ölçüm (2026-09-19): istisna kökünü taşıyan 49 ad bu nedenle hâlâ bulgu; bu **hata değil, istenen sonuçtur**.
+
+**Gerekçesiz kayıt sayılmaz** ve uyarı üretir — proje istisnalarındaki kuralın aynısı.
+
+#### Neye istisna verilmez
+
+Karar 2026-09-19'da 16.023 bulgu ve 136 kök üzerinde yapılan teşhisle verildi. Reddedilen küme, hacmin **%87'siydi**:
+
+- **İngilizce karşılığı net muhasebe terimleri** (%31): `bilanco` → `balanceSheet`, `gelirTablosu` → `incomeStatement`, `aktif/pasif` → `assets/liabilities`, `ceyrek` → `quarter`, `bakiye` → `balance`, `hesapKodu` → `accountCode`. Bunlar finans alanında evrenseldir; istisna verilirse kod kalıcı olarak iki dilli kalır ve her yeni ajan hangi katmanda hangi dilin geçerli olduğunu ezberlemek zorunda kalır.
+- **Genel programlama kelimeleri** (%56): `satir`, `dosya`, `hata`, `sonuc`, `tablo`, `grup`, `veri`. Bunların Türkiye'ye özgü hiçbir yanı yoktur.
+
+**Ölçüt:** bir kök, ancak İngilizce karşılığı *yoksa* ya da karşılığı *yanlış şeyi* anlatıyorsa istisna olur. "Alışkın olduğumuz" ya da "daha kısa" ölçüt değildir.
+
+#### Yeni istisna isteme
+
+Proje, kökü ve gerekçesini SNN-Standartlar'a bildirir; kendi listesini tutmaz. Ortak depo ölçer, karar proje sahibine sorulur, kabul edilirse aile dosyasına eklenir ve **tüm projelere aynı anda** ulaşır.
+
+
 ### Kelime listesi eksik kök bulunca (aile süreci)
 
 Liste sonludur; Türkçe harf taşımayan bir kök (ör. `kasa`, `kur`, `hedef`) listede yoksa tarayıcıdan **sessizce geçer**. Bunu ilk gören genelde o projedir.
