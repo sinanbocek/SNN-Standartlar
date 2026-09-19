@@ -1,0 +1,85 @@
+{
+  "_description": "Kapi kayit defteri. Her kapi, kendisini doguran GERCEK VAKAYI ve o vakayi yakalayan TESTI bildirir.",
+  "_rule": "standartlar/olcum-standardi.md · 'Kapi, bilinen bir hatayla sinanmadan kurulmaz'",
+  "_why": "2026-09-19: uyum olceri, yakalamasi gereken boslugu 'tamam' diye isaretledi (kod-dili.yml yalniz workflow_call'du). Olcut yazilirken 'ayni gunku liste hatasini yakalar miydi?' diye sorulmamisti. Bu defter o sorunun sorulmasini zorunlu kilar.",
+  "gates": [
+    {
+      "id": "kod-dili-tarama",
+      "module": "quality/code-language-scan.js",
+      "vaka": "2026-09-17: SNN-Piyasa-Core'da 52 dosya / ~3.650 satir ve 10 tablo Turkce adlandirilmisti; aile capinda kural yoktu.",
+      "test": "Türkçe kelime yakalanır"
+    },
+    {
+      "id": "kod-dili-uyari",
+      "module": "quality/code-language-warn.js",
+      "vaka": "2026-09-19: kural yalniz PR turnikesinden zorlaniyordu; turnike 11 projenin yalniz birinde takiliydi, geri kalaninda kural yaziydi.",
+      "test": "Türkçe ad yakalanır"
+    },
+    {
+      "id": "uyum-olceri",
+      "module": "quality/compliance.js",
+      "vaka": "2026-09-19: bu deponun kod-dili.yml dosyasi yalniz workflow_call'du, yani KENDI PR'larinda hic calismiyordu; olcer buna 'turnike var' diyordu (yanlis gecis).",
+      "test": "yalnız workflow_call tetiklenmiş sayılmaz"
+    },
+    {
+      "id": "genis-etkili-komut",
+      "module": "quality/wide-effect-git.js",
+      "vaka": "2026-09-18: `git add -A` paralel oturumun commit'lenmemis dosyasini sahneye aldi (fark edildi, geri alindi).",
+      "test": "git add -A"
+    },
+    {
+      "id": "dal-silme",
+      "module": "quality/wide-effect-git.js",
+      "vaka": "2026-09-18: `gh pr merge --delete-branch` ustunde acik PR duran dali sildi; PR #18 kapandi ve tabani degistirilemedigi icin yeniden acilamadi.",
+      "test": "taban dalı silinirken engellenir"
+    },
+    {
+      "id": "ana-dal-commit",
+      "module": "quality/wide-effect-git.js",
+      "vaka": "2026-09-18: dal acma komutu baska bir bekciye takilinca fark edilmeden ana dala commit atildi. Kural yaziliydi ama zorlanmiyordu.",
+      "test": "main dalında commit engellenir"
+    },
+    {
+      "id": "birlestirme-kapisi",
+      "module": "quality/merge-gate.js",
+      "vaka": "2026-09-15: gizli depolarda GitHub'in 'zorunlu kontrol' dal korumasi ucretli plan istiyor; Portfoy'de 403 olculdu, yani kontroller kirmiziyken birlestirmeyi engelleyen hicbir sey yoktu.",
+      "test": "numara ve -R"
+    },
+    {
+      "id": "sema-belgesi",
+      "module": "quality/schema-doc.js",
+      "vaka": "2026-09-15 olcumu (son 120 gun): yapisal migration'larin sema belgesiyle birlikte gelme orani Portfoy'de 4/9.",
+      "test": "CREATE TABLE yapısal"
+    },
+    {
+      "id": "oturum-defteri",
+      "module": "quality/session-registry.js",
+      "vaka": "2026-09-18: SNN-Standartlar'da iki oturum birbirinden habersiz ayni calisma klasorunde calisti; kimse 'baskasi da burada' demedi.",
+      "test": "kendi kaydı eklenir"
+    },
+    {
+      "id": "rehber-tazeligi",
+      "module": "quality/guide-freshness.js",
+      "vaka": "2026-09-15 olcumu: Nakit-Akis ve Gunum-Var rehberleri silinmis borc dosyasini gosteriyordu.",
+      "test": "yol biçimli atıflar alınır"
+    },
+    {
+      "id": "guvenlik-uyarilari",
+      "module": "quality/security-alerts.js",
+      "vaka": "2026-09-15 olcumu: GHS'de 2 kritik + 45 yuksek, trade-kasa'da 2 yuksek, Naturapan'da 6 yuksek uyari sessizce duruyordu.",
+      "test": "önem × kapsam ayrımı"
+    },
+    {
+      "id": "anahtar-tarama",
+      "module": "quality/secret-scan.js",
+      "vaka": "2026-09-15 olcumu: GHS, Portfoy ve Nakit-Akis depolarinda tam yetkili veritabani anahtari ve token'lar koda gomuluydu.",
+      "test": "GitHub anahtarı"
+    },
+    {
+      "id": "aile-olcumu",
+      "module": "quality/measure-projects.js",
+      "vaka": "2026-09-19: tarayici degisiklikleri 11 projenin sayilarini sessizce degistirebiliyordu; olcum bir aliskanlikti, kapi degildi. Ilk calistiginda Piyasa-Core'un 301 degil 2.496 oldugunu gosterdi.",
+      "test": "artış hesaplanır"
+    }
+  ]
+}

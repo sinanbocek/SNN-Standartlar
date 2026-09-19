@@ -35,5 +35,10 @@ Bir değişiklik birleştirilmeden önce sorulan sorular. Her madde **evet/hayı
 
 ## Doğrulama
 
+> Kural: `standartlar/olcum-standardi.md`. Bu iki madde 2026-09-19'dan **önce de** listedeydi ve o gün 17 kez çiğnendi — yazılı olması tutmadı. Artık kısmen makineye bağlı; aşağıdaki sorular makinenin göremediği kısım içindir.
+
 - [ ] İddialar ölçüldü mü? Ölçülmemiş sebep açıklaması "hipotez" diye mi yazıldı?
+- [ ] Hız, maliyet, kapsam ve "hepsi/hiçbiri" iddialarının **sayısı ve kaynağı** yazılı mı?
 - [ ] Yeni kuralın testi, kuralı bilerek bozunca gerçekten kırmızı veriyor mu (sabotaj denemesi)?
+- [ ] Yeni bir kapı eklendiyse: `quality/data/gates.json` kaydı var mı, vakası **tarihli** mi, o vakayı yakalayan test gerçekten kırmızıdan yeşile mi döndü?
+- [ ] Kapı **gerçek veride** çalıştırıldı mı, yanlış alarm sayısı ölçülüp yazıldı mı?
