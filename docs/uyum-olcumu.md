@@ -57,19 +57,28 @@ Oturum açılışında, o projenin kendi eksiği:
 |---|---|
 | SNN-Ihale-Maliyet-Teklif-Yonetimi | 1 · `kod-dili-akisi` |
 | SNN-Standartlar | 1 · `rehber-atfi` |
-| trade-kasa | 2 · `kod-dili-kaydi`, `rehber-atfi` |
-| SNN-Piyasa-Core · SNN-Portfoy-Yonetimi | 2 |
-| GHS-Panel · Gunum-Var · SNN-Abacus-Core · SNN-Proje-ve-Nakit-Akis | 3 |
-| Naturapan-Web-Sitesi | 4 |
-| SNN-Yonetici-Ozeti | 5 |
-| ihale-mcp | 6 |
+| Naturapan-Web-Sitesi · SNN-Portfoy-Yonetimi | 2 |
+| Diğer 7 proje | 3 |
+| **Toplam** | **27** |
 
 İlk ölçümün ortaya çıkardıkları:
 
-- **`kod-dili.yml` yalnız trade-kasa'da takılı.** Diğer 10 projede kural yazıdan ibaret (uyarı kipi hepsinde çalışıyor, ama PR kapısı yok).
-- **SNN-Yonetici-Ozeti'nin `teknik-borc.yml` akışı yok** ama `docs/teknik-borc.md` var — yani kütüğü hiç issue'ya senkronlanmıyor. Kimsenin fark etmediği bir boşluktu.
-- **Naturapan ve SNN-Yonetici-Ozeti'nde `anahtar-tarama.yml` yok** — sır sızıntısına karşı PR kapısı yok.
-- **SNN-Standartlar'ın kendi rehber dosyası yok.** Kural koyan depo kendi ölçütünü karşılamıyor.
+- **`kod-dili.yml` hiçbir projenin ana dalında yok.** trade-kasa'da kuruluyor ama henüz `ci/kod-dili` dalında. Uyarı kipi 11 projede çalışıyor; PR kapısı hiçbirinde yok.
+- **8 projenin rehberi aile standardına atıf yapmıyor** — bu depo dahil.
+
+### Bu tablo bir kez yanlış çıktı (2026-09-19)
+
+İlk sürüm **çalışma klasörünü** okuyordu ve iki alarm üretti:
+
+> *"Naturapan ve Yönetici-Özeti'nde sır tarama kapısı yok"*
+> *"Yönetici-Özeti'nin kütüğü hiç issue'ya senkronlanmıyor"*
+
+**İkisi de yanlıştı.** Dosyalar ana dalda vardı; yerel kopyalar 3 ve 7 commit gerideydi ve projelerin üçü kendi çalışma dalındaydı — yani klasörün içeriği ana dalı hiç göstermiyordu.
+
+Ders göç notunun 11.0 bölümünde **2026-09-15'te zaten yazılıydı**: *"rapor ve denetimler GitHub'dan okumalı, yerel klasörden değil."* Yazılı kural tutmadı. Ölçer artık `origin/main`'den okur ve bu gerileme testlerle korunuyor.
+
+Düzeltirken ikinci bir hata daha çıktı: kök klasör için `origin/main:.` yazılmıştı, git bunu geçersiz sayıyor ("Not a valid object name") ve rehber listesi hep boş dönüyordu — üç projeye yanlış *"rehber yok"* dedi. Kökte `origin/main:` kullanılır; bu da teste yazıldı.
+
 
 ## Muafiyet
 
@@ -89,4 +98,5 @@ Aileye gerçekten ait olmayan bir depo için (`ihale-mcp` gibi dışarıdan tük
 
 - **Worktree'ler ayrı proje sayılır.** `GHS-Panel-teklif`, GHS-Panel'in worktree'sidir (`.git` bir dosya, klasör değil) ve proje listesinde ikinci kez görünür. Oturum açılışında zararsız; toplu ölçümde çift sayar.
 - **Ölçüt varlığa bakar, içeriğe değil.** `kod-dili.yml` takılı ama bozuk olabilir; ölçer bunu görmez. Akışın gerçekten çalıştığını CI gösterir.
+- **`origin/main` en son çekildiği andaki hâlidir.** Ölçüm ağa çıkmaz (oturum açılışı bütçesi), bu yüzden hiç `fetch` yapılmamış bir kopyada eski bilgi gösterebilir. Uzak dal hiç yoksa çalışma klasörüne düşülür.
 - **`rehber-atfi` metin arar.** Rehber `SNN-Standartlar` yazmadan aynı şeyi anlatıyorsa yanlış alarm üretir. 2026-09-19 ölçümünde bulgu veren 8 projenin rehberi elle okundu ve **bir yanlış alarm bulundu**: SNN-Piyasa-Core, depo adını yazmadan "SNN aile standardı" diyerek gerçek bir atıf yapıyordu. Ölçüt düzeltildi (atfın kendisi aranır, biçimi değil) ve iki gerileme testi eklendi. Kalan 7 bulgu doğrulandı.
