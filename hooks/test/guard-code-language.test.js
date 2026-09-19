@@ -5,11 +5,20 @@
 //   2. 'allow' DÖNDÜRMEK — normalde onay soracak yazmaları sessizce onaylar, güvenliği gevşetir.
 // İkisi de testle sabitlenir; kod değişirse kırmızıya döner.
 'use strict';
+const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
 const HOOKS = path.join(__dirname, '..');
-const ROOT = path.join(__dirname, '..', '..'); // ortak deponun kökü (canlı kopya yerine)
+// Ortak deponun koku: testler hem depodan hem makineden (~/.claude/hooks) calisir.
+// Makinede depo-goreli yol ortak depo DEGILDIR; canli kopyaya duselim (2026-09-19 olcumu).
+const ROOT = [
+  process.env.SNN_STANDARTLAR,
+  path.join(__dirname, '..', '..'),
+  path.join(os.homedir(), '.claude', 'standartlar-canli'),
+].find((p) => p && fs.existsSync(path.join(p, 'debt-sync', 'lib', 'debt.js')))
+  || path.join(__dirname, '..', '..');
 
 let fail = 0;
 const expect = (name, actual, wanted) => {
