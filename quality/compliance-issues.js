@@ -131,9 +131,12 @@ function applyActions(repo, actions) {
   }
 }
 
-function run({ baseDir, apply = false }) {
+function run({ baseDir, apply = false, only = null }) {
   const compliance = require('./compliance.js');
-  const projects = require('./measure-projects.js').readList();
+  let projects = require('./measure-projects.js').readList();
+  // Kademeli uygulama: önce TEK projede dene, sonucu gör, sonra hepsine uygula.
+  // 27 issue 11 depoya aynı anda düşerse, yanlış bir şey varsa 27 kez temizlik gerekir.
+  if (only) projects = projects.filter((p) => p.dir === only || p.repo === only);
   const rows = [];
   for (const p of projects) {
     const dir = path.join(baseDir, p.dir);
@@ -155,12 +158,20 @@ function main() {
   const args = process.argv.slice(2);
   const baseDir = args.find((a) => !a.startsWith('--'));
   if (!baseDir) {
-    console.error('Kullanım: node quality/compliance-issues.js <projeler-klasoru> [--uygula]');
+    console.error('Kullanım: node quality/compliance-issues.js <projeler-klasoru> [--proje <ad>] [--uygula]');
     process.exit(1);
   }
   const apply = args.includes('--uygula');
-  console.log(apply ? '⚙  UYGULANIYOR\n' : '🔍 KURU ÇALIŞTIRMA (hiçbir şey değişmez)\n');
-  console.log(report(run({ baseDir, apply })));
+  const onlyIdx = args.indexOf('--proje');
+  const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
+  if (only && !require('./measure-projects.js').readList().some((p) => p.dir === only || p.repo === only)) {
+    console.error(`Aile listesinde yok: ${only}`);
+    process.exit(1);
+  }
+  console.log(apply ? '⚙  UYGULANIYOR' : '🔍 KURU ÇALIŞTIRMA (hiçbir şey değişmez)');
+  if (only) console.log(`Yalnız: ${only}`);
+  console.log('');
+  console.log(report(run({ baseDir, apply, only })));
   if (!apply) console.log('\nUygulamak için: --uygula');
 }
 
