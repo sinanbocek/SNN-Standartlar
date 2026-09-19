@@ -35,6 +35,9 @@ function readState(root) {
   const guideNames = listOr(root).filter((f) => /^(CLAUDE|AI-RULES)\.md$/i.test(f));
   return {
     workflows: listOr(path.join(root, '.github', 'workflows')),
+    workflowText: listOr(path.join(root, '.github', 'workflows'))
+      .map((f) => readFileOr(path.join(root, '.github', 'workflows', f)))
+      .filter((t) => isTriggered(t)),
     hasLedger: fs.existsSync(path.join(root, 'docs', 'teknik-borc.md')),
     ledgerText: readFileOr(path.join(root, 'docs', 'teknik-borc.md')),
     guideNames,
@@ -64,6 +67,18 @@ function exemptions(raw) {
 // ─── Olcutler (SAF) ─────────────────────────────────────────────────────────
 // Her olcut: durumdan tek bir evet/hayir uretir ve NE YAPILACAGINI soyler.
 
+// SAF: bu akis dosyasi PR ya da push ile TETIKLENIYOR mu?
+// Yalniz workflow_call olan bir dosya baska bir depo tarafindan cagrilir; KENDI deposunda
+// hicbir sey yapmaz. 2026-09-19: bu deponun kod-dili.yml dosyasi tam olarak boyleydi ve
+// uyum olceri "turnike var" diyordu — YANLIS GECIS. Kapinin varligi degil, CALDIGI olculur.
+function isTriggered(text) {
+  const head = String(text || '').split(/^jobs:/m)[0];
+  return /^\s*(pull_request|push)\s*:/m.test(head);
+}
+
+// SAF: tetiklenen akislardan herhangi biri bu kapiyi calistiriyor mu?
+const runsGate = (state, re) => (state.workflowText || []).some((t) => re.test(t));
+
 const has = (state, file) => state.workflows.includes(file);
 const mentions = (text, re) => re.test(text || '');
 
@@ -71,8 +86,10 @@ const CHECKS = [
   {
     id: 'kod-dili-akisi',
     title: 'Kod dili turnikesi',
-    ok: (s) => has(s, 'kod-dili.yml'),
-    detail: () => '.github/workflows/kod-dili.yml yok',
+    ok: (s) => runsGate(s, /kod-dili\.yml|code-language-scan/),
+    detail: (s) => (has(s, 'kod-dili.yml')
+      ? 'kod-dili.yml var ama PR/push ile tetiklenmiyor (yalnız workflow_call) — bu depoda hiç çalışmıyor'
+      : '.github/workflows/kod-dili.yml yok'),
     fix: 'ornek/kod-dili.yml dosyasını projeye kopyala',
   },
   {
@@ -85,8 +102,10 @@ const CHECKS = [
   {
     id: 'teknik-borc-akisi',
     title: 'Teknik borç akışı',
-    ok: (s) => has(s, 'teknik-borc.yml'),
-    detail: () => '.github/workflows/teknik-borc.yml yok — kütük issue/board ile senkron olmuyor',
+    ok: (s) => runsGate(s, /teknik-borc\.yml|borc-senkron|debt-sync/),
+    detail: (s) => (has(s, 'teknik-borc.yml')
+      ? 'teknik-borc.yml var ama PR/push ile tetiklenmiyor — kütük issue/board ile senkron olmuyor'
+      : '.github/workflows/teknik-borc.yml yok — kütük issue/board ile senkron olmuyor'),
     fix: 'ornek/teknik-borc.yml dosyasını projeye kopyala',
   },
   {
@@ -99,8 +118,10 @@ const CHECKS = [
   {
     id: 'anahtar-tarama',
     title: 'Anahtar taraması',
-    ok: (s) => has(s, 'anahtar-tarama.yml'),
-    detail: () => '.github/workflows/anahtar-tarama.yml yok — sır sızıntısı PR kapısı yok',
+    ok: (s) => runsGate(s, /anahtar-tarama\.yml|secret-scan/),
+    detail: (s) => (has(s, 'anahtar-tarama.yml')
+      ? 'anahtar-tarama.yml var ama PR/push ile tetiklenmiyor — sır sızıntısı kapısı çalmıyor'
+      : '.github/workflows/anahtar-tarama.yml yok — sır sızıntısı PR kapısı yok'),
     fix: 'ornek/anahtar-tarama.yml dosyasını projeye kopyala',
   },
   {
@@ -144,4 +165,4 @@ function check(root) {
   return evaluate(readState(root));
 }
 
-module.exports = { CHECKS, EXEMPT_FILE, readState, exemptions, evaluate, summary, check, MAX_SHOWN };
+module.exports = { CHECKS, EXEMPT_FILE, isTriggered, runsGate, readState, exemptions, evaluate, summary, check, MAX_SHOWN };
