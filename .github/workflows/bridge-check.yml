@@ -1,0 +1,41 @@
+# Eski ad köprüleri GERÇEKTEN çalışıyor mu? (TB-001, 2026-09-19)
+#
+# Köprüler 10 projenin çağırdığı arayüzdür. "Herhalde çalışır" demek yetmez: bu akış,
+# tüketicinin yaptığı çağrının AYNISINI yapar — tam yolla, `@main` ile, aynı eski girdi adlarıyla.
+# Kırmızıya dönerse köprü bozulmuş demektir ve 10 projenin kapısı da bozulmuş demektir.
+#
+# NEDEN ELLE TETİKLENİR: köprüler yalnız `main`'de anlamlıdır (tüketiciler `@main` çağırır).
+# Haftalık da çalışır ki köprü sessizce bozulursa en geç bir hafta içinde görülsün.
+#
+# KAPSAM DIŞI: `cekirdek-yayilim` köprüsü burada çalıştırılmaz — çalıştırmak tüketici depolarda
+# PR açmayı denerdi. Onun doğruluğu yapı testiyle sınanır:
+#   node quality/test/workflow-callers.test.js  → "cekirdek-yayilim.yml → hedefi var"
+name: bridge-check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 5 * * 1" # her Pazartesi 08:23 TSİ
+
+permissions:
+  contents: read
+
+jobs:
+  secret-scan-bridge:
+    name: anahtar-tarama (eski ad) köprüsü
+    uses: sinanbocek/SNN-Standartlar/.github/workflows/anahtar-tarama.yml@main
+
+  code-language-bridge:
+    name: kod-dili (eski ad) köprüsü
+    uses: sinanbocek/SNN-Standartlar/.github/workflows/kod-dili.yml@main
+
+  debt-sync-bridge:
+    name: borc-senkron (eski ad) köprüsü — KURU
+    permissions:
+      contents: read
+      issues: write
+    uses: sinanbocek/SNN-Standartlar/.github/workflows/borc-senkron.yml@main
+    with:
+      uygula: false
+    secrets:
+      PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}

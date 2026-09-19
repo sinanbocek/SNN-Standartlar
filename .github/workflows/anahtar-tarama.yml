@@ -1,51 +1,28 @@
-# Ortak görevli: PR'da (ya da main'e gönderimde) EKLENEN satırlarda gizli anahtar var mı?
-# Projeler bunu kendi .github/workflows/anahtar-tarama.yml dosyalarından çağırır (ornek/anahtar-tarama.yml).
-# Değerler hiçbir çıktıya yazılmaz; yalnız dosya:satır ve anahtar türü.
-name: anahtar-tarama
+# ESKİ AD — UYUMLULUK KÖPRÜSÜ (2026-09-19, TB-001)
+#
+# Gerçek iş `secret-scan.yml` içindedir. Bu dosya yalnız çağrıyı oraya iletir.
+#
+# NEDEN VAR: bu akışı 10 projenin HEPSİ bu adla çağırıyor (2026-09-19'da ana daldan ölçüldü).
+# Adı doğrudan değiştirmek 10 projenin kapısını aynı anda kırardı. Köprü sayesinde hiçbir
+# projede dosya değiştirmek gerekmedi.
+#
+# NE ZAMAN SİLİNİR: her tüketici kendi çağrısını `secret-scan.yml`e çevirdiğinde. Ölçüm:
+#   node quality/workflow-callers.js
+# Sıfır çağıran kaldığında bu dosya silinir. Kendiliğinden silinmez; ölçüm gösterince silinir.
+name: anahtar-tarama (eski ad)
 
 on:
   workflow_call:
     inputs:
       standart_surumu:
-        description: "SNN-Standartlar deposundan kullanılacak dal/etiket"
+        description: "ESKİ AD — yerine `secret-scan.yml` + `standards_ref` kullanın"
         type: string
         default: main
 
 jobs:
-  tara:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+  bridge:
     permissions:
       contents: read
-    steps:
-      - name: Proje deposunu al (tam geçmiş, taban commit ile karşılaştırma için)
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Ortak tarayıcıyı al
-        uses: actions/checkout@v4
-        with:
-          repository: sinanbocek/SNN-Standartlar
-          ref: ${{ inputs.standart_surumu }}
-          path: .snn-standartlar
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Eklenen satırlarda gizli anahtar taraması
-        env:
-          PR_BASE: ${{ github.event.pull_request.base.sha }}
-          PUSH_BEFORE: ${{ github.event.before }}
-        run: |
-          BASE="${PR_BASE:-$PUSH_BEFORE}"
-          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
-            echo "Karşılaştırılacak taban commit yok (ilk gönderim ya da elle tetikleme) — tarama atlandı." | tee -a "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          set -o pipefail
-          node .snn-standartlar/quality/secret-scan.js --diff "$BASE" 2>&1 | tee tarama.log
-          STATUS=${PIPESTATUS[0]}
-          { echo '### Gizli anahtar taraması'; echo '```'; cat tarama.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-          exit $STATUS
+    uses: sinanbocek/SNN-Standartlar/.github/workflows/secret-scan.yml@main
+    with:
+      standards_ref: ${{ inputs.standart_surumu }}

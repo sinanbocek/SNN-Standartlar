@@ -29,11 +29,11 @@ Her proje için sırayla:
 4. **En son SNN-Piyasa-Core:** ana dalda 2.534 bulgu var ama çeviri `refactor/ingilizce-tanimlayicilar` dalında sürüyor (o dalda 301). Çeviri main'e girmeden turnike takılmaz.
 5. **SNN-Standartlar (bu depo):** TB-001 kapanınca kendi turnikesini takar. Kural koyan depo, kuralı en son değil en görünür biçimde uygular.
 
-## 2. Ölçüm (2026-09-19, ana daldan — `aile-olcumu.yml` akışı üretir)
+## 2. Ölçüm (2026-09-19, ana daldan — `family-measure.yml` akışı üretir)
 
 Tarayıcı yalnız tanımlayıcılara bakar; yorum, dizge, JSX yazısı ve düzenli ifade gövdesi taranmaz.
 
-Sayılar **her projenin ana dalından** gelir ve `.github/workflows/aile-olcumu.yml` tarafından üretilir. Elle ölçüm yapılmaz: yerel klasörler çalışma dallarında olabilir ve yanlış sayı verir (aşağıya bakın).
+Sayılar **her projenin ana dalından** gelir ve `.github/workflows/family-measure.yml` tarafından üretilir. Elle ölçüm yapılmaz: yerel klasörler çalışma dallarında olabilir ve yanlış sayı verir (aşağıya bakın).
 
 | Proje | Bulgu | Ayrı ad | SQL | Önerilen öncelik |
 |---|---:|---:|---:|---|

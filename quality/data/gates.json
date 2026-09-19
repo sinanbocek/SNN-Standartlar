@@ -92,6 +92,12 @@
       "module": "hooks/stop-gate.js",
       "vaka": "2026-09-19: kapi vardi ama defterde yoktu ve testsizdi. Test yazilirken gercek kacak olculdu: git yeni bir klasoru tek satirda bildirdigi icin (`?? src/`) yeni klasore yazilan TS dosyalari kapiyi HIC tetiklemiyordu; kanca artik `-uall` ile okuyor.",
       "test": "yeni klasör kaçmaz (-uall çıktısı)"
+    },
+    {
+      "id": "akis-koprusu",
+      "module": "quality/workflow-callers.js",
+      "vaka": "2026-09-19: akis dosyasi adlari Ingilizceye tasindi, ama eski adlar 10 projenin cagirdigi disa acik arayuzdu. Eski adlar kopruye donusturuldu; koprunun ne zaman silinebilecegi tahminle degil ANA DALDAN olculerek karara baglandi. Ayni gun yerel kopya iki projede yanlis cevap vermisti.",
+      "test": "çağıranı olan hazır sayılmaz"
     }
   ]
 }

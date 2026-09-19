@@ -1,52 +1,22 @@
-# Ortak görevli: PR'da (ya da main'e gönderimde) EKLENEN satırlarda Türkçe tanımlayıcı var mı?
-# Projeler bunu kendi .github/workflows/kod-dili.yml dosyalarından çağırır (ornek/kod-dili.yml).
-# Yalnız TANIMLAYICILAR taranır: yorumlar, dizgeler ve belgeler Türkçedir, taranmaz.
-# Kural: standartlar/kod-dili-standardi.md
-name: kod-dili
+# ESKİ AD — UYUMLULUK KÖPRÜSÜ (2026-09-19, TB-001)
+#
+# Gerçek iş `code-language.yml` içindedir. Bu dosya yalnız çağrıyı oraya iletir.
+# Ana dalda 1 proje bu adla çağırıyor (2026-09-19 ölçümü).
+# Silme koşulu: `node quality/workflow-callers.js` sıfır çağıran gösterdiğinde.
+name: kod-dili (eski ad)
 
 on:
   workflow_call:
     inputs:
       standart_surumu:
-        description: "SNN-Standartlar deposundan kullanılacak dal/etiket"
+        description: "ESKİ AD — yerine `code-language.yml` + `standards_ref` kullanın"
         type: string
         default: main
 
 jobs:
-  tara:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+  bridge:
     permissions:
       contents: read
-    steps:
-      - name: Proje deposunu al (tam geçmiş, taban commit ile karşılaştırma için)
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Ortak tarayıcıyı al
-        uses: actions/checkout@v4
-        with:
-          repository: sinanbocek/SNN-Standartlar
-          ref: ${{ inputs.standart_surumu }}
-          path: .snn-standartlar
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Eklenen satırlarda Türkçe tanımlayıcı taraması
-        env:
-          PR_BASE: ${{ github.event.pull_request.base.sha }}
-          PUSH_BEFORE: ${{ github.event.before }}
-        run: |
-          BASE="${PR_BASE:-$PUSH_BEFORE}"
-          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
-            echo "Karşılaştırılacak taban commit yok (ilk gönderim ya da elle tetikleme) — tarama atlandı." | tee -a "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          set -o pipefail
-          node .snn-standartlar/quality/code-language-scan.js --diff "$BASE" . 2>&1 | tee kod-dili.log
-          STATUS=${PIPESTATUS[0]}
-          { echo '### Kod dili taraması (tanımlayıcılar İngilizce mi?)'; echo '```'; cat kod-dili.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-          exit $STATUS
+    uses: sinanbocek/SNN-Standartlar/.github/workflows/code-language.yml@main
+    with:
+      standards_ref: ${{ inputs.standart_surumu }}

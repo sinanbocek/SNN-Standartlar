@@ -1,0 +1,65 @@
+# Ortak görevli: çekirdekte (SNN-Abacus-Core) yeni sürüm etiketi çıkınca, çekirdeği kullanan her projeye güncelleme PR'ı açar.
+# Çekirdek deposu bunu kendi .github/workflows/cekirdek-yayilim.yml dosyasından çağırır (ornek/cekirdek-yayilim.yml).
+name: core-propagate
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Yayılacak çekirdek sürümü (ör. v3.3.0)"
+        type: string
+        required: true
+      apply:
+        description: "false ise yalnız plan yazdırılır"
+        type: boolean
+        default: true
+      only:
+        description: "Boş değilse yalnız bu depo (ör. sinanbocek/SNN-Yonetici-Ozeti)"
+        type: string
+        default: ""
+      standards_ref:
+        description: "SNN-Standartlar deposundan kullanılacak dal/etiket"
+        type: string
+        default: main
+    secrets:
+      PROJECT_TOKEN:
+        description: "Tüketici depolarda dal ve PR açabilen anahtar (klasik PAT, repo yetkisi)"
+        required: true
+
+jobs:
+  yay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Ortak görevliyi al
+        uses: actions/checkout@v4
+        with:
+          repository: sinanbocek/SNN-Standartlar
+          ref: ${{ inputs.standards_ref }}
+
+      # Node 24 = npm 11. npm 10 sabit etiketli git bağımlılığını (#v2.7.0 → #v3.2.0) kilit dosyasına işlemiyor ve
+      # npm 11'in yazdığı libc satırlarını siliyor (2026-09-15 ölçümü: Gunum-Var PR açılamadı, Ihale/Portföy'de gürültü)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: npm sürümü en az 11 olmalı
+        run: |
+          npm --version
+          [ "$(npm --version | cut -d. -f1)" -ge 11 ] || { echo "npm 11 gerekli"; exit 1; }
+
+      - name: Çekirdek sürümünü projelere yay
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          SURUM: ${{ inputs.version }}
+          UYGULA: ${{ inputs.apply }}
+          YALNIZ: ${{ inputs.only }}
+        run: |
+          ARGS=(--surum "$SURUM")
+          if [ "$UYGULA" = "true" ]; then ARGS+=(--uygula); fi
+          if [ -n "$YALNIZ" ]; then ARGS+=(--yalniz "$YALNIZ"); fi
+          set -o pipefail
+          node core/propagate.js "${ARGS[@]}" 2>&1 | tee yayilim.log
+          { echo '### Çekirdek yayılımı'; echo '```'; cat yayilim.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
