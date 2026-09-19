@@ -105,12 +105,30 @@ const MAIN_BRANCHES = ['main', 'master'];
 // SAF: komut yerel bir commit mi? (mesaj okuma, günlük listeleme gibi çağrılar hariç)
 const isCommit = (cmd) => /\bgit\s+commit\b/.test(String(cmd || '')) && !/\bgit\s+commit\b[^\n]*\s--dry-run\b/.test(String(cmd || ''));
 
+// SAF: komut, commit'ten ÖNCE dal değiştiriyor mu? (`git checkout -b x && git commit …`)
+// Neden (2026-09-19'da ölçüldü): kapı komutu değil, komut BAŞLARKEN bulunulan dalı okuyor.
+// Ana daldayken "önce dalımı açayım" diye yazılan doğru komut engelleniyordu — kapının
+// tam olarak teşvik ettiği davranış. Üç yanlış alarmın biri buydu.
+function switchesBranchFirst(cmd) {
+  const text = String(cmd || '');
+  const commitAt = text.search(/\bgit\s+commit\b/);
+  if (commitAt < 0) return false;
+  const before = text.slice(0, commitAt);
+  const hits = [...before.matchAll(/\bgit\s+(?:checkout|switch)\s+(?:(?:-b|-c|-B)\s+)?([^\s&|;]+)/g)];
+  if (!hits.length) return false;
+  // ÖNEMLİ: `git checkout main && git commit` muaf OLMAMALI — kapının engellemek istediği
+  // şeyin ta kendisi. Son geçilen dala bakılır; ana dalsa muafiyet yok.
+  const target = hits[hits.length - 1][1];
+  return !MAIN_BRANCHES.includes(target);
+}
+
 // SAF: ana dalda commit ediliyorsa engel gerekçesi döndürür. branch = o an bulunulan dal.
 function mainCommitBlock(cmd, branch) {
   if (!isCommit(cmd)) return null;
+  if (switchesBranchFirst(cmd)) return null;
   if (!MAIN_BRANCHES.includes(String(branch || '').trim())) return null;
   return `[global kural] Engellendi: ${branch} dalına doğrudan commit. `
     + 'Önce kendi dalını aç: git checkout -b <tur>/<kisa-ad> (feat/ fix/ docs/ refactor/), sonra commit\'le ve PR aç. '
     + 'Kural: standartlar/es-zamanli-calisma-standardi.md — paralel oturumlar aynı dalda birikirse hangi işin hangi commit olduğu kaybolur.';
 }
-module.exports = { RULES, check, blockMessage, deletedBranch, branchDeleteBlock, MAIN_BRANCHES, isCommit, mainCommitBlock };
+module.exports = { RULES, check, blockMessage, deletedBranch, branchDeleteBlock, MAIN_BRANCHES, isCommit, mainCommitBlock, switchesBranchFirst };

@@ -10,6 +10,24 @@ const expect = (name, actual, wanted) => {
 };
 const engel = (cmd) => (g.check(cmd) ? g.check(cmd).name : null);
 
+console.log('— ana dal kapısı: komut içinde dal açılıyorsa engellenmez');
+// 2026-09-19'da ölçüldü: kapı komutu değil, komut BAŞLARKEN bulunulan dalı okuyordu.
+// Ana daldayken "önce dalımı açayım" diye yazılan DOĞRU komut engelleniyordu — kapının
+// tam olarak teşvik ettiği davranış. Bugünkü üç yanlış alarmın biri buydu.
+const ana = (cmd, branch = 'main') => !!g.mainCommitBlock(cmd, branch);
+expect('yalın commit engellenir', ana('git commit -m x'), true);
+expect('checkout -b sonra commit serbest', ana('git checkout -b feat/x && git add a && git commit -m x'), false);
+expect('switch -c sonra commit serbest', ana('git switch -c fix/y && git commit -m x'), false);
+expect('var olan dala geçip commit serbest', ana('git checkout feat/x && git commit -m x'), false);
+// Açık: `git checkout main && git commit` muaf OLMAMALI — engellemek istediğimiz şeyin ta kendisi.
+expect('ana dala geçip commit engellenir', ana('git checkout main && git commit -m x'), true);
+expect('master için de engellenir', ana('git checkout master && git commit -m x'), true);
+expect('son geçilen dal ana dalsa engellenir', ana('git checkout -b feat/x && git checkout main && git commit -m x'), true);
+expect('commit SONRA dal açmak engellenir', ana('git commit -m x && git checkout -b feat/x'), true);
+expect('mesaj içindeki checkout muafiyet vermez', ana("git commit -m 'git checkout -b denemesi'"), true);
+expect('kendi dalında yalın commit serbest', ana('git commit -m x', 'feat/z'), false);
+expect('commit yoksa karar yok', g.mainCommitBlock('git checkout -b feat/x', 'main'), null);
+
 console.log('— sahneye her şeyi alma');
 expect('git add -A', engel('git add -A'), 'git add -A');
 expect('git add --all', engel('git add --all'), 'git add -A');

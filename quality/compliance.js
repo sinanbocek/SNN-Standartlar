@@ -10,9 +10,13 @@
 // Durum farki bunlarin hicbirini gerektirmez: her oturumda yeniden hesaplanir,
 // eksik giderilince kendiliginden kaybolur.
 //
-// HIZ: oturum acilisinda calisir, bu yuzden PAHALI is yapmaz. Kod dili taramasi
-// (Yonetici-Ozeti'nde 10.153 bulgu) burada CALISTIRILMAZ; yalniz turnikenin takili
-// olup olmadigina ve kutukte kayit bulunup bulunmadigina bakilir.
+// HIZ (2026-09-19'da OLCULDU, once yanlis varsayilmisti):
+// Ilk surum "kod dili taramasi pahali" diye tarama YAPMIYORDU. Sonuc: Naturapan'a
+// (0 bulgu) "kod dili kaydi ac" deniyordu — yanlis alarm. Olcum varsayimi curuttu:
+//   Naturapan 53 ms · Abacus 76 ms · trade-kasa 77 ms
+//   GHS-Panel 321 ms · Gunum-Var 445 ms · Yonetici-Ozeti 134 ms (10.153 bulguya ragmen)
+// Sureyi bulgu sayisi degil DOSYA SAYISI belirliyor. En kotu hal 445 ms; acilis
+// bekcisinin butcesi 30 sn. Tarama artik yapilir ve bulgu sayisi acilista gorunur.
 //
 // Kural: standartlar/ · Belge: docs/uyum-olcumu.md
 'use strict';
@@ -69,7 +73,17 @@ function readState(root) {
     guideNames,
     guideText: guideNames.map((f) => readFileOr(path.join(root, f))).join('\n'),
     exemptRaw: readFileOr(path.join(root, EXEMPT_FILE), null),
+    findings: countFindings(root),
   };
+}
+
+// Kod dili bulgu sayisi. Tarama coker ya da yuklenemezse null doner: "bilmiyorum".
+// Bilmiyorken kayit ISTENMEZ — var olmayan bir is icin dirdir etmek, kapinin
+// guvenilirligini oldurur (ihale-mcp dersi).
+function countFindings(root) {
+  try {
+    return require('./code-language-scan.js').scanAll(root).findings.length;
+  } catch { return null; }
 }
 
 // ─── Muafiyet (SAF) ─────────────────────────────────────────────────────────
@@ -121,8 +135,12 @@ const CHECKS = [
   {
     id: 'kod-dili-kaydi',
     title: 'Kod dili teknik borç kaydı',
-    ok: (s) => mentions(s.ledgerText, /kod dili/i),
-    detail: (s) => (s.hasLedger ? 'kütükte kod dili kaydı yok' : 'docs/teknik-borc.md yok'),
+    // Bulgu yoksa kayıt da gerekmez; bilinmiyorsa (tarama çalışmadı) istenmez.
+    ok: (s) => s.findings === 0 || s.findings === null || s.findings === undefined
+      || mentions(s.ledgerText, /kod dili/i),
+    detail: (s) => (s.hasLedger
+      ? `kütükte kod dili kaydı yok (${(s.findings || 0).toLocaleString('tr-TR')} bulgu)`
+      : `docs/teknik-borc.md yok (${(s.findings || 0).toLocaleString('tr-TR')} bulgu)`),
     fix: 'docs/kod-dili-gecis.md §3 şablonuyla kendi kütüğüne kayıt aç',
   },
   {

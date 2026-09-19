@@ -148,10 +148,18 @@ function projectStatus(dir) {
   };
 }
 
+// SAF değil (diske bakar): klasör bir deponun KÖKÜ mü, yoksa worktree'si mi?
+// Worktree'de `.git` bir DOSYADIR (ana deponun .git/worktrees/… dizinine işaret eder).
+// Neden (2026-09-19'da ölçüldü): GHS-Panel-teklif, GHS-Panel'in worktree'siydi ve proje
+// listesinde ikinci kez görünüyordu — aynı 13 P1 borcu iki proje gibi sayılıyordu.
+function isRepoRoot(dir) {
+  try { return fs.statSync(path.join(dir, '.git')).isDirectory(); } catch { return false; }
+}
+
 function listProjects() {
   try {
     return fs.readdirSync(PROJECTS_ROOT, { withFileTypes: true })
-      .filter((d) => d.isDirectory() && !IGNORED_PROJECTS.has(d.name) && fs.existsSync(path.join(PROJECTS_ROOT, d.name, '.git')))
+      .filter((d) => d.isDirectory() && !IGNORED_PROJECTS.has(d.name) && isRepoRoot(path.join(PROJECTS_ROOT, d.name)))
       .map((d) => path.join(PROJECTS_ROOT, d.name));
   } catch {
     return [];
@@ -169,4 +177,4 @@ function debtLabel(d) {
   return `P1:${c.P1} P2:${c.P2} P3:${c.P3}` + (c['P?'] ? ` P?:${c['P?']}` : '');
 }
 
-module.exports = { PROJECTS_ROOT, projectStatus, unpushedBranches, forgottenWork, listProjects, findProjectRoot, debtLabel, parseDebts, parseArchiveIds, setIssueNumber };
+module.exports = { PROJECTS_ROOT, isRepoRoot, projectStatus, unpushedBranches, forgottenWork, listProjects, findProjectRoot, debtLabel, parseDebts, parseArchiveIds, setIssueNumber };
