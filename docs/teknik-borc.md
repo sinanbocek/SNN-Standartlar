@@ -78,25 +78,6 @@ Kapanan kayıtlar: `docs/teknik-borc-arsiv.md`
 
 ---
 
-### TB-005 — Bu deponun kendi rehber dosyası yok
-- **Tespit Tarihi:** 2026-09-19 (uyum ölçeri ilk çalıştığında)
-- **Öncelik:** P3 (Fırsatta)
-
-#### 🟢 Sade Anlatım
-- **Sorun ne?** Aile standardı "her projenin rehberi (`CLAUDE.md` ya da `AI-RULES.md`) aile standardına atıf yapsın" diyor. Bu depoda öyle bir dosya hiç yok. Kuralı koyan depo, kendi ölçütünü karşılamıyor.
-- **Benzetme:** Yönetmeliği yazan dairenin kapısında yönetmeliğin kendisinin asılı olmaması.
-- **Çözülmezse ne olur?** Somut arıza çıkmaz. Ama bu depoda çalışan bir ajan, projeye özgü kuralları (dal adları, PR sırası, bekçi tuzakları) her seferinde yeniden keşfediyor.
-- **Senden beklenen karar:** Yok.
-
-#### 🔧 Teknik Detay
-- **Açıklama:** `quality/compliance.js` ölçütü `rehber-atfi`; 2026-09-19 ölçümünde bu depo dahil 8 projede eksik. Bu depo için sebep atfın eksikliği değil, dosyanın hiç olmaması.
-- **Etki:** Yalnız bu depo.
-- **Çözüm yönü:** `CLAUDE.md` yazılır. İçeriği ölçülmüş olmalı, temenni değil: bugün üç kez tekrarlanan bekçi tuzağı (komut metninde yasak komut adı geçince engellenme), PR'ları üst üste bindirmeme kuralı (#18 vakası), commit mesajını dosyadan verme alışkanlığı, `git checkout -b` ile `git commit`'i ayrı komutlarda çalıştırma.
-- **Neden Şimdi Çözülmüyor:** Küçük iş ama içeriği bugünkü derslerin oturmasını bekliyor; aceleyle yazılan rehber yanlış alışkanlık kaydeder.
-- **Bağlı kalemler:** Yok.
-
----
-
 ### TB-006 — `GOC-NOTU.md` ve beceriler hiçbir depoda sürümlenmiyor
 - **Tespit Tarihi:** 2026-09-19 (dayanıklılık araştırması)
 - **Öncelik:** P2 (Planlı)
