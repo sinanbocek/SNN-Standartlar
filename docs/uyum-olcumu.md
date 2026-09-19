@@ -80,6 +80,25 @@ Ders göç notunun 11.0 bölümünde **2026-09-15'te zaten yazılıydı**: *"rap
 Düzeltirken ikinci bir hata daha çıktı: kök klasör için `origin/main:.` yazılmıştı, git bunu geçersiz sayıyor ("Not a valid object name") ve rehber listesi hep boş dönüyordu — üç projeye yanlış *"rehber yok"* dedi. Kökte `origin/main:` kullanılır; bu da teste yazıldı.
 
 
+## Eksikler issue olarak da düşer (TB-003)
+
+Oturum açılışındaki satır yalnız **o projeye girene** görünür ve oturum kapanınca kaybolur; "yapıldı mı?" kaydı tutulmaz. Bu yüzden eksikler her projenin kendi issue listesine de düşer.
+
+| Oturum açılışı | Issue |
+|---|---|
+| Yalnız içeri giren görür | Panodan hepsi birden görünür |
+| Oturum kapanınca kaybolur | Yapılana kadar durur |
+| Kayıt yok | Giderilince kendiliğinden kapanır |
+| Uyarı | Kütüktekilerle aynı yerde duran iş kalemi |
+
+Akış: `.github/workflows/uyum-issue.yml` — Pazartesi 08:23 TSİ. Elle çalıştırıldığında **varsayılan kuru çalıştırmadır**; yazmak için `uygula` işaretlenir.
+
+**Elle kapatmak eksiği gidermez.** Ölçüm eksiği hâlâ görüyorsa issue bir sonraki turda yeniden açılır — kapanış yalnızca ölçümden gelir. Kütük senkronundaki kuralın aynısı.
+
+**Başka kaynaktan gelen issue'lara dokunulmaz:** yalnız `[UYUM:<ölçüt>]` başlıklı ve `aile-uyum` etiketli olanlar yönetilir. Kütüğün `[TB-xxx]` issue'larına karışmaz.
+
+> **Gerekçe düzeltmesi (2026-09-19):** bu iş ilk önerildiğinde gerekçe "aylarca açılmayan proje eksiğini görmez" diye yazılmıştı. Ölçüldü ve zayıf çıktı: en eski projenin ana dalı 3 gün önce hareket etmişti. Gerçek gerekçe **görünürlük ve kalıcılık**.
+
 ## Muafiyet
 
 Aileye gerçekten ait olmayan bir depo için (`ihale-mcp` gibi dışarıdan tüketilen bir MCP sunucusu) proje kökünde `.snn-uyum.json`:

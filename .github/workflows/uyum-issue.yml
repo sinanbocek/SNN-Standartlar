@@ -1,0 +1,65 @@
+# Aile standardı uyum eksiklerini her projenin kendi issue listesine düşürür (TB-003).
+#
+# Neden (2026-09-19): eksikler yalnız oturum açılışında görünüyordu; o satır oturum
+# kapanınca kaybolur, "yapıldı mı?" kaydı tutulmaz ve proje sahibi 11 projenin durumunu
+# tek yerde göremezdi. Issue kalır, panodan hepsi birden görünür, giderilince kapanır.
+#
+# VARSAYILAN KURU ÇALIŞTIRMADIR. Yazmak için `uygula` işaretlenir.
+# Kural: docs/uyum-olcumu.md · Liste: quality/data/family-projects.json
+name: uyum-issue
+
+on:
+  schedule:
+    - cron: "23 5 * * 1" # Pazartesi 08:23 TSİ — haftalık rapordan sonra
+  workflow_dispatch:
+    inputs:
+      uygula:
+        description: "İşaretsizse yalnız kuru çalıştırma (hiçbir issue açılmaz)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uyum-issue
+  cancel-in-progress: false
+
+jobs:
+  uyum:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Ara klasörler depo ağacının DIŞINDA: içeride olursa "cp -r ." kendi ara
+      # klasörünü de kopyalar ve bu depo kendi eski dosyalarını tarar (2026-09-19'da ölçüldü).
+      - name: "Aile projelerini klonla"
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/_projeler"
+          node -e "
+            const list = require('./quality/measure-projects.js').readList();
+            console.log(list.map((p) => p.repo + ' ' + p.dir).join('\n'));
+          " > "$RUNNER_TEMP/_repo-listesi.txt"
+          while read -r repo dir; do
+            [ -z "$repo" ] && continue
+            git clone --quiet --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${repo}.git" "$RUNNER_TEMP/_projeler/$dir" \
+              || echo "KLONLANAMADI $repo"
+          done < "$RUNNER_TEMP/_repo-listesi.txt"
+          ls "$RUNNER_TEMP/_projeler"
+
+      - name: "Ölç ve issue planını çıkar"
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.uygula }}" = "true" ]; then
+            node quality/compliance-issues.js "$RUNNER_TEMP/_projeler" --uygula
+          else
+            node quality/compliance-issues.js "$RUNNER_TEMP/_projeler"
+          fi

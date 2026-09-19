@@ -58,6 +58,8 @@ jobs:
         run: node quality/test/code-language-warn.test.js
       - name: Uyum ölçeri testleri
         run: node quality/test/compliance.test.js
+      - name: Uyum issue senkronu testleri
+        run: node quality/test/compliance-issues.test.js
       - name: Aile ölçümü testleri
         run: node quality/test/measure-projects.test.js
       - name: Kapı kayıt defteri testleri
