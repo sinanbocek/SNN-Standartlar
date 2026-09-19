@@ -60,11 +60,63 @@ function measure(dir) {
       'anahtar-tarama.yml': /\/SNN-Standartlar$/i.test(full) ? true : callerWorkflow(full, '.github/workflows/anahtar-tarama.yml', def),
     },
     board,
+    inFamily: familyState(full),
     secret: secretList.ok ? JSON.parse(secretList.out).secrets.some((s) => s.name === 'PROJECT_TOKEN') : null,
     deleteBranchOnMerge: admin ? !!info.delete_branch_on_merge : null,
     vulnAlerts: admin ? (alerts.ok && /HTTP\/[\d.]+ 204/.test(alerts.out)) : null,
     securityFixes: fixes.ok ? !!JSON.parse(fixes.out).enabled : null,
   };
+}
+
+// Ortak deponun kendi adı; aile listesi oraya PR ile eklenir.
+const STANDARDS_REPO = 'sinanbocek/SNN-Standartlar';
+const FAMILY_FILE = 'quality/data/family-projects.json';
+
+// Liste ortak depodan okunur; okunamazsa null ("ölçemedim") döner — varsayım yapılmaz.
+// Karar saf modülde (setup-plan.familyLookup); burada yalnız dosya okunur.
+function familyState(full) {
+  try {
+    return K.familyLookup(fs.readFileSync(path.join(ROOT, FAMILY_FILE), 'utf8'), full);
+  } catch { return null; }
+}
+
+// Ortak depoya "projeyi aile listesine ekle" PR'ı açar. Hedef proje PR'ından AYRI tutulur:
+// farklı depolar, farklı inceleme. Döner: PR adresi ya da null (zaten listede).
+function applyFamilyEntry(o, dir) {
+  const current = ghJson(['api', `repos/${STANDARDS_REPO}/contents/${FAMILY_FILE}`]);
+  const next = K.familyWithEntry(Buffer.from(current.content, 'base64').toString('utf8'), o.repo.full, dir);
+  if (!next) return null;
+  const branch = `chore/aile-listesi-${o.repo.name.toLowerCase()}`;
+  const base = ghJson(['api', `repos/${STANDARDS_REPO}/git/ref/heads/main`]).object.sha;
+  if (!tryGh(['api', `repos/${STANDARDS_REPO}/git/ref/heads/${branch}`]).ok) {
+    gh(['api', `repos/${STANDARDS_REPO}/git/refs`, '-f', `ref=refs/heads/${branch}`, '-f', `sha=${base}`]);
+  }
+  const b64 = Buffer.from(next).toString('base64');
+  const tmp = path.join(require('os').tmpdir(), `aile-${Date.now()}.b64`);
+  fs.writeFileSync(tmp, b64);
+  try {
+    const onBranch = tryGh(['api', `repos/${STANDARDS_REPO}/contents/${FAMILY_FILE}?ref=${branch}`]);
+    const shaArgs = onBranch.ok ? ['-f', `sha=${JSON.parse(onBranch.out).sha}`] : [];
+    gh(['api', '-X', 'PUT', `repos/${STANDARDS_REPO}/contents/${FAMILY_FILE}`,
+      '-f', `branch=${branch}`, '-F', `content=@${tmp}`,
+      '-f', `message=chore(aile): ${o.repo.name} aile listesine eklendi\n\nSNN-Standartlar/setup/setup-project.js`, ...shaArgs]);
+  } finally { fs.rmSync(tmp, { force: true }); }
+  const open = tryGh(['pr', 'list', '-R', STANDARDS_REPO, '--head', branch, '-s', 'open', '--json', 'url', '--jq', '.[0].url']);
+  if (open.ok && open.out.trim()) return open.out.trim();
+  const body = [
+    `\`${o.repo.full}\` aile listesine eklenir.`,
+    '',
+    'Bu liste **haftalık uyum issue\'larının** ve **toplu ölçümün** kaynağıdır; proje listede',
+    'değilken kapılar ve oturum açılışı yine çalışır, ama eksikleri issue olarak düşmez.',
+    '',
+    '🤖 SNN-Standartlar proje kurulum betiği',
+  ].join('\n');
+  const bodyFile = path.join(require('os').tmpdir(), `aile-pr-${Date.now()}.md`);
+  fs.writeFileSync(bodyFile, body);
+  try {
+    return gh(['pr', 'create', '-R', STANDARDS_REPO, '--base', 'main', '--head', branch,
+      '--title', `chore(aile): ${o.repo.name} aile listesine eklensin`, '--body-file', bodyFile]).trim();
+  } finally { fs.rmSync(bodyFile, { force: true }); }
 }
 
 function putFile(repo, file, content, message) {
@@ -153,6 +205,7 @@ function main() {
     const attempt = (label, fn) => { try { const r = fn(); done.push(`${label}${r ? `: ${r}` : ''}`); } catch (e) { failed.push(`${label}: ${(e.stderr || e.message).toString().trim().split('\n')[0]}`); } };
     attempt('dosyalar (PR)', () => applyFiles(o, steps));
     if (want('board')) attempt('board', () => `#${applyBoard(o)}`);
+    if (want('aile-listesi')) attempt('aile listesi (PR)', () => applyFamilyEntry(o, path.basename(dir)) || 'zaten listede');
     if (want('dal-silme')) attempt('dal silme ayarı', () => { gh(['api', '-X', 'PATCH', `repos/${o.repo.full}`, '-F', 'delete_branch_on_merge=true']); });
     if (want('guvenlik-uyarilari')) attempt('güvenlik uyarıları', () => { gh(['api', '-X', 'PUT', `repos/${o.repo.full}/vulnerability-alerts`]); });
     if (want('guvenlik-duzeltme')) attempt('güvenlik düzeltme PR\'ları', () => { gh(['api', '-X', 'PUT', `repos/${o.repo.full}/automated-security-fixes`]); });
