@@ -33,6 +33,33 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 
 ## Kararlar
 
+### 2026-09-19 · JSX ekran yazısı tanımlayıcı sanılıyor — **KABUL** (iki bildirim)
+
+- **Kimden:** GHS-Panel oturumu (#64) ve SNN-Proje-ve-Nakit-Akis oturumu (#28)
+- **Tür:** yanlış-alarm
+- **Talep:** Kullanıcıya görünen Türkçe cümleler tanımlayıcı sanılıyor. Nakit-Akış ölçümünde
+  **22 bulgunun 22'si** yanlış alarmdı. Üç ayrı boşluk bildirildi:
+  1. Cümle ortasındaki **noktalı virgül** satırı kod yapıyordu — aynı cümlenin `;` taşıyan satırı
+     yakalanıyor, alt satırı temiz geçiyordu.
+  2. **"Parantez varsa koddur"** katılığı: `Kuruma Ait İhaleler ({projects.length})` (16 bulgu).
+  3. **HTML varlığındaki `;`**: aynı cümle `&quot;` ile 6 bulgu, `&quot;` olmadan temiz (6 bulgu).
+- **Karar:** **Kabul.** Üçü de yeniden üretildi.
+- **Kök neden:** ölçüt yalnız *"`=` ya da `;` var mı"* idi. Noktalı virgül kodda deyimi
+  **bitirir** (satır sonu ya da `}`/`)` önü); düzyazıda cümlenin ortasında durur. Parantez de
+  ölçüt değil: ayırt eden şey parantezin **bir adın hemen ardından** gelmesi.
+- **Ölçüm yolu — düzeltme üç kez daraltıldı:**
+  | Deneme | Düşen | Yeni | Sorun |
+  |---|---|---|---|
+  | 1 — parantez katılığı tamamen kaldırıldı | 1.272 | 0 | Düşenlerin çoğu **gerçek ad**dı (`liste`, `zincirKur`, `konsolBulgulari`) |
+  | 2 — çağrı/anahtar kelime ölçütü eklendi | 412 | 2.266 | **201 ekran yazısı** yanlış alarm verdi: Türkçe "var" ve üç nokta kod sanıldı |
+  | 3 — ölçüt etiket arası / sarkan diye ayrıldı | 416 | 42 | ✓ |
+- **Sonuç:** **−416 yanlış alarm, +42 gerçek ad** (önceden gizlenen `DURUM_METNI`, `OdemeTimeline`,
+  `zincirler`). Düşenlerin örnekleri tek tek okundu; hepsi ekran cümlesi. 14 gerileme testi;
+  bildirenin **koruma örneği** (`setSonucAlani` kaçmamalı) teste kondu. Sabotajda 5 + 1 test kırmızı.
+- **Tüketiciler doğru yaptı:** ikisi de susturmadı. Nakit-Akış **çözüm yönü önerdi** ve
+  *"kaldırılırsa şu gerçek ad kaçar"* diyerek **kendi önerisinin riskini** de gösterdi; o cümle
+  olmasaydı 1. denemedeki aşırı genişlik ölçüm yapılana kadar fark edilmezdi.
+
 ### 2026-09-19 · Hassas desen issue açılmasını sessizce engelliyor — **KABUL**
 
 - **Kimden:** SNN-Abacus-Core oturumu (issue #67)

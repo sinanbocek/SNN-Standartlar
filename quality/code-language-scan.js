@@ -143,7 +143,45 @@ function codePart(line, sql) {
 //   {metrics.count} adet ödemenin kur bilgisi girilmediği için TL
 // Bu durumda YAZI atılır, yalnız süslü parantez içindeki KOD taranır (2026-09-18 ikinci
 // kalibrasyon: İhale ve Nakit-Akış ölçümlerinde kalan bulguların çoğu bu biçimdeydi).
-const CODE_MARK = /[=;]/;
+// SAF: HTML varlıkları (`&quot;` `&nbsp;` `&#39;`) atılır. İçlerindeki NOKTALI VİRGÜL, ekran
+// yazısını kod sanmaya yetiyordu: aynı cümle `&quot;` ile 6 bulgu veriyor, `&quot;` olmadan
+// temiz geçiyordu (SNN-Proje-ve-Nakit-Akis bildirimi #28, 2026-09-19).
+const stripEntities = (part) => String(part).replace(/&[a-zA-Z]+;|&#\d+;/g, ' ');
+
+// SAF: noktalı virgül KOD işareti mi, yoksa cümle noktalaması mı?
+// Kodda deyimi bitirir: satır sonunda ya da `}` / `)` önünde durur. Düzyazıda ise ortada durur
+// ve ardından bir kelime gelir: "…sessizce yazılmaz; gönderene WhatsApp'tan sorulur."
+// Eski ölçüt her `;` işaretini kod sayıyordu; bu yüzden ÇOK SATIRLI JSX metninin `;` taşıyan
+// satırı yakalanıyor, aynı cümlenin alt satırı temiz geçiyordu (GHS-Panel bildirimi #64).
+const CODE_SEMICOLON = /;\s*$|;\s*[})]/;
+
+// SAF: parça ÇAĞRI ya da ÖZELLİK ERİŞİMİ taşıyor mu? `mockReturnValue(`, `Math.floor`, `sahte.from`
+//
+// NEDEN VAR: ilk düzeltme denemesinde "parantez koddur" katılığı tamamen kaldırılmıştı. 11 projede
+// ölçünce 1.272 bulgunun düştüğü, ÇOĞUNUN GERÇEK AD olduğu görüldü (`liste`, `zincirKur`,
+// `konsolBulgulari`, `vadesizTLKasa`). Parantezin kendisi ölçüt değil; ayırt eden şey, parantezin
+// bir ADIN HEMEN ARDINDAN gelmesi. Ekran yazısında araya boşluk girer: "İhaleler ({n})".
+const CALL_OR_ACCESS = /[A-Za-z0-9_$]\(|[A-Za-z0-9_$]\.[A-Za-z_$]/;
+
+// SAF: düzyazıda bulunmayan kod işaretleri — mantık işleçleri ve JavaScript anahtar kelimeleri.
+// `if (!baslik) return { error: '' }` satırı bunlar olmadan "ekran yazısı" sanılıyordu: içinde
+// ne `=` var, ne çağrı (parantezden önce boşluk), ne de deyim sonu noktalı virgülü.
+//
+// `var` BİLEREK LİSTEDE YOK: "Zaten hesabınız var mı?" cümlesindeki Türkçe "var", JavaScript
+// anahtar kelimesiyle aynı yazılıyor. Listeye konduğunda ekran yazısı kod sanıldı (ölçümde
+// görüldü). Aynı sebeple `new`, `class`, `case` de yok — Türkçe metinde geçebilirler.
+const CODE_TOKEN = /\(!|&&|\|\||\?\?|\?\.|\b(?:return|if|else|for|while|const|let|function|await|async|typeof|throw|export|import|switch|try|catch)\b/;
+
+// İKİ AYRI ÖLÇÜT. Aynı ölçütü iki bağlama birden uygulamak ölçümde yanlış çıktı (2026-09-19).
+//
+// ETİKET ARASI yazıda kod, süslü parantezin İÇİNDEDİR: `Aktif: {user.active_groups || 0}`.
+// Buradaki `||` ve `user.active_groups` satırı kod yapmaz — yazı yazıdır, ifade ayrıca taranır.
+// Bu ölçüte çağrı/işleç işaretleri eklenince 201 ekran yazısı yanlış alarm verdi.
+const isCodeInText = (part) => /=/.test(part) || CODE_SEMICOLON.test(part);
+
+// SARKAN parçada ise süslü parantezler zaten ayıklanmış olur; geriye kalan metin çağrı ya da
+// anahtar kelime taşıyorsa koddur.
+const isCodeInDangling = (part) => isCodeInText(part) || CALL_OR_ACCESS.test(part) || CODE_TOKEN.test(part);
 
 // SAF: parça bir NESNE ALANI satırı mı? `netSatisKurus: 1295235481,` gibi.
 // NEDEN: yazı ölçütü yalnız `=` ve `;` arıyordu; nesne alanı satırında ikisi de yoktur, bu yüzden
@@ -159,13 +197,24 @@ const BRACE_EXPR = /{[^{}]*}/g;
 const keepExpressions = (part) => (part.match(BRACE_EXPR) || []).join(' ');
 
 // SAF: parça yazı mı? Atama ya da satır sonu işareti taşıyan parça koddur, dokunulmaz.
-const isPlainText = (part) => part.trim() !== '' && !CODE_MARK.test(part) && !PROPERTY_LINE.test(part);
+const isPlainText = (part) => part.trim() !== '' && !isCodeInText(stripEntities(part)) && !PROPERTY_LINE.test(part);
 
-// Etiket dışında kalan (sarkan) yazı için daha katı ölçüt: parantez de taşımamalı.
-// Neden: `onChange={(e) => setX(e)}` satırında `=>` işaretinden sonrası yazı sanılıyor ve
-// gerçek adlar kaçıyordu (2026-09-18 ölçümü). Etiketler ARASINDAKİ yazıda parantez serbesttir
-// ("Altın (Gram) Değişim" gibi).
-const isDanglingText = (part) => part.trim() !== '' && !/[=;()]/.test(part) && !PROPERTY_LINE.test(part);
+// Etiket dışında kalan (sarkan) yazı. Ölçüt önce SÜSLÜ PARANTEZLİ İFADELERİ ayıklar, sonra
+// KALAN metne bakar.
+//
+// Neden böyle (SNN-Proje-ve-Nakit-Akis bildirimi #28, 2026-09-19): ölçüt "parantez varsa koddur"
+// diyordu. Türkçe arayüz yazısında parantez çok sık — `Kuruma Ait İhaleler ({projects.length})`
+// gibi — ve bu tek başına 16 yanlış alarm üretiyordu.
+//
+// Parantez katılığı bilerek konmuştu ve gerçek bir şeyi koruyordu: `onChange={(e) => setX(e)}`
+// satırında `=>` sonrası yazı sanılıp gerçek adlar kaçıyordu (2026-09-18). Koruma duruyor, ama
+// artık parantezin kendisiyle değil: süslü ifadeler ayıklanınca o satırda `=` kalır, bu yazının
+// yazı olmadığını yeterince söyler. Bildiren kişi bu korumayı testiyle birlikte gösterdi.
+const isDanglingText = (part) => {
+  if (part.trim() === '' || PROPERTY_LINE.test(part)) return false;
+  const rest = stripEntities(String(part).replace(BRACE_EXPR, ' '));
+  return !isCodeInDangling(rest);
+};
 
 function stripJsxText(line) {
   let s = line;
@@ -186,8 +235,14 @@ function stripJsxText(line) {
     if (firstBrace >= 0 && lastBrace > firstBrace) {
       const before = s.slice(0, firstBrace);
       const after = s.slice(lastBrace + 1);
-      if (isDanglingText(before) || isDanglingText(after)) {
-        s = (isDanglingText(before) ? '' : before) + s.slice(firstBrace, lastBrace + 1) + (isDanglingText(after) ? '' : after);
+      // SATIRIN BAŞI KODSA SONU DA KODDUR. İki yan bağımsız değerlendirilince
+      // `for (const { yol, icerik } of geriYuklemeKuyrugu) {` satırında baş "kod" sayılıyor ama
+      // son (` of geriYuklemeKuyrugu) {`) tek başına yazıya benziyor ve GERÇEK AD atılıyordu
+      // (2026-09-19 ölçümünde yakalandı). Yazı satırında iki yan da yazıdır.
+      const textBefore = before.trim() === '' || isDanglingText(before);
+      const textAfter = after.trim() === '' || isDanglingText(after);
+      if (textBefore && textAfter && (before.trim() !== '' || after.trim() !== '')) {
+        s = s.slice(firstBrace, lastBrace + 1);
       }
     } else if (isPlainText(s)) return keepExpressions(s);
   }

@@ -163,5 +163,36 @@ expect('dizi alanı yakalanır', names('  kaynaklar: [],'), ['kaynaklar']);
 expect('ekran yazısı hâlâ atılır', names('          Durum: aktif'), []);
 expect('etiket arası yazı hâlâ atılır', names('<label className="x">Poliçe Durumu</label>'), []);
 
+console.log('— JSX ekran yazısı (tüketici bildirimleri #28 ve #64, 2026-09-19)');
+// #64 · GHS-Panel: ÇOK SATIRLI metnin `;` taşıyan satırı yakalanıyor, alt satırı temiz geçiyordu.
+// Noktalı virgül kodda deyimi BİTİRİR (satır sonu ya da `}`/`)` önü); düzyazıda ortada durur.
+expect('cümle ortası noktalı virgül yazıdır', names('  Bu sınırların dışına çıkan dekont sessizce yazılmaz; gönderene'), []);
+expect('deyim sonu noktalı virgül koddur', names('  const kayitZamani = 1;'), ['kayitZamani']);
+
+// #28-1 · Nakit-Akış: "parantez varsa koddur" katılığı 16 yanlış alarm üretiyordu.
+// Ayırt eden şey parantez değil, parantezin bir ADIN HEMEN ARDINDAN gelmesi.
+expect('sarkan metinde parantez yazıdır', names('  <Folder size={16} /> Kuruma Ait İhaleler ({projects.length})'), []);
+expect('ad+parantez çağrıdır, koddur', names('  sahte.from.mockReturnValue(zincirKur({ data: null }))').sort(), ['sahte', 'zincirKur']);
+// Bildiren kişinin KORUMA örneği: bu ad kaçarsa düzeltme fazla geniş demektir.
+expect('gerçek ad hâlâ yakalanır', names('  <input onChange={(e) => setSonucAlani(e)} />'), ['setSonucAlani']);
+
+// #28-2 · HTML varlığındaki `;` satırı kod sanıyordu. Aynı cümle, tek fark `&quot;`.
+expect('HTML varlığı yazıyı bozmaz', names('  Teklifler ayrı, &quot;teslimli toplam maliyet&quot; üzerinden'), []);
+
+// Ölçüm sırasında bulunan üç GERİLEME — düzeltme fazla geniş olursa bunlar kaçar.
+expect('anahtar kelime kod sayılır', names('  if (!baslik) return { error: 1 }'), ['baslik']);
+expect('satırın başı kodsa sonu da koddur', names('  for (const { a } of geriYuklemeKuyrugu) {'), ['geriYuklemeKuyrugu']);
+expect('tür bildirimi koddur', names('  const zincirler: Record<string, unknown>[] = []'), ['zincirler']);
+
+// Türkçe "var" JavaScript anahtar kelimesiyle aynı yazılıyor; listeye konunca ekran yazısı kod
+// sanıldı (ölçümde 201 yanlış alarm). Üç nokta da yayma işleciyle karışıyordu.
+expect('Türkçe "var" kod işareti değildir', names('  Zaten hesabınız var mı? <span className="y">Giriş</span>'), []);
+expect('üç nokta yayma işleci değildir', names('<p className="x">Bilgiler Yükleniyor...</p>'), []);
+expect('gerçek yayma işleci koddur', names('  const yeniKayit = { ...eskiKayit };').sort(), ['eskiKayit', 'yeniKayit']);
+
+// EN KRİTİK: ekran yazısı atılırken AYNI SATIRDAKİ gerçek ad atılmamalı.
+expect('yazı atılır, ifadedeki ad kalır', names('  Pozisyon limiti aşıldı (max %{fmtDecimal(maxPozisyonYuzdesi, 0)})'), ['maxPozisyonYuzdesi']);
+expect('varlık arasındaki ad kalır', names('  HESAP KODU (veri): &quot;{k.hesapKodu}&quot;'), ['hesapKodu']);
+
 console.log(fail ? `\n${fail} test başarısız` : '\nTüm testler geçti');
 process.exit(fail ? 1 : 0);
