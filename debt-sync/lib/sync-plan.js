@@ -10,8 +10,25 @@ const LABELS = [
   { name: PRIORITY_LABELS.P2, color: 'fbca04', description: 'Planlı: ertelenirse arıza çıkar' },
   { name: PRIORITY_LABELS.P3, color: '0e8a16', description: 'Fırsatta: düzen ve temizlik' },
 ];
-// Public depoda issue açılmayacak kayıtları yakalar (bilerek geniş tutuldu: yanlış pozitif zararsız).
+// Gövde metninde hassas olabilecek kelimeler. UYARI ÜRETİR, ENGELLEMEZ.
+//
+// 2026-09-19 · SNN-Abacus-Core bildirimi (#67) — kabul edildi:
+// Bu desen önce ENGELLEYİCİYDİ ve "yanlış pozitif zararsız" varsayımıyla geniş tutulmuştu.
+// Varsayım yanlıştı, üç sebeple:
+//   1. SESSİZ. Uyarı yalnız koşum kütüğüne yazılıyordu; koşum yeşil bitiyor, kimse görmüyordu.
+//      Bildiren kişi ancak "TB-011'in issue'su neden yok?" diye ÖZELLİKLE arayınca buldu.
+//   2. Etiketi de düşürüyordu. Atlama, etiket mantığından ÖNCEYDİ: P2'den P1'e yükseltilmiş bir
+//      kayıt kütükte P1 görünüp panoda P2 kalıyordu.
+//   3. Yazarın kararını elinden alıyordu. Kaydın zaten `- **Hassas:** Evet` beyanı var; gövde
+//      metnine bakan desen, o beyanın üstünde çalışan ikinci ve otomatik bir mekanizmaydı.
+// Tetikleyen masum kullanımlar gerçekti: bir nesnenin "ayar anahtarı", ve kütüğün KENDİ öncelik
+// tanımını ("veri/para/güvenlik/sessiz hata") kaydın içinde anmak.
+//
+// Artık tek ölçüt YAZARIN BEYANIDIR. Desen yalnız "bunu işaretlemek ister misin?" diye sorar.
 const SENSITIVE = /güvenlik|guvenlik|\bRLS\b|token|anahtar|parola|şifre|sifre|secret|credential|yetki|KVKK|VKN|TCKN|sızıntı|sizinti/i;
+
+// SAF: gövdede hassas olabilecek bir kelime var mı? → yakalanan kelime ya da null
+const sensitiveWord = (text) => (String(text || '').match(SENSITIVE) || [null])[0];
 
 // Hassas kayıtta issue başlığı açığı anlatmaz (kullanıcı kararı a, 2026-09-15); ayrıntı yalnız kütükte kalır.
 const SENSITIVE_DEFAULT_TITLE = 'Ayrıntısı kütükte (hassas kayıt)';
@@ -54,9 +71,14 @@ function plan({ debts, archiveIds, issues, ctx }) {
       warnings.push(`${d.id} önceliksiz; önce Öncelik alanı doldurulmalı (atlandı)`);
       continue;
     }
-    if (ctx.isPublic && (d.hassas || SENSITIVE.test(d.text))) {
-      warnings.push(`${d.id} hassas içerik barındırıyor ve depo PUBLIC; issue açılmadı`);
+    if (ctx.isPublic && d.hassas) {
+      warnings.push(`${d.id} kayıtta "Hassas: Evet" yazıyor ve depo PUBLIC; issue açılmadı (yazarın kararı)`);
       continue;
+    }
+    // ENGELLEMEZ: yalnız yazara sorar. Gerekçe yukarıda, SENSITIVE tanımında (#67).
+    const sensitive = ctx.isPublic ? sensitiveWord(d.text) : null;
+    if (sensitive) {
+      warnings.push(`${d.id} gövdesinde "${sensitive}" geçiyor ve depo PUBLIC. Kayıt gerçekten hassassa kütüğe "- **Hassas:** Evet" ekleyin; issue başlığı o zaman gizlenir. Değilse bir şey yapmanız gerekmez — issue açıldı.`);
     }
     const labels = [LABEL_BASE, PRIORITY_LABELS[d.priority]];
     const existing = (d.issue && byNumber.get(d.issue)) || byId.get(d.id);
