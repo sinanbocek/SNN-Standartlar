@@ -28,6 +28,33 @@ Kurallar canlı kopyadan (`~/.claude/standartlar-canli`) okunur ve kendiliğinde
 
 **Güvenlik notu (ölçülmüştür, gizlenmez):** kancalar hâlihazırda canlı kopyadan `require()` ile kod çalıştırıyor (12 çağrı) ve canlı kopya oturum başında onaysız güncelleniyor. Yani "ortak depoya yazabilen, bu makinede kod çalıştırır" durumu **bugün de geçerli**. Kopyalama modeli bu yüzeyi büyütmez, küçültme fırsatı verir. Ortak depo `main`'ine yazma yetkisi bir kişiden büyükse bu ayrı bir sertleştirme kalemidir.
 
+## Beceriler de aynı paketle gelir
+
+Kancaların yanında **beceriler** (`skills/`) de ortak depoda durur ve aynı betikle
+`~/.claude/skills` altına **kopyalanır**. Gerekçe kancalarla aynıdır: beceri sürümsüz kalırsa
+makineyle birlikte kaybolur — ve sessizce **bozulur**.
+
+Ölçülmüş olay (2026-09-19): `borclar` becerisi `hooks/borclar.js`'i, `proje-kur` becerisi
+`kurulum/proje-kur.js`'i çağırıyordu. İkisi de yeniden adlandırılmıştı; iki beceri de çalışmıyordu
+ve bunu kimse fark etmemişti, çünkü beceriler hiçbir testin, hiçbir kapının kapsamında değildi.
+
+Bugün depoda duran beceriler:
+
+| Beceri | Ne yapar |
+|---|---|
+| `borclar` | Teknik borç listesini okur |
+| `borc-ekle` | Yeni teknik borç kaydı açar |
+| `proje-kur` | Yeni projeyi aile standardına bağlar |
+| `standart-talep` | Bu projeden ortak depoya **talep/yanlış alarm bildirimi** gönderir |
+
+**Silme kuralı (en riskli davranış).** `~/.claude/skills` altında bize ait **olmayan** beceriler de
+bulunur (eklenti kısayolları gibi). Bu yüzden silme yalnız **bizim beceri klasörlerimizin içinde**
+yapılır; klasörün kendisi dışındakine dokunulmaz. Bu davranışın adı geçen bir testi vardır:
+`setup/test/setup-machine.test.js` → *"BAŞKASININ becerisine dokunulmaz"*.
+
+**Yollar taşınabilir yazılır.** Beceri dosyalarında makineye özel mutlak yol bulunmaz; ev klasörü
+`<ev>` olarak yazılır ve beceri onu çalışma anında ölçer.
+
 ## Kurulum
 
 1. Node.js, `git`, `gh` kurulu olmalı; `gh auth login` yapılmış olmalı.

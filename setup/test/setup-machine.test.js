@@ -51,6 +51,35 @@ expect('kopyalanacak görünür', text.includes('+ a.js'), true);
 expect('silinecek görünür', text.includes('- b.js'), true);
 expect('eski ad görünür', text.includes('b.js -> a.js'), true);
 
+console.log('— beceriler');
+// Beceriler de ortak depoda durur ve makineye kopyalanır (kancalarla aynı gerekçe).
+// EN RİSKLİ DAVRANIŞ: ~/.claude/skills altında BİZİM OLMAYAN beceriler var (archify,
+// eklenti kısayolu). Silme yalnız bizim beceri klasörlerimizin İÇİNDE yapılmalı.
+{
+  const fs2 = require('fs');
+  const os2 = require('os');
+  const p2 = require('path');
+  const root = fs2.mkdtempSync(p2.join(os2.tmpdir(), 'snn-beceri-'));
+  const src = p2.join(root, 'kaynak');
+  const dst = p2.join(root, 'hedef');
+  const put = (base, rel, text) => { fs2.mkdirSync(p2.dirname(p2.join(base, rel)), { recursive: true }); fs2.writeFileSync(p2.join(base, rel), text); };
+  put(src, 'bizim/SKILL.md', 'yeni');
+  put(dst, 'bizim/SKILL.md', 'eski');
+  put(dst, 'bizim/artik.md', 'silinmeli');
+  put(dst, 'baskasinin/SKILL.md', 'DOKUNULMAMALI');
+
+  const plan = m.planSkills(src, dst, () => false);
+  expect('içeriği değişen beceri kopyalanır', plan.copy, ['bizim/SKILL.md']);
+  expect('bizim klasördeki artık silinir', plan.remove, ['bizim/artik.md']);
+  // Bu satır kırmızıya dönerse üçüncü tarafın becerisi silinecek demektir.
+  expect('BAŞKASININ becerisine dokunulmaz', plan.remove.some((f) => f.startsWith('baskasinin/')), false);
+  expect('kaynakta olmayan klasör hiç görülmez', m.skillNames(src), ['bizim']);
+  expect('aynı içerik kopyalanmaz', m.planSkills(src, dst, () => true).copy, []);
+  expect('kaynak yoksa boş plan', m.planSkills(p2.join(root, 'yok'), dst), { copy: [], remove: [] });
+
+  fs2.rmSync(root, { recursive: true, force: true });
+}
+
 console.log('— kayıt listesi tutarlı');
 expect('yeniden adlandırma hedefleri kayıtta', Object.values(m.RENAMES).filter((t) => t.startsWith('stop-')).every((t) => m.REGISTRY.some((r) => r.file === t)), true);
 

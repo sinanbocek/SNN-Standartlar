@@ -128,7 +128,7 @@ node quality/test/code-language-scan.test.js
 
 **İstisnası olmayan proje bu dosyayı oluşturmaz.** Boş iskelet (`{"exceptions": [], "paths": []}`) yazmak da gerekmez: tarayıcı ve iş akışı dosyanın yokluğunda sorunsuz çalışır (dosya okunamazsa boş liste sayılır). Boş dosya, ileride "burada zaten istisna var" izlenimi verir; olmayan şey yazılmaz.
 
-**Yanlış alarm `paths` ile susturulmaz.** Tarayıcı bir ekran yazısını ya da yorumu tanımlayıcı sanıyorsa, o satır **kurala aykırı değildir** — muafiyet yazmak iki zarar üretir: (1) doğru olan bir şeye muafiyet yazmak kaydı kirletir, (2) dosyayı toptan muaf tutmak yarın aynı dosyaya girecek **gerçek** bir Türkçe tanımlayıcıyı da kör eder. Yapılacak olan: durumu SNN-Standartlar'a bildirmek; tarayıcı düzeltilir ve düzeltme tüm projelere aynı anda ulaşır. `paths` yalnız **gerçekten istisna olan gerçek adlar** içindir (canlıya uygulanmış migration, dış kaynağın alan adı gibi).
+**Yanlış alarm `paths` ile susturulmaz.** Tarayıcı bir ekran yazısını ya da yorumu tanımlayıcı sanıyorsa, o satır **kurala aykırı değildir** — muafiyet yazmak iki zarar üretir: (1) doğru olan bir şeye muafiyet yazmak kaydı kirletir, (2) dosyayı toptan muaf tutmak yarın aynı dosyaya girecek **gerçek** bir Türkçe tanımlayıcıyı da kör eder. Yapılacak olan: durumu SNN-Standartlar'a bildirmek; tarayıcı düzeltilir ve düzeltme tüm projelere aynı anda ulaşır. Nasıl: projedeki ajan `standart-talep` becerisini kullanır (taslağı hazırlar, sana gösterir, onayınla issue açar). Karar `GERI-BILDIRIM-KAYDI.md`'ye yazılır. `paths` yalnız **gerçekten istisna olan gerçek adlar** içindir (canlıya uygulanmış migration, dış kaynağın alan adı gibi).
 
 ### Aile geneli istisna (kök bazında)
 
@@ -166,14 +166,14 @@ Karar 2026-09-19'da 16.023 bulgu ve 136 kök üzerinde yapılan teşhisle verild
 
 #### Yeni istisna isteme
 
-Proje, kökü ve gerekçesini SNN-Standartlar'a bildirir; kendi listesini tutmaz. Ortak depo ölçer, karar proje sahibine sorulur, kabul edilirse aile dosyasına eklenir ve **tüm projelere aynı anda** ulaşır.
+Proje, kökü ve gerekçesini SNN-Standartlar'a bildirir; kendi listesini tutmaz. Nasıl: projedeki ajan `standart-talep` becerisini kullanır (taslağı hazırlar, sana gösterir, onayınla issue açar). Karar `GERI-BILDIRIM-KAYDI.md`'ye yazılır. Ortak depo ölçer, karar proje sahibine sorulur, kabul edilirse aile dosyasına eklenir ve **tüm projelere aynı anda** ulaşır.
 
 
 ### Kelime listesi eksik kök bulunca (aile süreci)
 
 Liste sonludur; Türkçe harf taşımayan bir kök (ör. `kasa`, `kur`, `hedef`) listede yoksa tarayıcıdan **sessizce geçer**. Bunu ilk gören genelde o projedir.
 
-1. Proje eksik kökleri **SNN-Standartlar'a bildirir** (kendi listesine ekleme yapmaz; liste tek kaynaktır).
+1. Proje eksik kökleri **SNN-Standartlar'a bildirir** (kendi listesine ekleme yapmaz; liste tek kaynaktır). Nasıl: projedeki ajan `standart-talep` becerisini kullanır (taslağı hazırlar, sana gösterir, onayınla issue açar). Karar `GERI-BILDIRIM-KAYDI.md`'ye yazılır.
 2. SNN-Standartlar kökleri ekler, **10 projede birden ölçer** ve her kök için en az bir gerçek örnek satır gösterir (yanlış alarm denetimi).
 3. Ölçüm değiştiği için `docs/kod-dili-gecis.md` tablosu yenilenir; etkilenen projeler kendi kütük kayıtlarındaki sayıyı günceller.
 

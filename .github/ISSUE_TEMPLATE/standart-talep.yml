@@ -1,0 +1,78 @@
+name: Standart talebi
+description: Tüketici projeden aile standardına talep, yanlış alarm ya da eksik kök bildirimi
+title: "[tür] "
+labels: ["talep"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Önce `GERI-BILDIRIM-KAYDI.md`'ye bakın.** Aradığınız şey orada REDDEDİLDİ olarak
+        duruyorsa gerekçesini okuyun; aynı talebi yeniden göndermeniz gerekmez.
+
+        Projedeki ajan bu formu `standart-talep` becerisiyle sizin için doldurabilir.
+
+  - type: dropdown
+    id: tur
+    attributes:
+      label: Tür
+      options:
+        - yanlış-alarm (kapı doğru olan bir şeyi yakalıyor)
+        - eksik-kök (tarayıcı bir Türkçe kökü kaçırıyor)
+        - yeni-kural (aile çapında yeni kural/kapı)
+        - kural-değişikliği (var olan kural bu projede tutmuyor)
+        - soru (kararın gerekçesi anlaşılmadı)
+    validations:
+      required: true
+
+  - type: input
+    id: proje
+    attributes:
+      label: Proje
+      placeholder: sinanbocek/trade-kasa
+    validations:
+      required: true
+
+  - type: textarea
+    id: olay
+    attributes:
+      label: 1. Gerçek olay
+      description: Hangi dosya, hangi satır, ne oldu? Varsayımsal genellik yeterli değildir.
+      placeholder: |
+        src/.../profiles.ts:32 — İŞLEM, TUTARI, Açıklama için uyarı geldi.
+        Bunlar banka belgesi eşleştiren düzenli ifade metinleri.
+    validations:
+      required: true
+
+  - type: textarea
+    id: olcum
+    attributes:
+      label: 2. Ölçülmüş çıktı
+      description: İddia değil, çalıştırılmış komutun çıktısı.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatif
+    attributes:
+      label: 3. Denenen alternatif
+      description: Neden projede çözülemiyor? Yanlış alarm için, neden susturmak doğru değil?
+    validations:
+      required: true
+
+  - type: input
+    id: kapsam
+    attributes:
+      label: 4. Kaç projeyi etkiliyor?
+      description: Ölçmediyseniz "ölçmedim" yazın — tahmin yazmayın.
+      placeholder: "ölçmedim / yalnız bu proje / 3 projede aynı desen var"
+    validations:
+      required: true
+
+  - type: textarea
+    id: beklenen
+    attributes:
+      label: Beklenen sonuç
+      placeholder: Tarayıcı bu satırı bulgu saymasın; gerçek Türkçe adları saymaya devam etsin.
+    validations:
+      required: true
