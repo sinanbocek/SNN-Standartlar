@@ -43,6 +43,7 @@ Kapanan kayıtlar: `docs/teknik-borc-arsiv.md`
 ### TB-002 — Eş zamanlı oturumlarda dosya sahipliği ölçülmüyor
 - **Tespit Tarihi:** 2026-09-18 (eş zamanlı çalışma standardı kurulurken)
 - **Öncelik:** P3 (Fırsatta)
+- **Issue:** #24
 
 #### 🟢 Sade Anlatım
 - **Sorun ne?** Artık makine "bu projede başka bir oturum açık" diyor ve tehlikeli toplu komutları engelliyor. Ama "şu dosya üzerinde şu an kim çalışıyor" bilgisini tutmuyor. İki oturum aynı dosyayı aynı anda düzenlerse, ikincisi birincinin yazdığını görmeden üstüne yazabilir.
@@ -82,6 +83,7 @@ Kapanan kayıtlar: `docs/teknik-borc-arsiv.md`
 ### TB-007 — Türkçe çekim eki + İngilizce gövde tarayıcıdan kaçıyor
 - **Tespit Tarihi:** 2026-09-19 (31 eksik kök eklenirken)
 - **Öncelik:** P3 (Fırsatta)
+- **Issue:** #43
 
 #### 🟢 Sade Anlatım
 - **Sorun ne?** `manuelDeltalar`, `guncelleKur` gibi adlarda ek Türkçe ama gövde İngilizce. Tarayıcı bunları kaçırıyor. Somut kanıt: `guncel` kelime listesinde vardı, ama `guncelle` yakalanmıyordu.
