@@ -105,7 +105,13 @@ function stripTemplates(line) {
 // Satır bazlıdır (diff kipinde tam dosya elde yok). Bilinen sınır: çok satırlı blok yorumun
 // ortasındaki satırlar '*' ile başlamıyorsa taranabilir; bu yüzden '*' ile başlayan satır atılır.
 function codePart(line, sql) {
-  let s = line;
+  // CRLF SOYULUR — ÖNCE. Yorum soyma kuralları `.*$` ile biter; JavaScript'te `.` satır sonunu
+  // (\r dahil) EŞLEŞTİRMEZ ve `$` dizgenin sonunu ister. Satır `\r` ile bitiyorsa `--.*$` ve
+  // `//.*$` hiç eşleşmez, yani YORUM HİÇ SOYULMAZ ve içindeki Türkçe düzyazı tanımlayıcı
+  // sanılır. Yorumda Türkçe serbesttir; bu doğrudan yanlış alarmdır.
+  // Ölçüldü (2026-09-19, 11 proje / 2.684 dosya): 26.060 bulgunun 9.938'i (%38,1) bu kaynaktan.
+  // CI Linux'ta (LF) görünmüyordu; yalnız Windows çalışma kopyasında çıkıyordu.
+  let s = String(line).replace(/\r+$/, '');
   if (/^\s*\*/.test(s)) return ''; // blok yorumun gövde satırı
   s = s.replace(/'(?:[^'\\]|\\.)*'/g, "''");          // tek tırnaklı dizge
   if (sql) {
@@ -138,19 +144,28 @@ function codePart(line, sql) {
 // Bu durumda YAZI atılır, yalnız süslü parantez içindeki KOD taranır (2026-09-18 ikinci
 // kalibrasyon: İhale ve Nakit-Akış ölçümlerinde kalan bulguların çoğu bu biçimdeydi).
 const CODE_MARK = /[=;]/;
+
+// SAF: parça bir NESNE ALANI satırı mı? `netSatisKurus: 1295235481,` gibi.
+// NEDEN: yazı ölçütü yalnız `=` ve `;` arıyordu; nesne alanı satırında ikisi de yoktur, bu yüzden
+// satır "ekran yazısı" sanılıp atılıyor ve içindeki Türkçe ad KAÇIYORDU. CRLF düzeltmesi bunu
+// görünür kıldı: `netSatisKurus: 1295235481, // Yıllıklandırılmış = …` satırında adı ayakta tutan
+// şey YORUMDAKİ `=` işaretiydi; yorum doğru şekilde soyulunca ad da kayboldu (2026-09-19).
+// Ölçüt dar: ad + iki nokta + değer + sonda virgül. Ekran yazısındaki "Durum: aktif" bu kalıba
+// uymaz (sonunda virgül yoktur).
+const PROPERTY_LINE = /^\s*[A-Za-z_$][A-Za-z0-9_$]*\s*:\s*\S.*,\s*$/;
 const BRACE_EXPR = /{[^{}]*}/g;
 
 // SAF: JSX gövdesinden yalnız süslü parantezli ifadeleri bırakır (yazıyı atar)
 const keepExpressions = (part) => (part.match(BRACE_EXPR) || []).join(' ');
 
 // SAF: parça yazı mı? Atama ya da satır sonu işareti taşıyan parça koddur, dokunulmaz.
-const isPlainText = (part) => part.trim() !== '' && !CODE_MARK.test(part);
+const isPlainText = (part) => part.trim() !== '' && !CODE_MARK.test(part) && !PROPERTY_LINE.test(part);
 
 // Etiket dışında kalan (sarkan) yazı için daha katı ölçüt: parantez de taşımamalı.
 // Neden: `onChange={(e) => setX(e)}` satırında `=>` işaretinden sonrası yazı sanılıyor ve
 // gerçek adlar kaçıyordu (2026-09-18 ölçümü). Etiketler ARASINDAKİ yazıda parantez serbesttir
 // ("Altın (Gram) Değişim" gibi).
-const isDanglingText = (part) => part.trim() !== '' && !/[=;()]/.test(part);
+const isDanglingText = (part) => part.trim() !== '' && !/[=;()]/.test(part) && !PROPERTY_LINE.test(part);
 
 function stripJsxText(line) {
   let s = line;

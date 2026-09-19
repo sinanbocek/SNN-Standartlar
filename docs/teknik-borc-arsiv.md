@@ -6,6 +6,81 @@
 
 ## Kapanan Kalemler
 
+### TB-007 — Türkçe çekim eki + İngilizce gövde tarayıcıdan kaçıyor
+- **Tespit Tarihi:** 2026-09-19 (31 eksik kök eklenirken)
+- **Kapanış:** 2026-09-19 — TB-007 ölçüldü ve önerilen çözüm **REDDEDİLDİ**; ölçüm sırasında tarayıcıda iki gerçek kusur bulundu ve düzeltildi.
+- **Öncelik (kapanışta):** P3 (Fırsatta)
+- **Issue:** #43
+
+#### 🟢 Sade Anlatım
+- **Sorun ne?** `manuelDeltalar`, `guncelleKur` gibi adlarda ek Türkçe ama gövde İngilizce. Tarayıcı bunları kaçırıyor. Somut kanıt: `guncel` kelime listesinde vardı, ama `guncelle` yakalanmıyordu.
+- **Benzetme:** Kapıdaki görevli yabancı pasaportları tanıyor, ama yerli soyadı alan yabancıları tanımıyor.
+- **Çözülmezse ne olur?** Az sayıda ad kaçmaya devam eder. Kaçan her kök elle bulunup listeye eklenebiliyor; bugün 31 kök böyle eklendi.
+- **Senden beklenen karar:** Yok.
+
+#### 🔧 Teknik Detay
+- **Açıklama:** `quality/code-language-scan.js` içindeki `SUFFIXES` dar tutulmuş (`lari`, `leri`, `lar`, `ler`, `si`, `su`, `i`, `u`, `a`, `e`). Fiil ekleri (`-le`, `-la`) yok.
+- **Etki:** Ölçülmedi — kaç adın bu sınıfa girdiği bilinmiyor. Bilinen örnek: 2 ad.
+- **Çözüm yönü:** İki yol var ve **ölçmeden seçilmemeli.** (a) `-le`/`-la` eklerini toleransa eklemek: `handle`→`hand`, `table`→`tab`, `module`→`modu` gibi gövdeler üretir; bunlar Türkçe listesinde olmadığı için bugün zararsız görünüyor ama liste büyüdükçe çakışabilir. (b) Ayrı bir kural: "ad Türkçe bir ekle bitiyorsa ve gövde İngilizce sözlükte varsa" — İngilizce sözlük gerektirir, depoda yok. Önce ölçüm: 11 projede bu sınıftan kaç ad var?
+- **Neden Şimdi Çözülmüyor:** Etkisi ölçülmedi ve (a) yolunun yanlış alarm riski var. Ölçüm kapısı (`aile-olcumu.yml`) artık kurulduğu için etki güvenle ölçülebilir.
+- **Bağlı kalemler:** Yok.
+
+#### 📏 Ölçüm (2026-09-19 · 11 proje · 2.684 dosya)
+
+**Asıl soru:** `-le`/`-la` fiil ekleri sonek toleransına eklenirse ne olur?
+
+| | |
+|---|---|
+| Aday sonekin ürettiği toplam geçiş | **19** |
+| Bunların yorum satırında olanı (düzyazı) | **19** |
+| Gerçek tanımlayıcı | **0** |
+
+**Karar: REDDEDİLDİ.** Sıfır gerçek yakalama, 19 yanlış alarm. Kütükteki iki örnek
+(`manuelDeltalar`, `guncelleKur`) bugün aile kod tabanında yok — ikisi de bu deponun
+TB-001 göçünde İngilizceye taşınmıştı. Kayıt, örneklerin hâlâ var olduğunu varsayıyordu.
+
+#### 🔎 Ölçümün ortaya çıkardığı iki gerçek kusur
+
+**1. CRLF satır sonu yorum soymayı tamamen devre dışı bırakıyordu.**
+Yorum soyma kuralları `--.*$` ve `//.*$` biçiminde. JavaScript'te `.` satır sonunu (`` dahil)
+eşleştirmez ve `$` dizgenin sonunu ister. Satır `` ile bitince kural **hiç eşleşmiyor**, yorum
+soyulmuyor ve içindeki Türkçe düzyazı tanımlayıcı sanılıyordu.
+
+| | |
+|---|---|
+| Aile geneli bulgu (düzeltme öncesi) | 26.060 |
+| Bunların yorumdan geleni | **9.938 (%38,1)** |
+| Düzeltmeyle düşen | **10.745** — biri hariç hepsi yorum içinde; o biri de aynı adın yorumdaki ikinci kopyası |
+| Yanlışlıkla gizlenen gerçek ad | **0** (eski ve yeni tarayıcı satır satır karşılaştırıldı) |
+
+**CI bunu göremezdi:** GitHub Linux'ta LF ile dosya alır. Kusur yalnız **Windows çalışma
+kopyasında** çıkıyordu — yani kapı yeşil, geliştirici ekranı gürültülüydü.
+
+**2. Nesne alanı satırları "ekran yazısı" sanılıp atılıyordu.**
+Yazı ölçütü yalnız `=` ve `;` arıyordu; `netSatisKurus: 1295235481,` satırında ikisi de yok.
+Bu ad **görünmüyordu**; onu ayakta tutan tek şey yorumdaki `=` işaretiydi — yorum doğru
+soyulunca ad da kayboldu. Ölçüt eklendi: ad + iki nokta + değer + sonda virgül.
+
+| | |
+|---|---|
+| Böylece görünür olan **gerçek** ad | **2.228** |
+| JSX/etiket satırında çıkan yanlış alarm | **0 / 2.228** |
+| Okunan örnek | 24'ü tek tek (`yil`, `ceyrek`, `tablo`, `kaynak`, `yuzde`, `sinifAdi`, `bostaNakitToday`…) |
+
+**Net etki:** aile genelinde −10.745 yanlış alarm, +2.228 gerçek bulgu.
+
+#### 🧪 Sabitleme
+10 gerileme testi (`quality/test/code-language-scan.test.js`), gerçek dosyalardan alınmış
+satırlarla. İkisi sabotajla sınandı: CRLF soyma kaldırılınca 3 test, nesne alanı ölçütü
+kaldırılınca 3 test kırmızıya döndü.
+
+#### 📌 Ders
+Ölçüm sorusu "eklenen sonek ne yakalar?" idi; cevabı **hiçbir şey** çıktı. Ama ölçümü yapmak
+için tarayıcıyı gerçek dosyalarda satır satır çalıştırmak gerekti ve asıl kusurlar orada
+göründü. **Ölçüm, cevabından daha değerli olabilir.**
+
+---
+
 ### TB-004 — Kancaların 272 satırı testsiz
 - **Tespit Tarihi:** 2026-09-19 (kancalar depoya alınırken ölçüldü)
 - **Kapanış:** 2026-09-19 — TB-004 çözüldü; 272 satırın **272'si** test altında. Kapanış testi yazarken kapının **gerçekten çalışmadığı bir durum** bulundu (aşağıda).

@@ -139,5 +139,29 @@ console.log('— aile geneli kök istisnası');
 }
 
 
+console.log('— CRLF satır sonu (2026-09-19 ölçümü)');
+// Yorum soyma kuralları `.*$` ile biter; JS'te `.` satır sonunu eşleştirmez ve `$` dizge sonunu
+// ister. Satır `\r` ile bitince yorum HİÇ soyulmuyordu ve içindeki Türkçe DÜZYAZI tanımlayıcı
+// sanılıyordu. Ölçüm: 11 projede 26.060 bulgunun 9.938'i (%38,1) bu kaynaktandı. CI Linux'ta
+// (LF) görünmüyordu — yalnız Windows çalışma kopyasında. Aşağıdaki satırlar gerçek dosyalardan.
+expect('CRLF SQL yorumu taranmaz', names('-- Bu migration, uygulamanın ana iş mantığını destekleyen tabloları oluşturur.\r', true), []);
+expect('CRLF JS yorumu taranmaz', names('// Bu satır; Türkçe açıklama içerir (örnek).\r'), []);
+expect('LF JS yorumu taranmaz', names('// Bu satır; Türkçe açıklama içerir (örnek).'), []);
+// Soyma FAZLA olmamalı: CRLF'li gerçek kod satırı yakalanmaya devam etmeli.
+expect('CRLF kod satırı yakalanır', names('const kayitZamani = 1;\r'), ['kayitZamani']);
+expect('CRLF SQL kodu yakalanır', names('create table kullanici_kaydi (id int);\r', true), ['kullanici_kaydi']);
+
+console.log('— nesne alanı satırı');
+// Yazı ölçütü yalnız `=` ve `;` arıyordu; nesne alanı satırında ikisi de yoktur, bu yüzden satır
+// "ekran yazısı" sanılıp atılıyor ve içindeki Türkçe ad KAÇIYORDU. CRLF düzeltmesi bunu görünür
+// kıldı: adı ayakta tutan şey YORUMDAKİ `=` işaretiydi. Ölçüm: aile genelinde 2.228 gerçek ad
+// bu yüzden görünmüyordu; örneklerin hepsi okundu, JSX satırında tek bulgu çıkmadı (0/2.228).
+expect('nesne alanı adı yakalanır', names('    netSatisKurus: 1295235481,'), ['netSatisKurus']);
+expect('nesne alanı — CRLF ve yorumla', names('    netSatisKurus: 1295235481, // Yıllıklandırılmış = 1295235481 * 4\r'), ['netSatisKurus']);
+expect('dizi alanı yakalanır', names('  kaynaklar: [],'), ['kaynaklar']);
+// Ekran yazısı bu kalıba UYMAZ (sonunda virgül yoktur); yanlış alarm üretmemeli.
+expect('ekran yazısı hâlâ atılır', names('          Durum: aktif'), []);
+expect('etiket arası yazı hâlâ atılır', names('<label className="x">Poliçe Durumu</label>'), []);
+
 console.log(fail ? `\n${fail} test başarısız` : '\nTüm testler geçti');
 process.exit(fail ? 1 : 0);
