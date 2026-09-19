@@ -80,6 +80,12 @@
       "module": "quality/measure-projects.js",
       "vaka": "2026-09-19: tarayici degisiklikleri 11 projenin sayilarini sessizce degistirebiliyordu; olcum bir aliskanlikti, kapi degildi. Ilk calistiginda Piyasa-Core'un 301 degil 2.496 oldugunu gosterdi.",
       "test": "artış hesaplanır"
+    },
+    {
+      "id": "uyum-issue",
+      "module": "quality/compliance-issues.js",
+      "vaka": "2026-09-19: uyum eksikleri yalniz oturum acilisinda goruluyordu; satir oturum kapaninca kayboluyor, \"yapildi mi?\" kaydi tutulmuyor ve proje sahibi 11 projenin durumunu tek yerde goremiyordu.",
+      "test": "eksik var, issue yok → aç"
     }
   ]
 }
