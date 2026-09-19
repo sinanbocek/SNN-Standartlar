@@ -52,6 +52,25 @@ bulunur (eklenti kısayolları gibi). Bu yüzden silme yalnız **bizim beceri kl
 yapılır; klasörün kendisi dışındakine dokunulmaz. Bu davranışın adı geçen bir testi vardır:
 `setup/test/setup-machine.test.js` → *"BAŞKASININ becerisine dokunulmaz"*.
 
+**Beceri kaynağı bir LİSTEDİR** (2026-09-19, SNN-Abacus-Core bildirimi #59). İlk sıra canlı
+kopyadır; ek kaynaklar `setup/data/skill-sources.json` dosyasında durur. Gerekçe: bir beceri,
+**atıf yaptığı deponun sürümüyle birlikte** değişmelidir. `abacus-talep` çekirdeğin kendi
+defterine, `AI-RULES §4.1` ayıracına ve issue şablonuna atıf yapar; burada dursaydı iki depoda
+iki hızda ilerleyen tek bir metin olurdu.
+
+| Kaynak | Nereden okunur |
+|---|---|
+| SNN-Standartlar | Canlı kopya (`~/.claude/standartlar-canli/skills`) |
+| Ek kaynaklar | **Yerel çalışma kopyası** — betik hangi dalda olduğunu yazar |
+
+Ek kaynağın yerelden okunması bilinçli bir ödündür ve **görünür kılınır**: kuru çalıştırma
+`Ek beceri kaynagi: <ad> (dal: <dal>) — YEREL kopyadan okunur` satırını basar. O proje çalışma
+dalındaysa makineye o dalın becerisi gider.
+
+**Aynı ad iki kaynakta olamaz.** Çakışma bulunursa kurulum **durur** ve iki kaynağı da bildirir;
+sessizce biri seçilmez. Yanlış becerinin kurulması, hiç kurulmamasından pahalıdır — yanlış olan
+sessizce çalışır.
+
 **Yollar taşınabilir yazılır.** Beceri dosyalarında makineye özel mutlak yol bulunmaz; ev klasörü
 `<ev>` olarak yazılır ve beceri onu çalışma anında ölçer.
 

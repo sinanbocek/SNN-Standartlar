@@ -15,6 +15,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { execFileSync } = require('child_process');
 
 const BACKUP_PREFIX = 'hooks-yedek-';
 
@@ -112,16 +113,60 @@ function skillNames(dir) {
   } catch { return []; }
 }
 
-function planSkills(sourceRoot, targetRoot, sameContent = () => false) {
+// SAF: birden çok kaynaktan beceri planı.
+//
+// NEDEN LİSTE (SNN-Abacus-Core bildirimi #59, 2026-09-19): bir beceri, atıf yaptığı deponun
+// sürümüyle birlikte değişmelidir. `abacus-talep` çekirdeğin kendi defterine, `AI-RULES §4.1`
+// ayıracına ve issue şablonuna atıf yapıyor; SNN-Standartlar'da dursaydı iki depoda iki hızda
+// ilerleyen tek bir metin olurdu. Elle kopyalamanın bedeli bu ailede ölçüldü: `borclar` ve
+// `proje-kur` sürümsüz kaldıkları için sessizce bozulmuştu.
+//
+// ÇAKIŞMA SESSİZCE ÇÖZÜLMEZ. Aynı beceri adı iki kaynakta varsa plan `conflicts` döner ve
+// uygulama durur. "Hangisi kazanır" sorusunun sessiz bir cevabı, yanlış becerinin aylarca
+// kurulu kalması demektir.
+//
+// sources: [{ name, dir }] — ilk sıradaki canlı kopyadır.
+function planSkills(sources, targetRoot, sameContent = () => false) {
+  const list = Array.isArray(sources) ? sources : [{ name: 'canli-kopya', dir: sources }];
   const copy = [];
   const remove = [];
-  for (const name of skillNames(sourceRoot)) {
-    const src = listFiles(path.join(sourceRoot, name));
-    const dst = listFiles(path.join(targetRoot, name));
-    for (const f of src) if (!dst.includes(f) || !sameContent(name, f)) copy.push(`${name}/${f}`);
-    for (const f of dst) if (!src.includes(f)) remove.push(`${name}/${f}`);
+  const conflicts = [];
+  const owner = new Map(); // beceri adı → onu veren kaynak
+
+  for (const source of list) {
+    for (const name of skillNames(source.dir)) {
+      if (owner.has(name)) {
+        conflicts.push({ skill: name, sources: [owner.get(name).name, source.name] });
+        continue;
+      }
+      owner.set(name, source);
+      const src = listFiles(path.join(source.dir, name));
+      const dst = listFiles(path.join(targetRoot, name));
+      for (const f of src) if (!dst.includes(f) || !sameContent(source, name, f)) copy.push({ source, rel: `${name}/${f}` });
+      for (const f of dst) if (!src.includes(f)) remove.push(`${name}/${f}`);
+    }
   }
-  return { copy, remove };
+  return { copy, remove, conflicts, owner };
+}
+
+// EK beceri kaynakları. Canlı kopya yalnız SNN-Standartlar içindir; ek kaynaklar YEREL
+// çalışma kopyasından okunur. Yerel kopya başka dalda olabilir — bu yüzden dal adı yazdırılır
+// ("Yerel klasör gerçeği göstermez" dersi, CLAUDE.md).
+function extraSkillSources(projectsRoot = path.join(__dirname, '..', '..')) {
+  let raw;
+  try {
+    raw = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'skill-sources.json'), 'utf8'));
+  } catch { return []; }
+  return (raw.sources || [])
+    .map((s) => ({ name: s.name, dir: path.join(projectsRoot, s.dir) }))
+    .filter((s) => fs.existsSync(s.dir));
+}
+
+// Ek kaynağın hangi dalda olduğunu söyler (rapor için; ölçüm değil, uyarı).
+function sourceBranch(dir) {
+  try {
+    return execFileSync('git', ['-C', dir, 'rev-parse', '--abbrev-ref', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch { return null; }
 }
 
 function measure({ sourceDir, targetDir, settingsFile, skillsSource, skillsTarget }) {
@@ -133,12 +178,13 @@ function measure({ sourceDir, targetDir, settingsFile, skillsSource, skillsTarge
     } catch { return false; }
   };
   const files = planFiles(sourceFiles, targetFiles, same);
-  const sameSkill = (name, f) => {
+  const sameSkill = (source, name, f) => {
     try {
-      return fs.readFileSync(path.join(skillsSource, name, f), 'utf8') === fs.readFileSync(path.join(skillsTarget, name, f), 'utf8');
+      return fs.readFileSync(path.join(source.dir, name, f), 'utf8') === fs.readFileSync(path.join(skillsTarget, name, f), 'utf8');
     } catch { return false; }
   };
-  const skills = planSkills(skillsSource, skillsTarget, sameSkill);
+  const sources = [{ name: 'SNN-Standartlar (canlı kopya)', dir: skillsSource }, ...extraSkillSources()];
+  const skills = planSkills(sources, skillsTarget, sameSkill);
   const settingsText = (() => { try { return fs.readFileSync(settingsFile, 'utf8'); } catch { return ''; } })();
   return { files, skills, settings: planSettings(settingsText, sourceFiles), sourceFiles, targetFiles, settingsText, skillsSource, skillsTarget };
 }
@@ -151,6 +197,16 @@ function backup(targetDir) {
 }
 
 function apply({ sourceDir, targetDir, settingsFile, skillsSource, skillsTarget }, plan) {
+  // ÇAKIŞMA VARSA HİÇBİR ŞEY UYGULANMAZ. Yanlış becerinin kurulması, hiç kurulmamasından
+  // daha pahalıdır: yanlış olan sessizce çalışır (SNN-Abacus-Core bildirimi #59).
+  if (plan.skills && plan.skills.conflicts && plan.skills.conflicts.length) {
+    const rows = plan.skills.conflicts.map((c) => `  "${c.skill}" — ${c.sources.join(' ve ')}`);
+    throw new Error([
+      'Beceri adı çakışması var; hiçbir şey uygulanmadı:',
+      ...rows,
+      'Aynı ad iki kaynakta duramaz; biri yeniden adlandırılmalı.',
+    ].join('\n'));
+  }
   const backupDir = fs.existsSync(targetDir) ? backup(targetDir) : null;
   for (const f of plan.files.copy) {
     const to = path.join(targetDir, f);
@@ -161,10 +217,10 @@ function apply({ sourceDir, targetDir, settingsFile, skillsSource, skillsTarget 
     try { fs.rmSync(path.join(targetDir, f), { force: true }); } catch { /* yoksa sorun degil */ }
   }
   const skills = plan.skills || { copy: [], remove: [] };
-  for (const rel of skills.copy) {
-    const to = path.join(skillsTarget, rel);
+  for (const item of skills.copy) {
+    const to = path.join(skillsTarget, item.rel);
     fs.mkdirSync(path.dirname(to), { recursive: true });
-    fs.copyFileSync(path.join(skillsSource, rel), to);
+    fs.copyFileSync(path.join(item.source.dir, item.rel), to);
   }
   for (const rel of skills.remove) {
     try { fs.rmSync(path.join(skillsTarget, rel), { force: true }); } catch { /* yoksa sorun degil */ }
@@ -187,8 +243,9 @@ function report(plan) {
   lines.push(`Silinecek    : ${plan.files.remove.length} dosya (kaynakta yok)`);
   plan.files.remove.forEach((f) => lines.push(`   - ${f}`));
   lines.push(`Beceri       : ${skills.copy.length} kopyalanacak, ${skills.remove.length} silinecek`);
-  skills.copy.forEach((f) => lines.push(`   + skills/${f}`));
+  skills.copy.forEach((i) => lines.push(`   + skills/${i.rel}   (${i.source.name})`));
   skills.remove.forEach((f) => lines.push(`   - skills/${f}`));
+  (skills.conflicts || []).forEach((c) => lines.push(`   ✗ ÇAKIŞMA: "${c.skill}" iki kaynakta var — ${c.sources.join(' ve ')}`));
   lines.push(`settings.json: ${plan.settings.stale.length} eski ad, ${plan.settings.missing.length} eksik kayit`);
   plan.settings.stale.forEach((s) => lines.push(`   ~ ${s.from} -> ${s.to || 'KARSILIGI YOK (elle bak)'}`));
   plan.settings.missing.forEach((s) => lines.push(`   ! ${s.file} (${s.event}) settings.json'da kayitli degil`));
@@ -210,6 +267,10 @@ function main() {
   }
   const plan = measure(paths);
   console.log(report(plan));
+  for (const source of extraSkillSources()) {
+    const branch = sourceBranch(source.dir);
+    console.log(`Ek beceri kaynagi: ${source.name}${branch ? ` (dal: ${branch})` : ''} — YEREL kopyadan okunur`);
+  }
   const willApply = process.argv.includes('--uygula');
   if (!willApply) {
     console.log('\nKURU CALISTIRMA — hicbir sey degismedi. Uygulamak icin: --uygula');
@@ -222,4 +283,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { listFiles, planFiles, planSkills, skillNames, planSettings, rewriteSettings, measure, apply, report, RENAMES, REGISTRY, BACKUP_PREFIX };
+module.exports = { listFiles, planFiles, planSkills, skillNames, extraSkillSources, planSettings, rewriteSettings, measure, apply, report, RENAMES, REGISTRY, BACKUP_PREFIX };
