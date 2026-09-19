@@ -52,6 +52,8 @@ jobs:
         run: node quality/test/wide-effect-git.test.js
       - name: Kod dili uyarı kipi testleri
         run: node quality/test/code-language-warn.test.js
+      - name: Uyum ölçeri testleri
+        run: node quality/test/compliance.test.js
       - name: Kanca testleri
         run: node hooks/test/hooks.test.js
         env:
