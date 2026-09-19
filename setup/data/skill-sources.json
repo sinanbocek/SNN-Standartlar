@@ -1,0 +1,9 @@
+{
+  "_description": "Beceri kaynaklari. Ilk sira her zaman canli kopyadir (SNN-Standartlar); asagidakiler EK kaynaklardir.",
+  "_why": "Bir beceri, atif yaptigi deponun surumuyle birlikte degismelidir. abacus-talep cekirdegin kendi defterine, AI-RULES 4.1 ayiracina ve issue sablonuna atif yapar; SNN-Standartlar'da dursaydi iki depoda iki hizda ilerleyen tek metin olurdu (SNN-Abacus-Core bildirimi #59, 2026-09-19).",
+  "_conflict": "Ayni beceri adi iki kaynakta varsa KURULUM DURUR ve ikisini de bildirir. Sessizce biri secilmez.",
+  "_local": "Ek kaynaklar YEREL calisma kopyasindan okunur (canli kopya yalniz SNN-Standartlar icindir). Yerel kopya baska dalda olabilir; betik hangi dalda oldugunu ve kirli olup olmadigini yazar.",
+  "sources": [
+    { "name": "SNN-Abacus-Core", "dir": "SNN-Abacus-Core/skills" }
+  ]
+}

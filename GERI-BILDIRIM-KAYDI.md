@@ -33,6 +33,27 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 
 ## Kararlar
 
+### 2026-09-19 · Beceri kaynağı tek klasör — **KABUL**
+
+- **Kimden:** SNN-Abacus-Core oturumu (issue #59)
+- **Tür:** yeni-kural
+- **Talep:** Çekirdek kendi `abacus-talep` becerisini yazdı, ama `~/.claude/skills` altına
+  **yalnız SNN-Standartlar** yazıyor. Beceri kaynağı liste olsun.
+- **Eleme gösterilmiş:** beceriyi SNN-Standartlar'a taşımak denendi ve elendi — beceri çekirdeğin
+  defterine, `§4.1` ayıracına ve issue şablonuna atıf yapıyor; çekirdek sürüm atladığında beceri
+  de değişmeli. İki depoda iki hızda ilerleyen tek bir metin olurdu.
+- **Karar:** **Kabul.** Kaynak artık liste (`setup/data/skill-sources.json`).
+- **Çakışma kuralı açıkça tanımlandı** (talep bunu özellikle istedi): aynı beceri adı iki kaynakta
+  varsa **kurulum durur**, iki kaynağı da bildirir. Sessizce biri seçilmez — yanlış becerinin
+  kurulması, hiç kurulmamasından pahalıdır, çünkü yanlış olan sessizce çalışır.
+- **Kabul edilen ödün, görünür kılındı:** ek kaynaklar **yerel** çalışma kopyasından okunur
+  (canlı kopya yalnız SNN-Standartlar içindir). Betik artık kaynağın **hangi dalda** olduğunu
+  yazıyor. İlk çalıştırmada bu hemen işe yaradı: çekirdek `fix/borc-partisi-2` dalındaydı.
+- **Tüketici doğru yaptı:** elle kopyalamanın yürürlükte olduğunu **söyledi** ve neden çözüm
+  saymadığını yazdı; bedelini bu ailenin kendi ölçümüyle gösterdi (`borclar` ve `proje-kur`
+  sürümsüz kaldıkları için sessizce bozulmuştu). Kapsamı abartmadı: *"diğer projelerin ileride
+  beceri taşıyıp taşımayacağını ölçmedim — tahmin yazmıyorum."*
+
 ### 2026-09-19 · Proje istisnası sessizce ölü kalıyor — **KABUL**
 
 - **Kimden:** SNN-Abacus-Core oturumu (issue #62)

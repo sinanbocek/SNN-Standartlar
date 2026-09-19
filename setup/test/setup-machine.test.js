@@ -68,14 +68,42 @@ console.log('— beceriler');
   put(dst, 'bizim/artik.md', 'silinmeli');
   put(dst, 'baskasinin/SKILL.md', 'DOKUNULMAMALI');
 
-  const plan = m.planSkills(src, dst, () => false);
-  expect('içeriği değişen beceri kopyalanır', plan.copy, ['bizim/SKILL.md']);
+  const ana = { name: 'SNN-Standartlar', dir: src };
+  const plan = m.planSkills([ana], dst, () => false);
+  expect('içeriği değişen beceri kopyalanır', plan.copy.map((i) => i.rel), ['bizim/SKILL.md']);
+  expect('kopyanın kaynağı bilinir', plan.copy[0].source.name, 'SNN-Standartlar');
   expect('bizim klasördeki artık silinir', plan.remove, ['bizim/artik.md']);
   // Bu satır kırmızıya dönerse üçüncü tarafın becerisi silinecek demektir.
   expect('BAŞKASININ becerisine dokunulmaz', plan.remove.some((f) => f.startsWith('baskasinin/')), false);
   expect('kaynakta olmayan klasör hiç görülmez', m.skillNames(src), ['bizim']);
-  expect('aynı içerik kopyalanmaz', m.planSkills(src, dst, () => true).copy, []);
-  expect('kaynak yoksa boş plan', m.planSkills(p2.join(root, 'yok'), dst), { copy: [], remove: [] });
+  expect('aynı içerik kopyalanmaz', m.planSkills([ana], dst, () => true).copy, []);
+  expect('kaynak yoksa boş plan', m.planSkills([{ name: 'yok', dir: p2.join(root, 'yok') }], dst).copy, []);
+  // Eski çağrı biçimi (tek klasör) çalışmaya devam eder.
+  expect('tek kaynak biçimi de çalışır', m.planSkills(src, dst, () => false).copy.map((i) => i.rel), ['bizim/SKILL.md']);
+
+  // ── İKİNCİ KAYNAK (SNN-Abacus-Core bildirimi #59, 2026-09-19)
+  const ikinci = p2.join(root, 'ikinci');
+  put(ikinci, 'abacus-talep/SKILL.md', 'cekirdek becerisi');
+  const iki = m.planSkills([ana, { name: 'SNN-Abacus-Core', dir: ikinci }], dst, () => false);
+  expect('ikinci kaynaktan beceri gelir', iki.copy.map((i) => i.rel).sort(), ['abacus-talep/SKILL.md', 'bizim/SKILL.md']);
+  expect('ikinci kaynağın adı raporlanır', iki.copy.find((i) => i.rel.startsWith('abacus')).source.name, 'SNN-Abacus-Core');
+  expect('çakışma yoksa liste boş', iki.conflicts, []);
+
+  // EN KRİTİK: aynı ad iki kaynakta ise SESSİZCE biri seçilmez.
+  put(ikinci, 'bizim/SKILL.md', 'ayni ad, baska kaynak');
+  const cakisma = m.planSkills([ana, { name: 'SNN-Abacus-Core', dir: ikinci }], dst, () => false);
+  expect('çakışma bildirilir', cakisma.conflicts.map((c) => c.skill), ['bizim']);
+  expect('çakışmada iki kaynak da yazılır', cakisma.conflicts[0].sources, ['SNN-Standartlar', 'SNN-Abacus-Core']);
+  // Çakışan beceri ikinci kaynaktan KOPYALANMAZ; ilk kaynak kazanmış gibi davranılmaz.
+  expect('çakışan beceri ikinci kaynaktan kopyalanmaz', cakisma.copy.filter((i) => i.source.name === 'SNN-Abacus-Core').length, 1);
+
+  // Çakışma varsa uygulama DURUR.
+  let durdu = false;
+  try {
+    m.apply({ sourceDir: src, targetDir: p2.join(root, 'h'), settingsFile: p2.join(root, 's.json'), skillsSource: src, skillsTarget: dst },
+      { files: { copy: [], remove: [] }, skills: cakisma, settings: { stale: [], missing: [] }, settingsText: '{}' });
+  } catch (e) { durdu = /çakışması/.test(e.message); }
+  expect('çakışmada hiçbir şey uygulanmaz', durdu, true);
 
   fs2.rmSync(root, { recursive: true, force: true });
 }
