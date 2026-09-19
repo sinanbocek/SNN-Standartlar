@@ -73,6 +73,15 @@ function main() {
     } catch (e) {
       lines.push(`   ⚠ güvenlik uyarısı kontrolü çalışmadı: ${e.message}`);
     }
+    // Aile standardı uyumu: "beklenen durumdan ne kadar uzaktayız?" (kural: quality/compliance.js).
+    // Mesaj kuyruğu DEĞİL, durum farkı: her açılışta yeniden hesaplanır, eksik giderilince kaybolur.
+    // Pahalı iş yapmaz (kod dili taraması burada çalıştırılmaz); ölçüm çökerse açılış sürer.
+    try {
+      const compliance = require(require('./lib/shared').shared('quality/compliance.js'));
+      lines.push(...compliance.summary(compliance.check(root)));
+    } catch (e) {
+      lines.push(`   ⚠ uyum ölçümü çalışmadı: ${e.message}`);
+    }
   }
 
   const others = listProjects()
