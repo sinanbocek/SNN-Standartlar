@@ -104,6 +104,12 @@
       "module": "quality/open-requests.js",
       "vaka": "2026-09-19: kutukteki son kayit kapandi ve oturum \"eyleme gecirilebilir borc kalmadi\" dedi. Ayni anda DORT acik talep duruyordu; biri kapiyi sessizce bozan bir kusuru bildiriyordu. Talepler kutukte de, oturum acilisinda da gorunmuyordu. Proje sahibi ekran goruntusuyle gosterdi: \"bu tek basina yetmez, sadece iyi niyet gostergesidir; kurala girmeli ve makine zorlamasi olmali.\"",
       "test": "eşiği aşmış yanıtsız talep yakalanır"
+    },
+    {
+      "id": "bekleyen-olcum",
+      "module": "quality/pending-measurements.js",
+      "vaka": "2026-09-19: TB-002 'bir hafta defter verisi beklensin' diyordu. Olculdu: defter yalniz su anki oturumlari tutuyordu, gecmis hic biriktirilmiyordu — beklenen veri HIC gelmeyecekti. Ustelik beklemeyi tetikleyen bir sey de yoktu. Proje sahibi: 'bu ve benzeri islemler tamamen makine zorlamasiyla kontrol edilerek otomatik tetiklenen bir makine kurali olmali; aksi asla kabul edilemez.'",
+      "test": "komutun betiği yoksa kırmızı"
     }
   ]
 }

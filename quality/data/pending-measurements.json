@@ -1,0 +1,16 @@
+{
+  "_description": "Vadesi gelince MAKINE tarafindan calistirilacak olcumler. Kutukte 'sonra olceriz' diye bekleyen kayit bulunmaz; beklemenin yeri burasidir.",
+  "_why": "2026-09-19: TB-002 'bir hafta defter verisi beklensin' diyordu. Defter gecmis tutmuyordu; beklenen veri HIC gelmeyecekti. Proje sahibi 'TB-002 neyi bekliyor?' diye sorunca ortaya cikti ve sunu soyledi: 'bu ve benzeri islemler tamamen makine zorlamasiyla kontrol edilerek otomatik tetiklenen bir makine kurali olmali; aksi asla kabul edilemez.'",
+  "_rule": "Her kaydin CALISTIRILABILIR bir komutu ve bir vadesi olmak zorundadir. Komut dosyasi yoksa ya da vade gecersizse kapi KIRMIZI verir. Vade gelince akis komutu CALISTIRIR ve karar verilene kadar kirmizi kalir.",
+  "_allowlist": "Komut yalnizca bu deponun kendi olcerlerini cagirabilir: 'node quality/<dosya>.js ...'",
+  "pending": [
+    {
+      "id": "OLC-001",
+      "question": "Ayni projede ayni anda ve AYNI DALDA kac kez calisildi?",
+      "command": "node quality/meeting-report.js --gun 7",
+      "due": "2026-09-26",
+      "decision": "Ayni dalda bulusma VARSA: guard-files bekcisine dosya iddiasi (claim) eklenir, yeni kayit acilir. YOKSA: es zamanli calisma standardinin 2. maddesi (ayri dal / ayri worktree) yeterlidir, bu olcum kapatilir.",
+      "source": "TB-002 (2026-09-19'da arsive tasindi; bekleme kutukten buraya gecti)"
+    }
+  ]
+}

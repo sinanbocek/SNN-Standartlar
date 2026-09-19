@@ -1,0 +1,40 @@
+# Vadesi gelen ölçümleri MAKİNE çalıştırır (kural: standartlar/teknik-borc-standardi.md)
+#
+# NEDEN VAR (2026-09-19): TB-002 "bir hafta defter verisi beklensin" diyordu. Beklenen veri hiç
+# toplanmıyordu ve beklemeyi tetikleyen bir şey de yoktu — "bir hafta sonra bakarız" bir kontrol
+# değil, bir niyetti. Proje sahibi: "bu ve benzeri işlemler tamamen makine zorlamasıyla kontrol
+# edilerek otomatik tetiklenen bir makine kuralı olmalı; aksi asla kabul edilemez."
+#
+# Bu akış GÜNLÜK çalışır: vade kaçırılmaz. Vadesi gelen ölçümün komutu çalıştırılır, çıktı iş
+# özetine yazılır ve karar verilene kadar akış KIRMIZI kalır.
+name: pending-measurements
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "37 5 * * *" # her gün 08:37 TSİ
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Vadesi gelen ölçüm var mı
+        run: |
+          set -o pipefail
+          node quality/pending-measurements.js 2>&1 | tee olcum.log
+          STATUS=${PIPESTATUS[0]}
+          { echo '### Bekleyen ölçümler'; echo '```'; cat olcum.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$STATUS" != "0" ]; then
+            echo "::warning::Vadesi gelen ya da geçersiz bekleyen ölçüm var — karar verilmeli."
+          fi
+          exit $STATUS
