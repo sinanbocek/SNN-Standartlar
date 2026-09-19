@@ -56,6 +56,19 @@ expect('parantezli JSX yazısı', names('<span className="b">Altın (Gram) Deği
 expect('tek kelimelik JSX satırı', names('İptal'), []);
 expect('düzenli ifade gövdesi taranmaz', names('change(/Tedarikçiye ödeme günü/, "-30");'), []);
 expect('bölme işareti düzenli ifade sanılmaz', names('const oran = toplam / adet;'), ['oran','toplam','adet']);
+// KAÇIŞLI BÖLÜ gövdeyi kapatmaz. 2026-09-19'da GHS-Panel oturumu bildirdi: banka belgesi
+// eşleştiren düzenli ifadeler yanlış alarm veriyordu. Gövde `(?:[^/\n]|\.)+` yazılmıştı;
+// niyet "ters bölü + herhangi karakter" idi ama `\.` düz NOKTA demek, bu yüzden `\/`
+// görünce gövde erken kapanıyor ve kalanı KOD sayılıyordu.
+// Bildirilen gerçek satır (GHS-Panel profiles.ts:32): İŞLEM, TUTARI, SORGU yanlış alarm verdi.
+expect('kaçışlı bölü gövdeyi kapatmaz', names('pick(source, /GONDEREN AD SOYAD\\/UNVAN\\s*(.+?)(?=\\s*İŞLEM TUTARI|\\s*SORGU)/is)'), []);
+expect('iki kaçışlı bölü arasındaki yazı', names('pick(source, /Gönderen\\s*\\/\\s*Açıklama:\\s*(.+)/i)'), []);
+expect('adres kalıbı taranmaz', names('expect(url).toMatch(/^https:\\/\\/wa\\.me\\/\\?text=\\*Fiyat Teklifi\\*/);'), []);
+// Ok fonksiyonu gövdesindeki düzenli ifade: açılış bağlamında `>` yoktu, hiç soyulmuyordu
+// (aynı dosya, satır 65: `rest.find((part) => /[a-zçğıöşü]/i.test(part))`).
+expect('ok fonksiyonundan sonra', names('rest.find((part) => /[a-zçğıöşü]/i.test(part));'), []);
+// Düzeltme GERÇEK adları gizlememeli: düzenli ifadeden sonrası yine taranır.
+expect('düzenli ifadeden sonraki ad yine taranır', names('const sonuc = /a\\/b/.test(x); const gunSonu = 1;'), ['sonuc', 'gunSonu']);
 
 expect('metin + ifade aynı satırda: yazı atılır', names('{metrics.count} adet ödemenin kur bilgisi için TL'), []);
 expect('metin + ifade: ifade içindeki kod taranır', names('{gunSonu} adet kayıt bulundu'), ['gunSonu']);
