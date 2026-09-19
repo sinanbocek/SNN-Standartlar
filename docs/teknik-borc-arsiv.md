@@ -6,6 +6,38 @@
 
 ## Kapanan Kalemler
 
+### TB-004 — Kancaların 272 satırı testsiz
+- **Tespit Tarihi:** 2026-09-19 (kancalar depoya alınırken ölçüldü)
+- **Kapanış:** 2026-09-19 — TB-004 çözüldü; 272 satırın **272'si** test altında. Kapanış testi yazarken kapının **gerçekten çalışmadığı bir durum** bulundu (aşağıda).
+- **Öncelik (kapanışta):** P2 (Planlı)
+
+#### 🟢 Sade Anlatım
+- **Sorun ne?** Bekçilerin bir kısmının hiç testi yok. Bunların içinde en kritik dosya da var: `lib/shared.js`. O 45 satır bozulursa hiçbir bekçi ortak depoyu bulamaz ve tüm projelerde oturum açılışı durur.
+- **Benzetme:** Binadaki yangın kapılarının çoğu düzenli deneniyor, ama ana elektrik panosu hiç denenmiyor. Pano giderse kapıların hepsi birden çalışmaz.
+- **Çözülmezse ne olur?** Sessiz kalabilir. Ama 2026-09-15'te tam bu oldu: ortak depodaki bir fonksiyon adı değişti, `session-start` çöktü ve **tüm projelerde** açılış özeti durdu. O gün test olsaydı değişiklik main'e girmeden yakalanırdı.
+- **Senden beklenen karar:** Yok. Sıra önerisi: önce `lib/shared.js`, sonra `session-start.js`.
+
+#### 🔧 Teknik Detay
+- **Açıklama:** Testsiz dosyalar ve satır sayıları (2026-09-19 ölçümü): `session-start.js` 109, `stop-gate.js` 78, `lib/shared.js` 45, `guard-code-language.js` 40. Toplam 272. Mevcut `hooks/test/hooks.test.js` yalnız `guard-bash`, `guard-files` ve `stop-debt-push`'ı alt süreç olarak çalıştırıyor.
+- **Etki:** Tüm projeler — kancalar `~/.claude/settings.json` üzerinden her oturumda çalışır.
+- **Çözüm yönü:** `lib/shared.js` için: `SNN_STANDARTLAR` ortam değişkeni zaten yolu dışarıdan alıyor, bu yüzden geçici klasörle test edilebilir (`refresh()` kirli kopyada dokunmuyor, ağ yokken eski kural çalışmaya devam ediyor, damga 6 saati doldurmadan atlanıyor). `session-start.js` ve `guard-code-language.js` uçtan uca denenebilir: stdin'den JSON ver, stdout'u oku — `hooks.test.js` bu deseni zaten kullanıyor. `stop-gate.js` monolitik; önce `measure`/`decide` ayrımına bölünmeli (`schema-doc.js` deseni).
+- **İlerleme (2026-09-19):** 272 satırın **232'si** test altına alındı; 3 test dosyası, 56 test, hepsi CI'da ve makineden de yeşil.
+  - `lib/shared.js` (45) — sahte uzak depo + klon ile 23 test: yol çözme, damga, 6 saat kısıtlaması, ileri sarma, **kirli kopyaya dokunulmaz**, **ağ/uzak yokken patlamaz**.
+  - `session-start.js` (109) — 16 test; çoğu "çökmez" üzerine.
+  - `guard-code-language.js` (40) — 17 test; **asla engellemez**, **asla `allow` demez**.
+- **Test yazarken bulunan iki gerileme (ikisi de düzeltildi):**
+  1. **Damga adı.** TB-001 yeniden adlandırması `snn-son-guncelleme` → `snn-son-updateResult` değişimini **dizge içinde** de yaptı. Canlı kopyada iki damga yan yana kaldı; o aralıkta 6 saatlik kısıtlama çalışmadı, her oturum tazeleme denedi. Ad artık `snn-last-refresh`; eski adlar yazarken temizlenir.
+  2. **Açılış bekçisi çöküyordu.** `session-start.js:4` üst düzey `require('./lib/debt')` canlı kopyaya yönlendiriyor; canlı kopya yoksa bekçi **çıkış kodu 1** ile çöküyordu — hiçbir `try/catch`'e ulaşmadan. Dosyanın başlığı 2026-09-15 olayını anlatıp "açılış özeti çökmez" diyordu, ama o koruma **eksik fonksiyona** karşıydı, **eksik modüle** karşı değil. Artık özet kütüksüz sürer ve sebep yazılır.
+- **Kapanış (2026-09-19):** `stop-gate.js` (78) bölündü: karar mantığı `hooks/lib/stop-gate-plan.js` içine saf olarak alındı, IO kancada kaldı. 33 test yazıldı; ikisi sabotajla sınandı (ikinci turda engelleme, silinen dosya süzgeci — ikisi de kırmızıya döndü). Kapı `quality/data/gates.json`'a kaydedildi (15. kapı).
+- **Testin bulduğu gerçek kaçak:** uçtan uca denemede kapı **hiç tetiklenmedi**. Sebep: `git status --porcelain` yeni bir klasörü tek satırda bildirir (`?? src/`), içindeki dosyaları göstermez. Yani **yeni bir klasöre yazılan TS dosyaları tip kontrolünden muaftı** — kapı kurulduğundan beri. Kanca artık `-uall` ile okuyor. Bu, `git ls-files` kaçağının (kod dili tarayıcısı, aynı hafta) aynı sınıftan ikinci örneğidir: **git'in varsayılanları izlenmeyen dosyayı gizler.**
+- **Sabitlenen iki davranış:** (1) `stop_hook_active` iken ASLA yeniden engellenmez — engellenirse ajan aynı kapıya tekrar çarpar ve oturum ilerleyemez. (2) Zaman aşımı engel değildir; yapılamayan ölçümle iş durdurulmaz (`olcum-standardi.md`).
+- **Neden P2 kaldı:** Bugünkü 17 hatanın hiçbirini bu testler yakalamazdı (ölçüldü); dayanıklılık kapısıdır, keşif kapısı değildir. Yine de `lib/shared.js` tek nokta arızası olduğu için P2.
+- **Bağlı kalemler:** TB-006 (aynı dosyalar makine kurulumunun parçası).
+
+---
+
+---
+
 ### TB-005 — Bu deponun kendi rehber dosyası yok
 - **Tespit Tarihi:** 2026-09-19 (uyum ölçeri ilk çalıştığında)
 - **Kapanış:** 2026-09-19 — TB-005 çözüldü; `CLAUDE.md` yazıldı.

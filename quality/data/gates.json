@@ -86,6 +86,12 @@
       "module": "quality/compliance-issues.js",
       "vaka": "2026-09-19: uyum eksikleri yalniz oturum acilisinda goruluyordu; satir oturum kapaninca kayboluyor, \"yapildi mi?\" kaydi tutulmuyor ve proje sahibi 11 projenin durumunu tek yerde goremiyordu.",
       "test": "eksik var, issue yok → aç"
+    },
+    {
+      "id": "tip-kontrol-kapisi",
+      "module": "hooks/stop-gate.js",
+      "vaka": "2026-09-19: kapi vardi ama defterde yoktu ve testsizdi. Test yazilirken gercek kacak olculdu: git yeni bir klasoru tek satirda bildirdigi icin (`?? src/`) yeni klasore yazilan TS dosyalari kapiyi HIC tetiklemiyordu; kanca artik `-uall` ile okuyor.",
+      "test": "yeni klasör kaçmaz (-uall çıktısı)"
     }
   ]
 }
