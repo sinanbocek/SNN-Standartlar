@@ -1,7 +1,17 @@
 # Haftalık sağlık raporu — biçim ve rutin metni
 
-**İş bölümü:** makine **sayıyı** üretir (`quality/health-report.js`, Pazartesi 08:09), rutin
-**yorumu** yapar (bu hafta hangi üç şey önemli). Sayılar tek kaynaktan gelir.
+**İş bölümü:** makine **sayıyı** üretir, rutin **yorumu** yapar. Sayılar tek kaynaktan gelir.
+
+**Sıra önemli:**
+
+```
+07:40  health-report.yml   → 11 depoyu ölçer, issue'yu günceller
+08:00  e-posta rutini      → o issue'daki sayıları okur, üç maddeyi yazar, gönderir
+```
+
+İlk kurulumda sağlık akışı 08:09'daydı ve rutin **bir önceki haftanın** sayılarını okuyordu —
+"önce ölçülsün" niyeti vardı ama saat tutmuyordu (2026-09-23'te fark edildi). Rutinin saati
+değişirse bu akış da öne çekilmeli; aradaki pay en az 15 dakika olmalı (ölçüm: akış ~1 dk sürüyor).
 
 ## İlk gerçek koşumda çıkan altı kusur (2026-09-23, düzeltildi)
 
