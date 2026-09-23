@@ -128,6 +128,12 @@
       "module": "quality/health-report.js",
       "vaka": "2026-09-23: haftalik e-posta raporu 7 sutunlu bir tablo basiyordu; Guvenlik sutunu 10 projenin 10'unda da 'okunamadi' diyordu (iki hafta ust uste), maddeler paragraf halindeydi ve onem derecesi yoktu. Ayrica sayilar kutuk BASLIGINDAN okunuyordu ve uc projede dosya iceriginle uyusmuyordu (Abacus 11 vs 1, Gunum-Var 45 vs 35, GHS 48 vs 55). Proje sahibi: 'ozet hap bilgi'.",
       "test": "kayıtlar sayılır"
+    },
+    {
+      "id": "beceri-adresi",
+      "module": "quality/skill-paths.js",
+      "vaka": "2026-09-19: borclar ve proje-kur becerileri yeniden adlandirilmis betikleri cagiriyordu; ikisi de calismiyordu ve kimse fark etmemisti, cunku beceriler hicbir testin kapsaminda degildi (docs/makine-kurulumu.md). 2026-09-23: borc-ekle ve borclar, hicbir betigin kurmadigi <ev>/.claude/standartlar/ yerini gosteriyordu; bu makinede orada yalniz elle yazilmis bir yonlendirme notu var, yeni makinede adres bos cikar. Olcum (2026-09-23): 5 beceri, 9 adres satiri, 9'u yakalandi; 2 gercek bulgu, 0 yanlis alarm.",
+      "test": "yeniden adlandırılmış betik yakalanır"
     }
   ]
 }

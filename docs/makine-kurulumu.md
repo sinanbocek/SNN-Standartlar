@@ -74,6 +74,22 @@ sessizce çalışır.
 **Yollar taşınabilir yazılır.** Beceri dosyalarında makineye özel mutlak yol bulunmaz; ev klasörü
 `<ev>` olarak yazılır ve beceri onu çalışma anında ölçer.
 
+**Beceri adresleri her PR'da denetlenir** (`quality/skill-paths.js`, 2026-09-23). Becerideki her
+`<ev>/.claude/...` adresi depodaki dosyaya çevrilir ve dosya yoksa `test.yml` kırmızı olur. Makineye
+yalnız üç yer kurulur; eşleme `setup-machine.js` ile aynıdır:
+
+| Becerideki adres | Depodaki dosya |
+|---|---|
+| `<ev>/.claude/standartlar-canli/X` | `X` |
+| `<ev>/.claude/hooks/X` | `hooks/X` |
+| `<ev>/.claude/skills/X` | `skills/X` |
+
+Bu üçünün dışındaki bir `<ev>/.claude/...` adresi de kırmızıdır: o yeri hiçbir betik kurmaz, yeni
+makinede boş çıkar. İlk çalıştırmada bu yüzden iki bulgu çıktı: `borc-ekle` ve `borclar`,
+`<ev>/.claude/standartlar/` altındaki elle yazılmış bir yönlendirme notunu gösteriyordu.
+`<proje kökü>`, `<depo>` gibi yer tutucular başka projelerin dosyalarıdır ve atlanır.
+Bir betiği taşıdığında ya da adını değiştirdiğinde onu çağıran beceriyi de aynı PR'da güncelle.
+
 ## Kurulum
 
 1. Node.js, `git`, `gh` kurulu olmalı; `gh auth login` yapılmış olmalı.
