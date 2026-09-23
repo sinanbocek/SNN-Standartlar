@@ -2,6 +2,12 @@
 // Kullanım: node core/propagate.js --surum v3.2.0                → KURU ÇALIŞTIRMA (plan yazdırır, hiçbir şey değiştirmez)
 //           node core/propagate.js --surum v3.2.0 --uygula       → dal açar, sürümü yükseltir, PR açar
 //           ... --yalniz sinanbocek/SNN-Yonetici-Ozeti             → yalnız bu depo (deneme için)
+//           node core/propagate.js --temizle                      → sürüm yaymadan, yığılmış eski PR'ları kapatır
+//
+// AŞILMIŞ PR'LAR KAPATILIR: bir tüketicide aynı anda yalnız BİR açık çekirdek PR'ı bulunur.
+// Neden (bildirim #79, 2026-09-19): beş ardışık sürüm 8 tüketicide 25 açık PR bıraktı; biri hariç
+// hepsi ölüydü, başlıkları neredeyse aynıydı ve listeden eskisini seçen gözden geçiren yenisindeki
+// düzeltmeyi almamış oluyordu.
 // Anahtar: GH_TOKEN (repo yetkili). Kural: bot kütüğe doğrudan yazmaz; ana sürüm kaydı PR'ın içinde gelir. Otomatik birleştirme yok.
 'use strict';
 const fs = require('fs');
@@ -18,6 +24,7 @@ const ONLY = arg('--yalniz');
 const OWNER = 'sinanbocek';
 // Kişisel hesap dışındaki tüketiciler (kurum depoları kullanıcı listesinde görünmez)
 const EXTRA_REPOS = ['globalhedef/global-hedef-web-platform'];
+const CLEAN = argv.includes('--temizle');
 const BRANCH = `core/abacus-core-v${String(TARGET || '').replace(/^v/, '')}`;
 
 const gh = (args, opts = {}) => execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 1e8, stdio: ['ignore', 'pipe', 'pipe'], ...opts });
@@ -143,8 +150,79 @@ function applyOne(repo, plan, pkgText, changelog) {
   return prUrl;
 }
 
+// Bir tüketicideki AÇIK çekirdek PR'ları — commit/inceleme sayılarıyla.
+//
+// İKİ ADIM ŞART: `commits,reviews` alanlarını 100 PR için birden istemek GitHub'ın GraphQL düğüm
+// sınırını aşıyor ("exceeds the maximum limit of 500,000") ve çağrı KOMPLE başarısız oluyor.
+// İlk sürüm hatayı yutup boş liste döndürüyordu; temizlik "yapılacak yok" diyordu ve üç açık PR
+// duran bir depoyu SESSİZCE atlıyordu (globalhedef, 2026-09-23'te ölçüldü). Önce ucuz listeleme,
+// sonra yalnız çekirdek PR'ları için ayrıntı.
+function openCorePrs(repo) {
+  let list;
+  try {
+    list = ghJson(['pr', 'list', '-R', repo, '-s', 'open', '--limit', '100', '--json', 'number,headRefName']);
+  } catch (e) {
+    // SESSİZ ATLAMA YOK: okunamayan depo bildirilir, yoksa "yapılacak yok" yanlış güven verir.
+    console.log(`    ⚠ ${repo}: açık PR listesi okunamadı — ${(e.stderr || e.message || '').toString().trim().split('\n').pop()}`);
+    return null;
+  }
+  const core = list.filter((pr) => P.versionOfBranch(pr.headRefName));
+  return core.map((pr) => {
+    try {
+      const detail = ghJson(['pr', 'view', String(pr.number), '-R', repo, '--json', 'commits,reviews']);
+      return { ...pr, commits: detail.commits, reviews: detail.reviews };
+    } catch {
+      // Ayrıntı okunamadıysa DOKUNULMUŞ say: kapatmamak, yanlışlıkla kapatmaktan ucuzdur.
+      return { ...pr, commits: 2, reviews: 1 };
+    }
+  });
+}
+
+// Aşılmış PR'ları kapatır. DAL SİLİNMEZ: göç notları yeni PR gövdesinde zaten toplanıyor
+// (ölçüldü, #79 eki), ama dalı silmek geri alınamaz bir iştir ve bu aracın işi değildir.
+function closeSuperseded(repo, keepVersion, apply) {
+  const prs = openCorePrs(repo);
+  if (prs === null) return { closed: 0, touched: 0, unreadable: true };
+  const { close, keep, touched } = P.supersede(prs, keepVersion);
+  for (const pr of touched) {
+    console.log(`    ⚠ #${pr.number} (${pr.version}) elle dokunulmuş (ek commit ya da inceleme) — KAPATILMADI`);
+  }
+  for (const pr of close) {
+    const label = `#${pr.number} (${pr.version}) aşıldı`;
+    if (!apply) { console.log(`    − kapatılacak: ${label}`); continue; }
+    try {
+      gh(['pr', 'close', String(pr.number), '-R', repo, '--comment', P.supersedeComment(pr, keep)]);
+      console.log(`    − kapatıldı: ${label}`);
+    } catch (e) {
+      console.log(`    ✗ #${pr.number} kapatılamadı: ${(e.stderr || e.message || '').toString().trim().split('\n').pop()}`);
+    }
+  }
+  return { closed: close.length, touched: touched.length };
+}
+
+// Sürüm yaymadan yığılmayı temizler: her tüketicide EN YÜKSEK sürüm kalır.
+function cleanOnly() {
+  console.log(`${APPLY ? '▶ UYGULAMA' : '🔍 KURU ÇALIŞTIRMA (hiçbir şey değişmez)'} · aşılmış çekirdek PR temizliği`);
+  let total = 0;
+  let unreadable = 0;
+  for (const repo of consumers()) {
+    const prs = openCorePrs(repo);
+    // OKUNAMAYAN DEPO SESSİZ GEÇİLMEZ: "aşılmış PR yok" ile "bakamadım" aynı şey değildir.
+    if (prs === null) { unreadable += 1; continue; }
+    if (prs.length < 2) { if (prs.length) console.log(`  ✓ ${repo}: tek açık PR — yapılacak yok`); continue; }
+    console.log(`  • ${repo}: ${prs.length} açık çekirdek PR`);
+    total += closeSuperseded(repo, null, APPLY).closed;
+  }
+  console.log(total ? `\nToplam ${total} aşılmış PR${APPLY ? ' kapatıldı' : ' kapatılacak'}.` : '\nAşılmış PR yok.');
+  if (unreadable) {
+    console.log(`⚠ ${unreadable} depo okunamadı; oralarda yığılma olabilir.`);
+    process.exitCode = 1;
+  }
+}
+
 function main() {
-  if (!P.parse(TARGET)) throw new Error('Kullanım: --surum vX.Y.Z');
+  if (CLEAN) return cleanOnly();
+  if (!P.parse(TARGET)) throw new Error('Kullanım: --surum vX.Y.Z · ya da --temizle');
   const coreLog = fileAt(P.CORE_REPO, 'CHANGELOG.md', TARGET.startsWith('v') ? TARGET : `v${TARGET}`) || fileAt(P.CORE_REPO, 'CHANGELOG.md') || '';
   console.log(`${APPLY ? '▶ UYGULAMA' : '🔍 KURU ÇALIŞTIRMA (hiçbir şey değişmez)'} · çekirdek ${TARGET}${ONLY ? ` · yalnız ${ONLY}` : ''}`);
   if (APPLY) assertNpm11();
@@ -166,6 +244,9 @@ function main() {
     try {
       const changelog = P.changelogBetween(coreLog, plan.from, plan.to);
       console.log(`  • PR açıldı: ${label} → ${applyOne(repo, plan, pkgText, changelog)}`);
+      // YENİ PR AÇILDIKTAN SONRA kapatılır: önce kapatıp sonra açmak, PR açılışı başarısız
+      // olursa tüketiciyi hiç açık PR'sız bırakırdı (#79).
+      closeSuperseded(repo, String(TARGET).replace(/^v/, ''), true);
     } catch (e) {
       failed += 1;
       const msg = (e.stderr || e.message || '').toString().replace(/x-access-token:[^@]+@/g, 'x-access-token:***@').trim().split('\n').slice(-3).join(' | ');
