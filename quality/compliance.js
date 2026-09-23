@@ -162,6 +162,20 @@ function isTriggered(text) {
 // SAF: tetiklenen akislardan herhangi biri bu kapiyi calistiriyor mu?
 const runsGate = (state, re) => (state.workflowText || []).some((t) => re.test(t));
 
+// Kütük BAŞLIĞINDAKİ makine adresleri kurulan bir yeri gösteriyor mu? Eşleme beceri adres
+// kapısıyla aynıdır (quality/skill-paths.js): adres SNN-Standartlar'daki dosyaya çevrilir.
+// Yalnız başlık (ilk `---` satırından öncesi) ölçülür; kayıt gövdesi tarihçe anlatabilir.
+// 2026-09-23: 10 tüketici kütüğünün 10'u `~/.claude/standartlar/…` adresini taşıyordu; o yeri
+// hiçbir betik kurmuyor, yeni makinede boş çıkar.
+const STANDARDS_ROOT = path.join(__dirname, '..');
+function brokenLedgerRefs(ledgerText, exists = (p) => fs.existsSync(path.join(STANDARDS_ROOT, p))) {
+  const { extractRefs, mapToRepo } = require('./skill-paths');
+  const header = String(ledgerText || '').split(/^---\s*$/m)[0];
+  return extractRefs(header)
+    .filter((r) => { const { repoPath } = mapToRepo(r.rel); return repoPath === null || !exists(repoPath); })
+    .map((r) => r.raw);
+}
+
 const has = (state, file) => state.workflows.includes(file);
 const mentions = (text, re) => re.test(text || '');
 
@@ -201,6 +215,14 @@ const CHECKS = [
     ok: (s) => s.hasLedger,
     detail: () => 'docs/teknik-borc.md yok',
     fix: 'node setup/setup-project.js <proje> --uygula',
+  },
+  {
+    id: 'kutuk-adresi',
+    title: 'Kütükteki standart adresi',
+    // Adres hiç yazılmamışsa eksik sayılmaz: ölçüt "yazılan adres doğru olsun" der.
+    ok: (s) => brokenLedgerRefs(s.ledgerText).length === 0,
+    detail: (s) => `docs/teknik-borc.md başlığı hiçbir betiğin kurmadığı bir yeri gösteriyor: ${brokenLedgerRefs(s.ledgerText).join(', ')}`,
+    fix: 'kütük başlığındaki adresi `~/.claude/standartlar-canli/standartlar/teknik-borc-standardi.md` yap',
   },
   {
     id: 'anahtar-tarama',
@@ -255,4 +277,4 @@ function check(root) {
   return evaluate(readState(root));
 }
 
-module.exports = { CHECKS, EXEMPT_FILE, isTriggered, runsGate, repoSlug, excludedRepos, listAt, readAt, hasMain, readState, exemptions, evaluate, summary, check, MAX_SHOWN };
+module.exports = { CHECKS, EXEMPT_FILE, brokenLedgerRefs, isTriggered, runsGate, repoSlug, excludedRepos, listAt, readAt, hasMain, readState, exemptions, evaluate, summary, check, MAX_SHOWN };

@@ -27,7 +27,7 @@ const ids = (state, ex) => c.evaluate(state, ex).gaps.map((g) => g.id);
 
 console.log('— tam uyum');
 expect('eksik yok', ids(TAM), []);
-expect('ölçüt sayısı', c.CHECKS.length, 6);
+expect('ölçüt sayısı', c.CHECKS.length, 7);
 
 console.log('— tek tek eksikler');
 expect('turnike yok', ids({ ...TAM, workflowText: [akis('teknik-borc.yml'), akis('anahtar-tarama.yml')] }), ['kod-dili-akisi']);
@@ -91,6 +91,21 @@ expect('gerçek listede ihale-mcp dışlanmış', c.excludedRepos().includes('sa
 
 console.log('— kütük yoksa iki ölçüt birden düşer');
 expect('kütük + kayıt', ids({ ...TAM, hasLedger: false, ledgerText: '' }), ['kod-dili-kaydi', 'kutuk']);
+
+console.log('— kütük başlığındaki standart adresi');
+// 2026-09-23: 10 tüketici kütüğünün 10'u da başlığın 9. satırında hiçbir betiğin kurmadığı
+// `~/.claude/standartlar/…` adresini taşıyordu (kurulum şablonu öyle yazıyordu, #92'de düzeltildi).
+// Aşağıdaki satır Gunum-Var kütüğünden birebir alındı.
+const ESKI = '# Teknik Borç Kütüğü\n\n> **Standart:** `~/.claude/standartlar/teknik-borc-standardi.md` · **Son güncelleme:** 2026-09-16 · **Açık:** 45 (P1: 10 · P2: 15 · P3: 20)\n\n---\n\n## TB-012 · Kod dili geçişi';
+const YENI = ESKI.replace('~/.claude/standartlar/', '~/.claude/standartlar-canli/standartlar/');
+expect('kurulmayan standart adresi yakalanır', ids({ ...TAM, ledgerText: ESKI }), ['kutuk-adresi']);
+expect('canlı kopya adresi geçer', ids({ ...TAM, ledgerText: YENI }), []);
+expect('adres hiç yoksa eksik sayılmaz', ids({ ...TAM, ledgerText: '# Teknik Borç Kütüğü\n\n---\n\n## TB-012 · Kod dili geçişi' }), []);
+expect('eksik adres adıyla bildirilir', String((c.evaluate({ ...TAM, ledgerText: ESKI }).gaps[0] || {}).detail).includes('~/.claude/standartlar/teknik-borc-standardi.md'), true);
+// Kayıt gövdesi tarihçe anlatabilir ("eski betik ~/.claude/hooks/x.js silindi"); yalnız başlık ölçülür.
+expect('kayıt gövdesindeki eski adres sayılmaz', c.brokenLedgerRefs(`${YENI}\n- eski betik \`~/.claude/hooks/yok-artik.js\` silindi`), []);
+expect('başlıktaki eksik dosya yakalanır', c.brokenLedgerRefs('> Bkz. `~/.claude/hooks/yok-artik.js`\n\n---'), ['~/.claude/hooks/yok-artik.js']);
+expect('kütük yoksa adres ölçütü düşmez', ids({ ...TAM, hasLedger: false, ledgerText: '' }).includes('kutuk-adresi'), false);
 
 console.log('— muafiyet');
 const muaf = JSON.stringify({ exempt: [{ check: 'kod-dili-akisi', reason: 'dışarıdan tüketilen MCP sunucusu' }] });
