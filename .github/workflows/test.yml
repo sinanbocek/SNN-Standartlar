@@ -92,6 +92,8 @@ jobs:
         run: node quality/test/open-requests.test.js
       - name: Akış köprüsü ölçeri testleri
         run: node quality/test/workflow-callers.test.js
+      - name: Uzak okuma (var / yok / okunamadı) testleri
+        run: node quality/test/remote-read.test.js
       - name: Beceri adres kapısı testleri
         run: node quality/test/skill-paths.test.js
       - name: "Beceri adresleri: becerilerin gösterdiği dosyalar depoda var mı"

@@ -42,3 +42,5 @@ Bir değişiklik birleştirilmeden önce sorulan sorular. Her madde **evet/hayı
 - [ ] Yeni kuralın testi, kuralı bilerek bozunca gerçekten kırmızı veriyor mu (sabotaj denemesi)?
 - [ ] Yeni bir kapı eklendiyse: `quality/data/gates.json` kaydı var mı, vakası **tarihli** mi, o vakayı yakalayan test gerçekten kırmızıdan yeşile mi döndü?
 - [ ] Kapı **gerçek veride** çalıştırıldı mı, yanlış alarm sayısı ölçülüp yazıldı mı?
+- [ ] Okuma yapan kod "okunamadı"yı "yok"tan ayırıyor mu? Hata, 404 ya da boş yanıt "yok" diye yorumlanıyor mu? Okunamayan veriyle karar veriliyor mu? (Kural 3)
+      → `quality/remote-read.js`

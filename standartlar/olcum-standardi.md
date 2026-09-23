@@ -98,6 +98,50 @@ Test adı **tırnak içinde tam** aranır. İlk sürüm alt dizge arıyordu ve `
 
 ---
 
+## Kural 3 — Okunamadı ≠ yok
+
+Bir okuma üç sonuçtan birini verir: **var**, **yok**, **okunamadı**. Hata, 404, zaman aşımı, yetki reddi ya da boş yanıt "yok" değildir; **"bilinmiyor"dur** ve öyle raporlanır.
+
+Ölçülecekler kümesi de **bildirilmiş listeden** gelir, bulunandan değil. Yerel klasörde duran her depo aile projesi değildir; listede olup okunamayan proje de "yok" sayılmaz.
+
+### Neden (üç vaka, aynı kök)
+
+| Tarih | Ne oldu | Ne sanıldı | Gerçek |
+|---|---|---|---|
+| 2026-09-19 | Uyum ölçeri kök klasörü geçersiz bir adla (`origin/main:.`) listeledi; git hata verdi, liste boş döndü | Üç projede "rehber yok" | Rehberler vardı |
+| 2026-09-23 | GHS-Panel yanlış depo adıyla sorgulandı; gh 404 döndü | "GHS kütüğünde adres yok"; bir PR gövdesine "9/10" diye yazıldı | Adres oradaydı: 10/10 |
+| 2026-09-23 | Ölçüm, yerel klasörler gezilerek yapıldı | ihale-mcp aile projesi sayıldı | Aile listesinde dışlanmıştı |
+
+İkinci vakanın dersi: gh'nin hata metni, yanlış depo adında da var olan depodaki olmayan dosyada da **birebir aynıdır**: `gh: Not Found (HTTP 404)`. Hata metnine bakarak ikisi ayrılamaz. Ayırmak için **üst kaynağın** (depo, klasör) okunabildiği ayrıca doğrulanır.
+
+### Yazılmaz / yazılır
+
+| Yazılmaz | Yazılır |
+|---|---|
+| "GHS'de adres yok." (404 alındı) | "GHS okunamadı: 404, depo doğrulanamadı." |
+| "Bu köprüyü hiçbir proje çağırmıyor." (bir proje okunamadı) | "9 proje okundu, çağıran yok; 1 proje okunamadı. Silme önerilmez." |
+| "Kütük yok." (okuma hata verdi) | "Kütük okunamadı." |
+
+### Kodda
+
+- Okuma fonksiyonu üç durumu **ayrı** döner. "Okunamadı" (`null`, `'okunamadi'`) ile "boş" (`''`, `[]`, `false`) aynı değerle temsil edilmez.
+- **"Yok" kanıt ister.** 404 alındıysa, üst kaynağın okunabildiği doğrulanır; doğrulanamazsa sonuç "okunamadı"dır.
+- **Okunamayan veriyle karar verilmez.** Kapı o ölçütü atlar ve "ölçülemedi" der; issue açmaz, açık issue'yu da kapatmaz.
+- **Bilinçli temkin serbesttir, ama adı konur.** `actions-quota.js` okunamayan depoyu "gizli" (dakika harcayan) sayar. Bu "yok" demek değil, en kötü hâli varsaymaktır ve yorumda yazılıdır.
+
+Depoda doğru örnekler: `compliance.js` içindeki `countFindings` (`null` = bilinmiyor, kayıt istenmez), `health-report.js` ("ÖLÇÜLEMEDİ"), `setup-plan.js` (`unmeasured`), `compliance-issues.js` (klonlanamayan proje için işlem yapılmaz).
+
+### Makine zorlaması (kısmi)
+
+| Zorlayan | Neyi |
+|---|---|
+| `quality/remote-read.js` | Aile ölçüm aracı. Liste aile listesinden gelir, sonuç üç durumludur, okunamayan varsa çıkış kodu 1 olur. Elle döngü kurmak yerine bu kullanılır: `node quality/remote-read.js <yol> [--ara <desen>]` |
+| `quality/workflow-callers.js` | Okunamayan proje varken hiçbir köprüye "SİLİNEBİLİR" demez (testli) |
+
+Geri kalanı zorlanamaz: düzyazıdaki bir "yok"un hangi okumaya dayandığını makine bilemez.
+
+---
+
 ## Uymak kolay, atlamak zor
 
 Kapı, doğru davranışı **kolaylaştırmalı**. Engelleyen kapı, yarım kalmış bir işin ortasında açılırsa ajanı çevresinden dolaşmaya iter.
@@ -109,6 +153,7 @@ Kapı, doğru davranışı **kolaylaştırmalı**. Engelleyen kapı, yarım kalm
 - **Kural 1 tam zorlanamaz.** Yukarıda açıkça yazıldı.
 - **Defter, kaydın doğruluğunu değil varlığını denetler.** Vakayı uyduran bir kayıt tarih taşıdığı sürece geçer. Denetim biçimseldir; içeriği kod incelemesi denetler.
 - **Sabotaj testi zorunlu tutulamıyor.** "Bu testi bozunca kırmızıya dönüyor mu?" sorusunun makine karşılığı yok; kontrol listesi maddesidir.
+- **Kural 3 uyum ölçerinde tam uygulanmıyor** (2026-09-23, kod okunarak bulundu, gerçekleştiği görülmedi). `compliance.js` içindeki `readAt` ve `listAt`, okunamayan dosyayı olmayan dosyayla aynı değerle (`''`, `[]`) döndürüyor. Git okuması hata verirse ölçer "kütük yok" ya da "turnike yok" der ve o gün açık bir uyum issue'sunu yanlışlıkla kapatabilir.
 
 ## Kontrol listesi maddeleri
 
@@ -116,3 +161,4 @@ Kapı, doğru davranışı **kolaylaştırmalı**. Engelleyen kapı, yarım kalm
 
 > Bu PR'daki sayı ve oran iddialarının kaynağı belli mi, yoksa tahmin mi?
 > Yeni bir kapı eklendiyse: vakası tarihli mi, o vakayı yakalayan testi var mı, sabotajla denendi mi?
+> Okuma yapan kod "okunamadı"yı "yok"tan ayırıyor mu? Okunamayan veriyle karar veriliyor mu?
