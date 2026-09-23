@@ -46,6 +46,7 @@ Bugün depoda duran beceriler:
 | `borc-ekle` | Yeni teknik borç kaydı açar |
 | `proje-kur` | Yeni projeyi aile standardına bağlar |
 | `standart-talep` | Bu projeden ortak depoya **talep/yanlış alarm bildirimi** gönderir |
+| `oturum-teshis` | Bir oturumda ne ters gittiğini kayıttan satır kanıtıyla çıkarır (`docs/oturum-teshisi.md`) |
 
 **Silme kuralı (en riskli davranış).** `~/.claude/skills` altında bize ait **olmayan** beceriler de
 bulunur (eklenti kısayolları gibi). Bu yüzden silme yalnız **bizim beceri klasörlerimizin içinde**
