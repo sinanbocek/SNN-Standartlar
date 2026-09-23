@@ -44,6 +44,13 @@ expect('çağıranı olan hazır sayılmaz', r.ready.includes('anahtar-tarama.ym
 expect('çağıranı olmayan hazır sayılır', r.ready, ['kod-dili.yml']);
 expect('hepsi kullanılıyorsa hazır boş', t.report(['anahtar-tarama.yml'], usage).ready, []);
 
+console.log('— okunamayan proje "çağırmıyor" sayılmaz (olcum-standardi.md, Kural 3)');
+// Okunamayan bir proje köprüyü çağırıyor OLABİLİR. "0 çağıran" o zaman bilinmez, silme önerilmez.
+const partial = t.report(['kod-dili.yml'], new Map(), ['globalhedef/global-hedef-web-platform']);
+expect('okunamayan proje varken silinebilir denmez', partial.ready, []);
+expect('okunamayan proje adıyla yazılır', /okunamadı[\s\S]*globalhedef\/global-hedef-web-platform/.test(partial.text), true);
+expect('okunamayan proje varken SİLİNEBİLİR yazmaz', /SİLİNEBİLİR/.test(partial.text), false);
+
 console.log('— gerçek köprüler ana dalda tanımlı');
 const dir = path.join(__dirname, '..', '..', '.github', 'workflows');
 const files = fs.readdirSync(dir).filter((f) => /\.yml$/.test(f));

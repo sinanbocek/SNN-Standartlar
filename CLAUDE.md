@@ -72,6 +72,8 @@ sonra **yeni bir klasörle uçtan uca dene**; iki kaçak da ancak o denemede gö
 
 **Yerel klasör gerçeği göstermez.** Ölçüm `origin/main`'den yapılır. Yerel kopya geride olabilir ya da başka dalda durabilir; bu yüzden iki kez yanlış rapor üretildi.
 
+**Okunamadı ≠ yok** (2026-09-23). Aile ölçümünü elle döngüyle yapma; `node quality/remote-read.js <yol>` kullan. Elle kurulan döngü aynı gün iki yanlış sonuç verdi: yanlış depo adından gelen 404 "yok" diye okundu, yerel klasördeki üçüncü tarafın deposu aileye sayıldı. gh'nin 404 metni, yanlış depo adında ve olmayan dosyada birebir aynıdır. Kural: `standartlar/olcum-standardi.md` Kural 3.
+
 **Birleştirme kapısı kontrolleri bekler.** `gh pr checks <no> --watch -i 20` ile bekle; beklemesiz döngü istek hakkını bitirir.
 
 ---
@@ -109,6 +111,7 @@ Bir proje "bu yanlış alarm" diye bildirirse:
 
 ```bash
 node quality/code-language-scan.js --tumu          # bu depo temiz mi
+node quality/remote-read.js docs/teknik-borc.md    # dosya aile projelerinde var / yok / okunamadı
 node quality/gate-registry.js                      # kapılar vakasını bildiriyor mu
 node quality/compliance-issues.js <klasor>         # uyum issue planı (kuru)
 node setup/setup-machine.js                        # makine farkı (kuru)

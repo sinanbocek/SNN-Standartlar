@@ -12,7 +12,6 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { execFileSync } = require('child_process');
 
 const REPO = 'SNN-Standartlar';
 const WORKFLOW_DIR = path.join(__dirname, '..', '.github', 'workflows');
@@ -27,14 +26,24 @@ function callsIn(text, repo = REPO) {
   return [...new Set([...String(text).matchAll(re)].map((m) => m[1]))];
 }
 
-// SAF: ölçüm sonucundan rapor
-function report(bridges, usage) {
+// SAF: ölçüm sonucundan rapor.
+// unreadable: okunamayan projeler. Okunamayan bir proje köprüyü çağırıyor OLABİLİR; o zaman
+// "0 çağıran" bilinmez ve hiçbir köprüye SİLİNEBİLİR denmez (olcum-standardi.md, Kural 3).
+// İlk sürüm okunamayan projeyi sessizce atlıyordu: gh yetkisi bir projeyi okuyamasaydı, o projenin
+// çağırdığı köprü silinmeye aday gösterilirdi (2026-09-23'te kod okunarak bulundu; gerçekleşmedi).
+function report(bridges, usage, unreadable = []) {
   const lines = [];
   const ready = [];
   for (const name of bridges) {
     const callers = usage.get(name) || [];
-    lines.push(`${callers.length ? '•' : '✓'} ${name.padEnd(26)} ${callers.length} çağıran${callers.length ? ': ' + callers.join(', ') : ' — SİLİNEBİLİR'}`);
-    if (!callers.length) ready.push(name);
+    const verdict = callers.length ? ': ' + callers.join(', ') : (unreadable.length ? ' — bilinmiyor (okunamayan proje var)' : ' — SİLİNEBİLİR');
+    lines.push(`${callers.length ? '•' : (unreadable.length ? '?' : '✓')} ${name.padEnd(26)} ${callers.length} çağıran${verdict}`);
+    if (!callers.length && !unreadable.length) ready.push(name);
+  }
+  if (unreadable.length) {
+    lines.push('');
+    lines.push(`${unreadable.length} proje okunamadı: ${unreadable.join(', ')}`);
+    lines.push('Bu projeler köprü çağırıyor olabilir; okunana kadar silme önerilmez.');
   }
   if (ready.length) {
     lines.push('');
@@ -44,28 +53,27 @@ function report(bridges, usage) {
   return { text: lines.join('\n'), ready };
 }
 
-const gh = (args) => {
-  try {
-    return execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 1e8, stdio: ['ignore', 'pipe', 'ignore'] });
-  } catch { return null; }
-};
-
+// Okuma üç durumlu: var · yok · okunamadı (quality/remote-read.js). "yok" = projede akış
+// klasörü gerçekten yok, yani hiçbir köprüyü çağırmıyor; "okunamadı" = bilinmiyor.
 function measure() {
+  const { readRemote } = require('./remote-read');
   const list = JSON.parse(fs.readFileSync(PROJECTS, 'utf8')).projects.filter((p) => !p.repo.endsWith(REPO));
   const usage = new Map();
+  const unreadable = [];
   for (const { repo } of list) {
-    const names = gh(['api', `repos/${repo}/contents/.github/workflows`, '--jq', '.[].name']);
-    if (!names) continue;
-    for (const file of names.trim().split('\n').filter(Boolean)) {
-      const encoded = gh(['api', `repos/${repo}/contents/.github/workflows/${file}`, '--jq', '.content']);
-      if (!encoded) continue;
-      for (const called of callsIn(Buffer.from(encoded, 'base64').toString('utf8'))) {
+    const dirRead = readRemote(repo, '.github/workflows');
+    if (dirRead.state === 'yok') continue;
+    if (dirRead.state === 'okunamadi') { unreadable.push(repo); continue; }
+    for (const file of dirRead.entries || []) {
+      const fileRead = readRemote(repo, `.github/workflows/${file}`);
+      if (fileRead.state !== 'var') { if (!unreadable.includes(repo)) unreadable.push(repo); continue; }
+      for (const called of callsIn(fileRead.text)) {
         if (!usage.has(called)) usage.set(called, []);
         if (!usage.get(called).includes(repo)) usage.get(called).push(repo);
       }
     }
   }
-  return usage;
+  return { usage, unreadable };
 }
 
 module.exports = { callsIn, isBridge, report };
@@ -78,7 +86,8 @@ if (require.main === module) {
     console.log('Köprü yok — eski adlar tamamen kalkmış.');
     process.exit(0);
   }
-  const { text, ready } = report(bridges, measure());
+  const { usage, unreadable } = measure();
+  const { text, ready } = report(bridges, usage, unreadable);
   console.log(text);
   process.exit(ready.length ? 1 : 0);
 }
