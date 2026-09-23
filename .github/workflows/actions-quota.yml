@@ -1,0 +1,48 @@
+# Actions dakika kotası eşiği aşıyor mu? (kural: standartlar/olcum-standardi.md)
+#
+# NEDEN VAR (ölçüldü 2026-09-23): Temmuz 53 dk · Ağustos 972 dk · Eylül 2.527 dk — üç ayda 50 kat.
+# Sınıra dayanınca iş FATURALANMAZ, HİÇ BAŞLAMAZ; 2026-09-19'da trade-kasa'da tam bu oldu
+# ("spending limit" gerekçesiyle başlatılmadı) ve kimse bakmadığı için kimse bilmedi.
+#
+# BU AKIŞ KENDİ KOTASINI YAKMAZ: SNN-Standartlar herkese açık, açık depoda standart makine
+# ücretsizdir (ölçüldü: brüt $0.252 · indirim $0.252 · ödenen $0).
+name: actions-quota
+
+on:
+  workflow_dispatch:
+    inputs:
+      threshold:
+        description: "Aylık dakika eşiği"
+        type: string
+        default: "1500"
+  schedule:
+    - cron: "47 5 * * 1" # her Pazartesi 08:47 TSİ — diğer Pazartesi işlerinden sonra
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Kota ölçümü
+        env:
+          # Faturalama API'si `user` yetkisi ister; GITHUB_TOKEN'da o yetki YOKTUR.
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          THRESHOLD: ${{ inputs.threshold || '1500' }}
+        run: |
+          set -o pipefail
+          node quality/actions-quota.js --esik "$THRESHOLD" 2>&1 | tee kota.log
+          STATUS=${PIPESTATUS[0]}
+          { echo '### Actions kotası'; echo '```'; cat kota.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          # 2 = ÖLÇEMEDİM (yetki/ağ). Kota sorunuyla karıştırılmasın diye ayrı anlatılır;
+          # ama sessiz geçilmez: "okunamayan kota, kota iyi demek değildir".
+          if [ "$STATUS" = "2" ]; then
+            echo "::warning::Kota ÖLÇÜLEMEDİ (eşik aşıldı değil). PROJECT_TOKEN'da 'user' yetkisi var mı?"
+          elif [ "$STATUS" != "0" ]; then
+            echo "::warning::Actions dakika eşiği aşıldı — ayrıntı iş özetinde."
+          fi
+          exit $STATUS
