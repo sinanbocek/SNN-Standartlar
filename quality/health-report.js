@@ -25,12 +25,23 @@ const ghJson = (args) => JSON.parse(gh(args));
 // SAF: bir satır → "  etiket   değer"
 const line = (label, value) => `  ${label.padEnd(16)} ${value}`;
 
+// SAF: uzun akış adını kısaltır. Dependabot akışlarının adı paket listesinin tamamını taşıyor
+// ve satırı okunmaz hâle getiriyor (2026-09-23 ölçümü: 100+ karakterlik tek ad).
+const shortName = (name, max = 32) => (String(name || '').length > max ? `${String(name).slice(0, max - 1)}…` : String(name || ''));
+
 // SAF: projelerin ölçümünden SAYILAR bloğu.
 //
 // rows: [{ name, p1, open, ci, stalePrs, unreadable }]
 // quota: { billable, threshold, top } | null
 function numbersBlock(rows, quota, extra = {}) {
   const out = ['SAYILAR'];
+
+  // AİLE DURUMU makineden gelir. İlk raporda rutin bunu kendisi saymış ve yanılmıştı:
+  // "7 proje sakin" yazmış, oysa ailede 11 proje var ve 4'ünde acil borç vardı (biri 5 acil
+  // borçla "sakin" sayılmıştı). Rutinin hesaplayabileceği hiçbir sayı bırakılmaz.
+  const withDebt = rows.filter((r) => r.p1 > 0).length;
+  const redCount = rows.filter((r) => r.ci === 'red').length;
+  out.push(line('Aile durumu', `${rows.length} proje · ${withDebt} projede acil borç · ${redCount ? `${redCount} projede CI kırmızı` : 'CI hepsi yeşil'}`));
 
   if (quota) {
     const mark = quota.billable >= quota.threshold ? '⚠ aşıldı' : '✓';
@@ -50,7 +61,7 @@ function numbersBlock(rows, quota, extra = {}) {
 
   const red = rows.filter((r) => r.ci === 'red');
   const green = rows.filter((r) => r.ci === 'green').length;
-  out.push(line('main CI', red.length ? red.map((r) => `${r.name} KIRMIZI${r.ciName ? ` (${r.ciName})` : ''}`).join(' · ') : `${green}/${rows.length} yeşil`));
+  out.push(line('main CI', red.length ? red.map((r) => `${r.name} KIRMIZI${r.ciName ? ` (${shortName(r.ciName)})` : ''}`).join(' · ') : `${green}/${rows.length} yeşil`));
 
   const stale = rows.filter((r) => r.stalePrs > 0).sort((a, b) => b.stalePrs - a.stalePrs);
   const total = stale.reduce((s, r) => s + r.stalePrs, 0);
@@ -78,6 +89,19 @@ function countDebts(text, parseDebts) {
 
 const daysSince = (iso) => Math.floor((Date.now() - Date.parse(iso)) / 86400000);
 
+// SAF: koşum listesinden AKIŞ BAŞINA son koşum → { state, failing }
+//
+// Tek "en son koşum"a bakmak yanıltır: hangi zamanlanmış işin en son çalıştığına göre sonuç
+// değişir. 2026-09-23'te ölçüldü — kota kapısı kırmızıyken rapor "CI hepsi yeşil" dedi, çünkü
+// araya başka bir akışın başarılı koşumu girmişti. Liste yeniden eskiye gelir.
+function ciState(runs) {
+  const latest = new Map();
+  for (const run of runs || []) if (run && run.name && !latest.has(run.name)) latest.set(run.name, run);
+  if (!latest.size) return { state: 'yok', failing: null };
+  const failing = [...latest.values()].filter((run) => run.conclusion !== 'success').map((run) => run.name);
+  return { state: failing.length ? 'red' : 'green', failing: failing.join(', ') || null };
+}
+
 function measure() {
   const { parseDebts } = require('../debt-sync/lib/debt');
   const list = JSON.parse(fs.readFileSync(PROJECTS, 'utf8')).projects;
@@ -90,17 +114,19 @@ function measure() {
       debts = countDebts(Buffer.from(raw, 'base64').toString('utf8'), parseDebts);
     } catch { /* kütüğü olmayan proje: borç 0 değil, ÖLÇÜLEMEDİ */ }
 
-    // HANGİ akışın kırmızı olduğu yazılır. "KIRMIZI" tek başına yanıltır: kota kapısının
-    // eşiği aşması ile derlemenin bozulması aynı şey değildir (2026-09-23'te ilk çalıştırmada
-    // tam bu karışıklık çıktı).
+    // AKIŞ BAŞINA SON KOŞUM. Tek "en son koşum"a bakmak yanıltır: hangi zamanlanmış işin en
+    // son çalıştığına göre sonuç değişir. 2026-09-23'te ölçüldü — kota kapısı kırmızıyken
+    // rapor "CI hepsi yeşil" dedi, çünkü araya başka bir akışın başarılı koşumu girmişti.
+    //
+    // HANGİ akışın kırmızı olduğu da yazılır: kota kapısının eşiği aşması ile derlemenin
+    // bozulması aynı şey değildir. İlk raporda rutin bunu "depo kendini doğrulayamıyor" diye
+    // yorumlamıştı; oysa `test` akışı yeşildi.
     let ci = 'yok';
     let ciName = null;
     try {
-      const runs = ghJson(['api', `repos/${repo}/actions/runs?branch=main&per_page=1&status=completed`]).workflow_runs || [];
-      if (runs.length) {
-        ci = runs[0].conclusion === 'success' ? 'green' : 'red';
-        ciName = runs[0].name;
-      }
+      const state = ciState(ghJson(['api', `repos/${repo}/actions/runs?branch=main&per_page=50&status=completed`]).workflow_runs);
+      ci = state.state;
+      ciName = state.failing;
     } catch { ci = 'yok'; }
 
     let stalePrs = 0;
@@ -114,7 +140,7 @@ function measure() {
   return rows;
 }
 
-module.exports = { numbersBlock, countDebts, line, STALE_DAYS };
+module.exports = { numbersBlock, countDebts, line, shortName, ciState, STALE_DAYS };
 
 if (require.main === module) {
   const rows = measure();
