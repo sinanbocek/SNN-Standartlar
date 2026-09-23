@@ -75,7 +75,7 @@ expect('okunamadı → ölçülemedi', familyStep(null).status, 'unmeasured');
 expect('okunamadı → sahibine', familyStep(null).who, 'owner');
 
 console.log('— kütük şablonundaki makine adresi');
-// 2026-09-23: şablon `~/.claude/standartlar/…` yazıyordu; o yeri hiçbir betik kurmuyor ve 8 tüketici
+// 2026-09-23: şablon `~/.claude/standartlar/…` yazıyordu; o yeri hiçbir betik kurmuyor ve 9 tüketici
 // kütüğü bu adresi taşıyor. Şablondaki her makine adresi, beceri adres kapısıyla aynı kuralla denetlenir.
 {
   const { check, repoFiles } = require('../../quality/skill-paths');
