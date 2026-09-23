@@ -184,16 +184,16 @@ function closeSuperseded(repo, keepVersion, apply) {
   const prs = openCorePrs(repo);
   if (prs === null) return { closed: 0, touched: 0, unreadable: true };
   const { close, keep, touched } = P.supersede(prs, keepVersion);
-  for (const pr of touched) {
-    console.log(`    ⚠ #${pr.number} (${pr.version}) elle dokunulmuş (ek commit ya da inceleme) — KAPATILMADI`);
-  }
+  const wasTouched = new Set(touched.map((pr) => pr.number));
   for (const pr of close) {
-    const label = `#${pr.number} (${pr.version}) aşıldı`;
+    const mark = wasTouched.has(pr.number) ? ' ⚠ (inceleme/ek commit vardı)' : '';
+    const label = `#${pr.number} (${pr.version}) aşıldı${mark}`;
     if (!apply) { console.log(`    − kapatılacak: ${label}`); continue; }
     try {
-      gh(['pr', 'close', String(pr.number), '-R', repo, '--comment', P.supersedeComment(pr, keep)]);
+      gh(['pr', 'close', String(pr.number), '-R', repo, '--comment', P.supersedeComment(pr, keep, wasTouched.has(pr.number))]);
       console.log(`    − kapatıldı: ${label}`);
     } catch (e) {
+      // KAPATMA HATASI YAYILIMI DÜŞÜRMEZ: asıl iş yeni PR'ı açmaktı, o oldu.
       console.log(`    ✗ #${pr.number} kapatılamadı: ${(e.stderr || e.message || '').toString().trim().split('\n').pop()}`);
     }
   }
@@ -238,15 +238,28 @@ function main() {
     let hasOpenPr = false;
     try { hasOpenPr = ghJson(['pr', 'list', '-R', repo, '-s', 'open', '--head', BRANCH, '--json', 'number']).length > 0; } catch { /* okunamadı → açık PR yok say */ }
     const plan = P.decide({ locked, target: TARGET, hasOpenPr });
-    if (plan.action !== 'pr') { console.log(`  • ${repo}: ${plan.action.toUpperCase()} — ${plan.reason}`); continue; }
+    const version = String(TARGET).replace(/^v/, '');
+    if (plan.action !== 'pr') {
+      console.log(`  • ${repo}: ${plan.action.toUpperCase()} — ${plan.reason}`);
+      // GÜNCEL TÜKETİCİDE DE TEMİZLİK YAPILIR (proje sahibi kararı, 2026-09-23).
+      // Yeni PR açılmadığı için eski açık PR'lar buraya kadar hiç kapanmıyordu ve sonsuza kadar
+      // açık kalıyordu — kurum deposundaki iki PR tam bu durumdaydı.
+      closeSuperseded(repo, version, APPLY);
+      continue;
+    }
     const label = `${repo}: ${plan.from} → ${plan.to}${plan.major ? ' (ANA SÜRÜM: kütük kaydı PR içinde)' : ''}`;
-    if (!APPLY) { console.log(`  • PR açılacak: ${label}`); continue; }
+    if (!APPLY) {
+      console.log(`  • PR açılacak: ${label}`);
+      // Kuru çalıştırma neyin KAPANACAĞINI da yazar; yoksa uygulama anında sürpriz olur.
+      closeSuperseded(repo, version, false);
+      continue;
+    }
     try {
       const changelog = P.changelogBetween(coreLog, plan.from, plan.to);
       console.log(`  • PR açıldı: ${label} → ${applyOne(repo, plan, pkgText, changelog)}`);
       // YENİ PR AÇILDIKTAN SONRA kapatılır: önce kapatıp sonra açmak, PR açılışı başarısız
       // olursa tüketiciyi hiç açık PR'sız bırakırdı (#79).
-      closeSuperseded(repo, String(TARGET).replace(/^v/, ''), true);
+      closeSuperseded(repo, version, true);
     } catch (e) {
       failed += 1;
       const msg = (e.stderr || e.message || '').toString().replace(/x-access-token:[^@]+@/g, 'x-access-token:***@').trim().split('\n').slice(-3).join(' | ');

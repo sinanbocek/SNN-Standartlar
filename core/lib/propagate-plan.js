@@ -148,7 +148,12 @@ function supersede(prs, keepVersion = null) {
   for (const pr of core) {
     if (keep && pr.number === keep.number) continue;
     if (keepVersion && compare(pr.version, keepVersion) > 0) continue;   // daha YENİ olana dokunulmaz
-    if (count(pr.commits) > 1 || count(pr.reviews) > 0) { touched.push(pr); continue; }
+    // DOKUNULMUŞ PR DA KAPATILIR (proje sahibi kararı, 2026-09-23 — #79'un önerisi).
+    // Gerekçe: açık kalan eski PR tam da bu talebin şikâyet ettiği riski sürdürür — listeden
+    // eski sürümü seçen gözden geçiren, yenisindeki düzeltmeyi almamış olur. Ama dokunulmuş
+    // olduğu SAYILIR ve hem çıktıda hem kapatma yorumunda YAZILIR: sessiz kapatma, emeğini
+    // koyan kişinin "benim PR'ıma ne oldu?" diye aramasına yol açar.
+    if (count(pr.commits) > 1 || count(pr.reviews) > 0) touched.push(pr);
     close.push(pr);
   }
   return { close, keep, touched };
@@ -156,9 +161,18 @@ function supersede(prs, keepVersion = null) {
 
 // SAF: kapatma yorumu. Neden kapandığı ve yerine ne geçtiği YAZILI olmalı; sessiz kapatma,
 // gözden geçirenin "benim PR'ıma ne oldu?" diye aramasına yol açar.
-const supersedeComment = (pr, keep) => (keep
-  ? `Yerini #${keep.number} aldı (çekirdek ${keep.version}). Bu PR aşıldığı için kapatıldı; `
-    + 'göç notlarının tamamı yeni PR gövdesinde (aradaki tüm sürüm bölümleri toplanır).'
-  : `Çekirdek ${pr.version} güncellemesi aşıldı; bu PR kapatıldı.`);
+const supersedeComment = (pr, keep, touched = false) => {
+  const head = keep
+    ? `Aşılmış: yerini #${keep.number} aldı (çekirdek ${pr.version} → ${keep.version}). `
+      + 'Göç notlarının tamamı yeni PR gövdesinde — aradaki tüm sürüm bölümleri orada toplanıyor.'
+    : `Aşılmış: bu tüketici çekirdeğin daha yeni bir sürümünde; ${pr.version} güncellemesi geçersiz kaldı.`;
+  // Emeğini koyan kişi sessizce kapatılmaz: PR'ın dokunulmuş olduğu yazılır.
+  const note = touched
+    ? '\n\nBu PR üzerinde inceleme ya da ek commit vardı. Kapatma kararı kuraldan geliyor '
+      + '(bir tüketicide yalnız bir açık çekirdek PR\'ı bulunur); kaybolmasını istemediğiniz bir '
+      + 'değişiklik varsa yeni PR\'a taşıyın. Dal silinmedi.'
+    : '\n\nDal silinmedi.';
+  return head + note;
+};
 
 module.exports = { PACKAGE, CORE_REPO, parse, compare, decide, rewriteSpec, changelogBetween, nextDebtId, majorDebtRecord, insertRecord, supersede, versionOfBranch, supersedeComment, BRANCH_PREFIXES };
