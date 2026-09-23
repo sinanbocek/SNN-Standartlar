@@ -100,4 +100,65 @@ function insertRecord(debtText, record) {
   return `${debtText.slice(0, pos)}${record}${sep}${debtText.slice(pos)}`;
 }
 
-module.exports = { PACKAGE, CORE_REPO, parse, compare, decide, rewriteSpec, changelogBetween, nextDebtId, majorDebtRecord, insertRecord };
+// ─── Aşılmış PR'lar ─────────────────────────────────────────────────────────
+//
+// KURAL: bir tüketicide aynı anda YALNIZ BİR açık çekirdek güncelleme PR'ı bulunur — en güncel olan.
+//
+// VAKA (SNN-Abacus-Core bildirimi #79, 2026-09-19): çekirdek bir günde beş sürüm yayımladı
+// (3.5.0 → 3.5.1 → 4.0.0 → 4.1.0 → 4.1.1). Her yayılım yeni PR açtı, eskisini KAPATMADI. Sekiz
+// tüketicide 25 açık PR yığıldı; Gunum-Var'da altısı da AYNI tabandan (3.2.0) geliyordu ve
+// başlıkları neredeyse aynıydı. Zarar görsel kalabalık değil: listeden 4.0.0'ı seçen bir gözden
+// geçiren, 4.1.1'deki düzeltmeyi ALMAMIŞ olur — o düzeltme 1000 kat sapma üreten bir hatayı
+// kapatıyordu ve risk hesabına giriyordu.
+//
+// İKİ ÖNEK: dal adı bir dönem `cekirdek/`, sonra `core/` oldu. Yalnız birini aramak eskileri
+// sonsuza kadar açık bırakır — bildiren kişi elle temizlikte tam bunu yaşadı (Gunum-Var #176).
+const BRANCH_PREFIXES = ['core/abacus-core-v', 'cekirdek/abacus-core-v'];
+
+// SAF: dal adından çekirdek sürümü → '4.1.1' ya da null
+function versionOfBranch(branch) {
+  for (const prefix of BRANCH_PREFIXES) {
+    if (String(branch || '').startsWith(prefix)) return String(branch).slice(prefix.length) || null;
+  }
+  return null;
+}
+
+// SAF: açık PR'lardan hangisi kapatılır, hangisi kalır?
+//
+// prs: [{ number, headRefName, commits, reviews }] — commits/reviews sayı ya da dizi olabilir.
+// keepVersion: kalacak sürüm (yeni açılan PR). Verilmezse EN YÜKSEK sürüm kalır (temizlik kipi).
+//
+// İNSAN EMEĞİ DOKUNULMAZ: üstüne ikinci bir commit atılmış ya da inceleme/yorum almış PR
+// KAPATILMAZ, yalnız bildirilir. Ölçüm (#79 eki, 2026-09-23): kapatılan 14 PR'ın 14'ü de tek
+// makine commit'iydi ve hiçbirinde inceleme yoktu — yani bu koruma nadiren devreye girer, ama
+// girdiğinde birinin işini korur.
+function supersede(prs, keepVersion = null) {
+  const core = (prs || [])
+    .map((pr) => ({ ...pr, version: versionOfBranch(pr.headRefName) }))
+    .filter((pr) => pr.version && parse(pr.version));
+  if (!core.length) return { close: [], keep: null, touched: [] };
+
+  const count = (v) => (Array.isArray(v) ? v.length : Number(v || 0));
+  const keep = keepVersion
+    ? core.find((pr) => compare(pr.version, keepVersion) === 0) || null
+    : core.reduce((best, pr) => (!best || compare(pr.version, best.version) > 0 ? pr : best), null);
+
+  const close = [];
+  const touched = [];
+  for (const pr of core) {
+    if (keep && pr.number === keep.number) continue;
+    if (keepVersion && compare(pr.version, keepVersion) > 0) continue;   // daha YENİ olana dokunulmaz
+    if (count(pr.commits) > 1 || count(pr.reviews) > 0) { touched.push(pr); continue; }
+    close.push(pr);
+  }
+  return { close, keep, touched };
+}
+
+// SAF: kapatma yorumu. Neden kapandığı ve yerine ne geçtiği YAZILI olmalı; sessiz kapatma,
+// gözden geçirenin "benim PR'ıma ne oldu?" diye aramasına yol açar.
+const supersedeComment = (pr, keep) => (keep
+  ? `Yerini #${keep.number} aldı (çekirdek ${keep.version}). Bu PR aşıldığı için kapatıldı; `
+    + 'göç notlarının tamamı yeni PR gövdesinde (aradaki tüm sürüm bölümleri toplanır).'
+  : `Çekirdek ${pr.version} güncellemesi aşıldı; bu PR kapatıldı.`);
+
+module.exports = { PACKAGE, CORE_REPO, parse, compare, decide, rewriteSpec, changelogBetween, nextDebtId, majorDebtRecord, insertRecord, supersede, versionOfBranch, supersedeComment, BRANCH_PREFIXES };

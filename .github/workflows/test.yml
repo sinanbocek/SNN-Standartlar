@@ -76,6 +76,8 @@ jobs:
         run: node hooks/test/guard-code-language.test.js
       - name: Oturum açılışı bekçisi testleri
         run: node hooks/test/session-start.test.js
+      - name: Aşılmış PR kapatma testleri
+        run: node core/test/propagate.test.js
       - name: Bekleyen ölçüm kapısı testleri
         run: node quality/test/pending-measurements.test.js
       - name: Bekleyen ölçüm kaydı geçerli mi
