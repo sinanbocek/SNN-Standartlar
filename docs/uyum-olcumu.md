@@ -46,6 +46,7 @@ Oturum açılışında, o projenin kendi eksiği:
 | `kod-dili-kaydi` | Kütükte "kod dili" geçen bir kayıt |
 | `teknik-borc-akisi` | `.github/workflows/teknik-borc.yml` |
 | `kutuk` | `docs/teknik-borc.md` |
+| `kutuk-adresi` | Kütük başlığındaki `~/.claude/...` adresi kurulan bir yeri gösteriyor (adres yoksa eksik sayılmaz; eşleme `quality/skill-paths.js` ile aynı). 2026-09-23: 10 tüketici kütüğünün 10'u kurulmayan `~/.claude/standartlar/…` adresini taşıyordu |
 | `anahtar-tarama` | `.github/workflows/anahtar-tarama.yml` |
 | `rehber-atfi` | `CLAUDE.md`/`AI-RULES.md` içinde `SNN-Standartlar` ya da "aile standardı" atfı |
 
