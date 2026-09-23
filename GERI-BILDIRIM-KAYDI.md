@@ -33,6 +33,47 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 
 ## Kararlar
 
+### 2026-09-23 · Diff kapısı yeniden adlandırma PR'ını cezalandırıyor — **KABUL**
+
+- **Kimden:** trade-kasa oturumu (issue #88)
+- **Tür:** yanlış-alarm
+- **Talep:** trade-kasa PR #44, 14 test dosyasında 56 Türkçe adı İngilizceye çevirdi (`--tumu`:
+  464 → 194 bulgu). Diff kapısı yine de **kırmızıydı**: değişen satırda duran, PR'ın dokunmadığı
+  eski adlar (`maxRiskYuzdesi` …) "eklendi" sayılıyordu. **Türkçe adı azaltan PR kırmızı yanıyordu.**
+- **Kök neden:** satır bazlı diff "satır değişti" ile "ad eklendi" arasında ayrım yapmıyordu.
+- **Karar:** **Kabul.** Bildiren iki ölçüt önerdi; **proje sahibi "sayı arttı mı"yı seçti**:
+  eklenen satırdaki ad, yalnız **dosyadaki sayısı tabana (ortak ata) göre arttıysa** bulgudur.
+  "Tabanda var mı" ölçütü seçilmedi: o ölçütle var olan Türkçe bir ad aynı dosyaya 50 kez daha
+  yazılsa kapı sessiz kalırdı. Taşınan dosyada tabandaki eski yol okunur.
+- **Bilinen sınır:** git taşımayı ancak içerik %50'den fazla aynıysa tanır. Hem taşınıp hem büyük
+  ölçüde değişen dosyada eski davranış sürer. Kapı orada gevşemez, katı kalır.
+- **Sonuç (11 proje, son 214 commit):** diff bulguları 6.087 → 5.694; **yeni çıkan 0**. Bildirilen
+  PR: 34 → 0. Düşenler, değişen satırda sayısı artmadan duran eski adlar; `--tumu` hâlâ gösterir.
+  393 düşen bulgunun hepsi okunmadı (Portföy ve trade-kasa tamamen, Piyasa-Core ~30,
+  Yönetici-Özeti ~100 örnek).
+- **Tüketici doğru yaptı:** satırları bölerek kuralı dolanmayı ve şema alanlarını sırasından önce
+  çevirmeyi **reddetti**; "temizliğin sırasını turnike belirlememeli" dedi. Etki kapsamını
+  ölçmediğini açıkça yazdı.
+- PR #89.
+
+### 2026-09-23 · Şablon ortasındaki satırda interpolasyon dizgesi taranıyor — **KABUL**
+
+- **Kimden:** SNN-Ihale-Maliyet-Teklif-Yonetimi oturumu (issue #87 — #76'nın kalan ucu)
+- **Tür:** yanlış-alarm
+- **Talep:** `renderDemoReport.ts:55` — çok satırlı şablonun ortasında
+  `${d.finding === null ? "Açıklanamadı" : …}`. Dizge ekran metnidir; projedeki **tek** bulguydu
+  ve uyum ölçütünü (`kod-dili-kaydi`) boşuna tetikleyip issue açtırıyordu (İhale #101).
+- **Kök neden:** satır şablonun **ortasında** başlayınca yalnız şablon soyucu çalışıyordu;
+  `${…}` içindeki dizgeyi soyan kural yorum kesicideydi ve o yol hiç çağrılmıyordu. #76'nın
+  tek satırlık durumu çözüp satırlar arası durumu atladığı yer. Yalnız `=` içeren
+  interpolasyonda görünüyordu, çünkü `=` yoksa JSX ayıklayıcısı dizgeyi tesadüfen atıyordu.
+- **Sonuç (11 proje, `--tumu`):** 19.622 → 19.608; **düşen 14 bulgunun 14'ü okundu**, hepsi
+  `${…}` içindeki dizge değeri (`'Satışçı'`, `'gunluk'`, `'ARTIŞ'` …). Düşen gerçek ad: **0**.
+- **Tüketici doğru yaptı:** kodu değiştirmeyi (ekran metnini İngilizceye çevirmek kurala aykırı),
+  susturmayı (2026-09-18 reddi) ve olmayan borcu kütüğe yazmayı ayrı ayrı gerekçelendirerek
+  reddetti; arama kalıbının dar olduğunu ve başka yazımları **ölçmediğini** yazdı.
+- PR #89.
+
 ### 2026-09-23 · Yayılım yeni PR açarken eskileri kapatmıyor — **KABUL**
 
 - **Kimden:** SNN-Abacus-Core oturumu (issue #79, 2026-09-19 · ek ölçüm 2026-09-23)
