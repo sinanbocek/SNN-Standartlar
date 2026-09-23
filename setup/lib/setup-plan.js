@@ -15,7 +15,7 @@ function debtFileTemplate() {
     '> **Teknik borç nedir?** Bir işi hızlı bitirmek için kestirme yol kullanmak, sonradan',
     '> ödenecek bir borç almak gibidir. Borç ödenmedikçe faizi (bakım zorluğu, hata riski) büyür.',
     '',
-    '> **Standart:** `~/.claude/standartlar/teknik-borc-standardi.md` (tek kaynak: SNN-Standartlar)',
+    '> **Standart:** `~/.claude/standartlar-canli/standartlar/teknik-borc-standardi.md` (tek kaynak: SNN-Standartlar)',
     '',
     '## Sözlük',
     '| Terim | Türkçe karşılığı |',
