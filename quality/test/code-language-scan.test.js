@@ -253,5 +253,80 @@ expect('interpolasyon içindeki dizge soyulur', names("const m = `${ok ? 'Türk�
 // Kapanmamış tırnak Türkçe kesme işaretidir; satırın kalanı atılırsa GERÇEK ad düşer.
 expect('kesme işareti satırı yutmaz', names("  <span>Oran %{pct}'si {eskiCariStr}</span>"), ['eskiCariStr']);
 
+console.log('— şablon ortasındaki satırda interpolasyon dizgesi (tüketici bildirimi #87, 2026-09-23)');
+// Satır çok satırlı şablonun ORTASINDA başlayınca yalnız şablon soyucu çalışıyordu; `${…}` içindeki
+// dizgeyi soyan kural yorum kesicideydi ve o yol hiç çağrılmıyordu. `===` satırı kod gösterdiği
+// için JSX ayıklayıcısı da dizgeyi atmıyordu. Bildirilen satır birebir
+// (SNN-Ihale src/presentation/demo/renderDemoReport.ts:55):
+const REPORTED_87 = [
+  '      .map(',
+  '        (d) => `',
+  '      <tr class="${d.finding === null ? "bad" : ""}">',
+  '        <td>${d.finding === null ? "Açıklanamadı" : `${d.finding} · ${escape(FINDINGS[d.finding] ?? d.finding)}`}</td>',
+  '      </tr>`,',
+  '      )',
+];
+expect('şablon ortasında interpolasyon dizgesi taranmaz', fileNames(REPORTED_87), []);
+expect('tek tırnaklı dizge de taranmaz', fileNames(['const r = `', "<td>${x === 1 ? 'Açıklanamadı' : ''}</td>", '`;']), []);
+// Soyma FAZLA olmamalı: aynı interpolasyondaki gerçek ad yakalanmaya devam etmeli.
+expect('şablon ortasında interpolasyondaki gerçek ad kalır', fileNames(['const r = `', '<td>${x === null ? "Açıklanamadı" : toplamTutar}</td>', '`;']), ['2:toplamTutar']);
+// Şablon METNİNDEKİ kesme işareti dizge açmaz; sonraki interpolasyondaki ad kaybolmamalı.
+expect('metindeki kesme işareti adı yutmaz', fileNames(['const r = `', "${n}'inin vadesi ${x === 1 ? 'a' : kalanGun}", '`;']), ['2:kalanGun']);
+
+console.log('— diff kipi: yeniden adlandırma (tüketici bildirimi #88, 2026-09-23)');
+// Satır bazlı diff "satır değişti" ile "ad eklendi" ayrımını yapmıyordu: bir adı İngilizceye
+// çeviren PR, AYNI SATIRDA duran eski Türkçe adı yeni bulgu sayıyordu. Türkçe adı AZALTAN PR
+// kırmızı yanıyordu (trade-kasa PR #44: 464 → 194 bulgu, ama kapı kırmızı).
+// Ölçüt: adın dosyadaki SAYISI arttıysa bulgudur. "Tabanda var mı" ölçütü seçilmedi — var olan
+// Türkçe bir ad aynı dosyaya 50 kez daha yazılsa sessiz kalırdı.
+{
+  const f = (line, name) => ({ line, name, reason: 'x' });
+  const grown = t.grownNames([f(1, 'maxRiskYuzdesi'), f(1, 'SAGLIKLI_AYARLAR')], [f(1, 'maxRiskYuzdesi')]);
+  expect('sayısı artmayan ad büyümüş sayılmaz', [...grown], []);
+  expect('sayısı artan ad büyümüş sayılır', [...t.grownNames([f(1, 'kalanGun')], [f(1, 'kalanGun'), f(5, 'kalanGun')])], ['kalanGun']);
+  expect('tabanda olmayan ad büyümüş sayılır', [...t.grownNames([], [f(3, 'yeniToplam')])], ['yeniToplam']);
+
+  // Uçtan uca: gerçek bir git deposunda, bildirilen satırla.
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'kod-dili-diff-'));
+  const git = (...args) => require('child_process').execFileSync('git', ['-C', repo, '-c', 'user.email=t@t', '-c', 'user.name=t', '-c', 'core.autocrlf=false', ...args], { encoding: 'utf8' });
+  const write = (file, lines) => { fs.mkdirSync(path.dirname(path.join(repo, file)), { recursive: true }); fs.writeFileSync(path.join(repo, file), lines.join('\n') + '\n'); };
+  const scan = () => t.scanDiff(repo, base).findings.map((b) => `${b.file}:${b.line}:${b.name}`);
+  git('init', '-q');
+  write('src/insights.test.ts', ['const settings: Settings = { ...SAGLIKLI_AYARLAR, maxRiskYuzdesi: 0 };', 'const ok = 1;']);
+  // Değişmeyen satırlar şart: git taşımayı ancak içerik %50'den fazla aynıysa tanır. Tamamen
+  // değişen dosya "silindi + eklendi" görünür ve eski davranış (her ad yeni) sürer — bilinen sınır.
+  const unchanged = ['export const a = 1;', 'export const b = 2;', 'export const c = 3;', 'export const d = 4;'];
+  write('src/hesap.ts', ['export const settings = { ...TEMEL_AYARLAR, maxPozisyonYuzdesi: 0 };', ...unchanged]);
+  git('add', 'src/insights.test.ts', 'src/hesap.ts');
+  git('commit', '-qm', 'taban');
+  const base = git('rev-parse', 'HEAD').trim();
+
+  // 1) Satırda eski ad duruyor, başka bir ad çevrildi → bulgu yok.
+  write('src/insights.test.ts', ['const settings: Settings = { ...HEALTHY_SETTINGS, maxRiskYuzdesi: 0 };', 'const ok = 1;']);
+  git('add', 'src/insights.test.ts');
+  git('commit', '-qm', 'yeniden adlandirma');
+  expect('yeniden adlandırma PR\'ı yeşil', scan(), []);
+
+  // 2) Yeni bir Türkçe ad eklendi → bulgu var.
+  write('src/insights.test.ts', ['const settings: Settings = { ...HEALTHY_SETTINGS, maxRiskYuzdesi: 0 };', 'const ok = 1;', 'const yeniToplam = 2;']);
+  git('add', 'src/insights.test.ts');
+  git('commit', '-qm', 'yeni ad');
+  expect('yeni Türkçe ad yakalanır', scan(), ['src/insights.test.ts:3:yeniToplam']);
+
+  // 3) Var olan Türkçe ad bir kez DAHA yazıldı → bulgu var ("sayı arttı mı" ölçütünün sebebi).
+  write('src/insights.test.ts', ['const settings: Settings = { ...HEALTHY_SETTINGS, maxRiskYuzdesi: 0 };', 'const ok = 1;', 'const yeniToplam = 2;', 'const risk = settings.maxRiskYuzdesi;']);
+  git('add', 'src/insights.test.ts');
+  git('commit', '-qm', 'ek kullanim');
+  expect('eski adın yeni kullanımı yakalanır', scan().sort(), ['src/insights.test.ts:1:maxRiskYuzdesi', 'src/insights.test.ts:3:yeniToplam', 'src/insights.test.ts:4:maxRiskYuzdesi']);
+
+  // 4) Dosya da yeniden adlandırıldı: tabandaki ESKİ yol okunmalı, yoksa her eski ad yeni sayılır.
+  git('mv', 'src/hesap.ts', 'src/account.ts');
+  write('src/account.ts', ['export const settings = { ...BASE_SETTINGS, maxPozisyonYuzdesi: 0 };', ...unchanged]);
+  git('add', 'src/account.ts');
+  git('commit', '-qm', 'dosya adi');
+  expect('dosya taşınınca eski ad yeni sayılmaz', scan().filter((s) => s.startsWith('src/account.ts')), []);
+  fs.rmSync(repo, { recursive: true, force: true });
+}
+
 console.log(fail ? `\n${fail} test başarısız` : '\nTüm testler geçti');
 process.exit(fail ? 1 : 0);
