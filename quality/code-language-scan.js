@@ -110,6 +110,17 @@ function stripTemplates(line, stack = []) {
       continue;                                              // ekran metni: atılır
     }
     // `${ … }` içi: KOD. Taranması gerekir.
+    if (ch === "'" || ch === '"') {
+      // KODUN İÇİNDEKİ DİZGE yine atılır (SNN-Ihale bildirimi #87, 2026-09-23). Satır şablonun
+      // ORTASINDA başlayınca yorum kesici hiç çalışmıyor; dizgeyi soyan tek yer burası.
+      // Bildirilen satır: `<td>${d.finding === null ? "Açıklanamadı" : …}</td>` → 1 yanlış alarm.
+      let j = i + 1;
+      while (j < line.length && line[j] !== ch) j += (line[j] === '\\' ? 2 : 1);
+      // Kapanmamış tırnak dizge değildir; yorum kesicideki kuralla aynı.
+      if (j < line.length) { out += ch + ch; i = j; continue; }
+      out += ch;
+      continue;
+    }
     if (ch === '`') { level.push(0); continue; }             // iç içe şablon
     if (ch === '{') { level[top] += 1; out += ch; continue; }
     if (ch === '}') { level[top] -= 1; if (level[top] > 0) out += ch; continue; }
@@ -542,12 +553,27 @@ function wordSet(family = familyExceptions()) {
   return words;
 }
 
+// SAF: tabandan başa SAYISI ARTAN adlar → Set. Sayı, adın geçtiği satır sayısıdır.
+// "Tabanda var mı" yerine "sayısı arttı mı" (#88): var olan Türkçe bir adın YENİ kullanımı da
+// Türkçe adı yaygınlaştırır ve yakalanmalıdır; yalnız yeniden adlandırmada sayı değişmez.
+function grownNames(baseFindings, headFindings) {
+  const count = (list) => {
+    const m = new Map();
+    for (const { name } of list) m.set(name, (m.get(name) || 0) + 1);
+    return m;
+  };
+  const before = count(baseFindings);
+  const out = new Set();
+  for (const [name, n] of count(headFindings)) if (n > (before.get(name) || 0)) out.add(name);
+  return out;
+}
+
 // Diff kipi: yalnız eklenen satırlar + yeni eklenen dosyaların adları
 function scanDiff(root, taban) {
   const words = wordSet();
   const exception = readExceptions(root);
   const findings = [];
-  const diff = gitOut(root, ['diff', '-U0', '--no-color', '--no-ext-diff', `${taban}...HEAD`]);
+  const diff = gitOut(root, ['diff', '-U0', '-M', '--no-color', '--no-ext-diff', `${taban}...HEAD`]);
   // ŞABLON BAĞLAMI: eklenen satır, çok satırlı bir şablonun ORTASINDA olabilir. Tek başına
   // bakıldığında ekran metni kod sanılır (#76). Dosyanın o satıra kadarki hâli okunarak bağlam
   // kurulur. Dosya okunamazsa eski davranışa düşülür — kapı yine çalışır, yalnız bağlamsız.
@@ -558,12 +584,35 @@ function scanDiff(root, taban) {
     }
     return fileLines.get(file);
   };
+  // YENİ Mİ, ESKİ Mİ? Eklenen satır ad eklendiği anlamına gelmez (trade-kasa bildirimi #88,
+  // 2026-09-23): bir adı çeviren PR, aynı satırda duran eski Türkçe adı da "eklemiş" görünüyordu.
+  // Adın dosyadaki sayısı tabana göre ARTMADIYSA bulgu sayılmaz. Taban, `taban...HEAD` ile aynı
+  // noktadır (ortak ata). Dosya taşındıysa tabandaki ESKİ yolu okunur.
+  const mergeBase = (() => { try { return gitOut(root, ['merge-base', taban, 'HEAD']).trim(); } catch { return taban; } })();
+  const renamedFrom = new Map();
+  for (const row of gitOut(root, ['diff', '--name-status', '-M', '--diff-filter=R', `${taban}...HEAD`]).split('\n')) {
+    const [, from, to] = row.split('\t');
+    if (from && to) renamedFrom.set(to, from);
+  }
+  const grownIn = new Map();
+  const grownOf = (file, sql) => {
+    if (!grownIn.has(file)) {
+      const head = linesOf(file);
+      let base = [];
+      try { base = gitOut(root, ['show', `${mergeBase}:${renamedFrom.get(file) || file}`]).split(/\r?\n/); } catch { /* dosya tabanda yok: her ad yenidir */ }
+      // Baş okunamazsa karşılaştırma yapılamaz: eski davranış (her bulgu sayılır) korunur.
+      grownIn.set(file, head ? grownNames(fileFindings(base, words, sql), fileFindings(head, words, sql)) : null);
+    }
+    return grownIn.get(file);
+  };
   for (const { file, line, text } of addedLines(diff)) {
     if (!isScanned(file)) continue;
     const sql = SQL_EXT.test(file);
     const all = linesOf(file);
     const stack = all ? stackBefore(all, line - 1, sql) : [];
+    const grown = grownOf(file, sql);
     for (const b of lineFindings(text, words, sql, stack)) {
+      if (grown && !grown.has(b.name)) continue;
       if (!isExcepted(b, file, exception)) findings.push({ file, line, ...b });
     }
   }
@@ -632,7 +681,7 @@ module.exports = {
   asciiFold, splitWords, stripJsxText, turkishWord, identifierProblem, codePart, lineFindings,
   pathFindings, readExceptions, addedLines, report, scanDiff, scanAll,
   familyExceptions, familyRoots, wordSet,
-  isScanned, isExcepted, unusedExceptions, codePartAt, fileFindings, stackBefore,
+  isScanned, isExcepted, unusedExceptions, codePartAt, fileFindings, stackBefore, grownNames,
 };
 
 if (require.main === module) {
