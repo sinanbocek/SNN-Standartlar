@@ -27,6 +27,28 @@ Her kayıt iki kişiye yazılır:
 
 Başka ad (`tech-debt.md`, `TECHNICAL_DEBT.md`, `TECH_DEBT.md`) kullanılmaz.
 
+## Başlık hassas ayrıntı taşımaz
+
+**Kural:** issue başlığı, e-posta konusu ve bildirim metni **açığı anlatmaz**. Ayrıntı gövdede
+ya da kütükte kalır.
+
+Sebep basit: **başlık her yerde görünür, gövde görünmez.** Bildirim balonunda, kilit ekranında,
+önizlemede, arama geçmişinde, omuz üstünden. Gövdeyi okumak için erişim gerekir; başlığı okumak
+için gerekmez.
+
+Yasak olanlar: tutar · anahtar/parola varlığı ya da yeri · açığın ne olduğu · müşteri bilgisi ·
+kaç yerde olduğu · ne kadar geçerli olduğu.
+
+| Yanlış | Doğru |
+|---|---|
+| `SNN Haftalık Sağlık — Global Hedef'te 482.879 TL dağıtılmamış komisyon` | `SNN Haftalık Sağlık — 23.09.2026 — 2 acil` |
+| `[TB-091] Supabase yönetici anahtarı 9 betikte açıkta, 2035'e kadar geçerli` | `[TB-091] Ayrıntısı kütükte (hassas kayıt)` |
+
+Kütük tarafında bu zaten makineyle zorlanıyor: `- **Hassas:** Evet` yazan kayıtta senkron, başlık
+yerine genel bir başlık kullanır (`sync-plan.js`, `SENSITIVE_DEFAULT_TITLE`). **Aynı ilke
+e-posta ve rapor başlıkları için de geçerlidir** (2026-09-23: haftalık rapor konusuna tutar ve
+açık tarifi girdi; proje sahibi yakaladı).
+
 ## Bekleyen ölçüm kütükte durmaz
 
 **Kural:** bir kayıt *"önce ölçelim, sonra karar veririz"* diyorsa o **borç değildir**, vadesi

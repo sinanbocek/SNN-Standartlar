@@ -24,6 +24,39 @@ const some = t.numbersBlock([p('GHS', { p1: 13 }), p('B'), p('C')], null);
 expect('P1 olan yazılır', some.includes('GHS 13'), true);
 expect('kalanlar sayıya iner', some.includes('diğer 2 proje 0'), true);
 
+console.log('— aile durumu makineden gelir');
+// İLK RAPORDA RUTIN BUNU KENDİSİ SAYDI VE YANILDI: "7 proje sakin" yazdı, oysa ailede 11 proje
+// var ve 4'ünde acil borç vardı — biri 5 acil borçla "sakin" sayılmıştı. Rutinin hesaplayabileceği
+// hiçbir sayı bırakılmaz.
+const aile = t.numbersBlock([p('A', { p1: 13 }), p('B', { p1: 5 }), p('C'), p('D')], null);
+expect('proje sayısı doğru', aile.includes('4 proje'), true);
+expect('acil borçlu proje sayısı doğru', aile.includes('2 projede acil borç'), true);
+expect('hepsi yeşilse öyle yazar', aile.includes('CI hepsi yeşil'), true);
+expect('kırmızı varsa sayılır', t.numbersBlock([p('A', { ci: 'red', ciName: 'x' }), p('B')], null).includes('1 projede CI kırmızı'), true);
+
+console.log('— CI: akış başına son koşum');
+// EN KRİTİK SATIR. Tek "en son koşum"a bakmak yanıltır: hangi zamanlanmış işin en son çalıştığına
+// göre sonuç değişir. 2026-09-23'te gerçek veride ölçüldü — kota kapısı kırmızıyken rapor
+// "11/11 yeşil" dedi, çünkü araya başka bir akışın başarılı koşumu girmişti.
+const run = (name, conclusion) => ({ name, conclusion });
+expect('eski kırmızı, yeni yeşil akış → yine kırmızı', t.ciState([
+  run('health-report', 'success'),   // en son koşan bu
+  run('actions-quota', 'failure'),   // ama bu akışın son koşumu kırmızı
+]).state, 'red');
+expect('kırmızı akışın adı döner', t.ciState([run('health-report', 'success'), run('actions-quota', 'failure')]).failing, 'actions-quota');
+// Aynı akışın ESKİ koşumu sayılmaz: düzeltilen bir akış kırmızı görünmemeli.
+expect('aynı akışın eski kırmızısı sayılmaz', t.ciState([run('test', 'success'), run('test', 'failure')]).state, 'green');
+expect('hepsi yeşilse yeşil', t.ciState([run('a', 'success'), run('b', 'success')]).state, 'green');
+expect('koşum yoksa yok', t.ciState([]).state, 'yok');
+expect('boş girdi çökmez', t.ciState(null).state, 'yok');
+expect('iki kırmızı akış da yazılır', t.ciState([run('a', 'failure'), run('b', 'failure')]).failing, 'a, b');
+
+console.log('— uzun akış adı satırı taşırmaz');
+// Dependabot akış adları paket listesinin tamamını taşıyor (ölçüldü: 100+ karakter).
+expect('uzun ad kısalır', t.shortName('npm_and_yarn in /. for @vitest/mocker, csv-parse, qs, stream-json').length <= 32, true);
+expect('kısaltma işareti konur', t.shortName('a'.repeat(50)).endsWith('…'), true);
+expect('kısa ad dokunulmaz', t.shortName('actions-quota'), 'actions-quota');
+
 console.log('— kota');
 expect('eşik aşılınca işaretlenir', t.numbersBlock([p('A')], { billable: 2133, threshold: 1500, top: ['Gunum-Var', 881] }).includes('⚠ aşıldı'), true);
 expect('en çok yakan depo yazılır', t.numbersBlock([p('A')], { billable: 2133, threshold: 1500, top: ['Gunum-Var', 881] }).includes("881'i Gunum-Var"), true);
