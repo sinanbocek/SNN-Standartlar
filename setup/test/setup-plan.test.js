@@ -74,5 +74,14 @@ expect('dışlanmış → iş yok', familyStep('excluded').status, 'present');
 expect('okunamadı → ölçülemedi', familyStep(null).status, 'unmeasured');
 expect('okunamadı → sahibine', familyStep(null).who, 'owner');
 
+console.log('— kütük şablonundaki makine adresi');
+// 2026-09-23: şablon `~/.claude/standartlar/…` yazıyordu; o yeri hiçbir betik kurmuyor ve 9 tüketici
+// kütüğü bu adresi taşıyor. Şablondaki her makine adresi, beceri adres kapısıyla aynı kuralla denetlenir.
+{
+  const { check, repoFiles } = require('../../quality/skill-paths');
+  const tpl = [{ file: 'debtFileTemplate', text: K.debtFileTemplate() }, { file: 'archiveFileTemplate', text: K.archiveFileTemplate() }];
+  expect('şablondaki makine adresi kurulan bir yeri gösterir', check(tpl, repoFiles()).map((p) => p.raw), []);
+}
+
 console.log(fail ? `\n✗ ${fail} test başarısız` : '\n✓ tümü geçti');
 process.exit(fail ? 1 : 0);

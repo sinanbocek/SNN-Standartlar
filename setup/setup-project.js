@@ -155,7 +155,7 @@ function applyFiles(o, steps) {
     '',
     ...files.map(([f]) => `- \`${f}\``),
     '',
-    '- **Kütük** (`docs/teknik-borc.md`): açık teknik borçların tek kaynağı; kayıt biçimi `~/.claude/standartlar/teknik-borc-standardi.md`.',
+    '- **Kütük** (`docs/teknik-borc.md`): açık teknik borçların tek kaynağı; kayıt biçimi `~/.claude/standartlar-canli/standartlar/teknik-borc-standardi.md`.',
     '- **Senkron görevlisi**: kütük main\'e ulaşınca, her gün ve elle tetiklenince issue + board günceller (kütüğe yazmaz).',
     '- **Anahtar taraması**: her PR\'da eklenen satırlarda gizli anahtar arar.',
     '',

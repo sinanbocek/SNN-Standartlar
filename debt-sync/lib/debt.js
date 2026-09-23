@@ -1,4 +1,4 @@
-// Proje durumu ve teknik borç okuyucu. Standart: ~/.claude/standartlar/teknik-borc-standardi.md
+// Proje durumu ve teknik borç okuyucu. Standart: standartlar/teknik-borc-standardi.md
 'use strict';
 const fs = require('fs');
 const path = require('path');
