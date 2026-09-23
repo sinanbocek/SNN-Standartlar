@@ -91,7 +91,24 @@ function publicRepos(names) {
   return out;
 }
 
-module.exports = { summarize, report, minuteRows, DEFAULT_THRESHOLD };
+// Ayın ölçümünü TEK YERDEN üretir: hem kapı hem haftalık rapor bunu çağırır.
+// İki ayrı yerde iki ayrı hesap, iki farklı sayı demektir — eski haftalık rapor tam bu yüzden
+// kütük başlığıyla dosya içeriğini karıştırmıştı.
+function measureMonth({ threshold = DEFAULT_THRESHOLD, year, month, day = null } = {}) {
+  const now = new Date();
+  const y = year || now.getUTCFullYear();
+  const m = month || now.getUTCMonth() + 1;
+  const items = JSON.parse(gh(['api', `users/${OWNER}/settings/billing/usage?year=${y}&month=${m}`])).usageItems || [];
+  const names = [...new Set(minuteRows(items).map((r) => r.repositoryName).filter(Boolean))];
+  return summarize(items, {
+    threshold,
+    freeRepos: publicRepos(names),
+    day: day === null && y === now.getUTCFullYear() && m === now.getUTCMonth() + 1 ? now.getUTCDate() : day,
+    daysInMonth: new Date(Date.UTC(y, m, 0)).getUTCDate(),
+  });
+}
+
+module.exports = { summarize, report, minuteRows, measureMonth, DEFAULT_THRESHOLD };
 
 if (require.main === module) {
   const argv = process.argv.slice(2);
@@ -101,9 +118,8 @@ if (require.main === module) {
   const [year, month] = (arg('--ay') || `${now.getUTCFullYear()}-${now.getUTCMonth() + 1}`).split('-').map(Number);
   const thisMonth = year === now.getUTCFullYear() && month === now.getUTCMonth() + 1;
 
-  let items;
   try {
-    items = JSON.parse(gh(['api', `users/${OWNER}/settings/billing/usage?year=${year}&month=${month}`])).usageItems || [];
+    gh(['api', `users/${OWNER}/settings/billing/usage?year=${year}&month=${month}`]);
   } catch (e) {
     // SESSİZ GEÇME YOK: okunamayan kota, "kota iyi" demek değildir.
     console.log(`✗ Kota okunamadı: ${(e.stderr || e.message || '').toString().trim().split('\n').pop()}`);
@@ -113,13 +129,7 @@ if (require.main === module) {
     process.exit(2);
   }
 
-  const names = [...new Set(minuteRows(items).map((r) => r.repositoryName).filter(Boolean))];
-  const summary = summarize(items, {
-    threshold,
-    freeRepos: publicRepos(names),
-    day: thisMonth ? now.getUTCDate() : null,
-    daysInMonth: new Date(Date.UTC(year, month, 0)).getUTCDate(),
-  });
+  const summary = measureMonth({ threshold, year, month, day: thisMonth ? now.getUTCDate() : null });
   console.log(report(summary, `${year}-${String(month).padStart(2, '0')}`));
   process.exit(summary.over ? 1 : 0);
 }

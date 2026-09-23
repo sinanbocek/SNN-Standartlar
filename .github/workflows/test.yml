@@ -76,6 +76,8 @@ jobs:
         run: node hooks/test/guard-code-language.test.js
       - name: Oturum açılışı bekçisi testleri
         run: node hooks/test/session-start.test.js
+      - name: Sağlık raporu sayıları testleri
+        run: node quality/test/health-report.test.js
       - name: Actions kota kapısı testleri
         run: node quality/test/actions-quota.test.js
       - name: Aşılmış PR kapatma testleri
