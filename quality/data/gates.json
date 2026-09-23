@@ -122,6 +122,12 @@
       "module": "quality/actions-quota.js",
       "vaka": "2026-09-19: trade-kasa'da bir is 'spending limit' gerekcesiyle HIC BASLATILMADI; sinira dayaninca is faturalanmaz, calismaz. Kimse kotaya bakmadigi icin kimse bilmedi. Olcum (2026-09-23): Temmuz 53 dk, Agustos 972 dk, Eylul 23 gunde 2.527 dk — uc ayda 50 kat.",
       "test": "eşiğe değince kırmızı"
+    },
+    {
+      "id": "saglik-sayilari",
+      "module": "quality/health-report.js",
+      "vaka": "2026-09-23: haftalik e-posta raporu 7 sutunlu bir tablo basiyordu; Guvenlik sutunu 10 projenin 10'unda da 'okunamadi' diyordu (iki hafta ust uste), maddeler paragraf halindeydi ve onem derecesi yoktu. Ayrica sayilar kutuk BASLIGINDAN okunuyordu ve uc projede dosya iceriginle uyusmuyordu (Abacus 11 vs 1, Gunum-Var 45 vs 35, GHS 48 vs 55). Proje sahibi: 'ozet hap bilgi'.",
+      "test": "kayıtlar sayılır"
     }
   ]
 }
