@@ -7,7 +7,7 @@ description: Çalışırken fark edilen ama şimdi çözülmeyecek bir sorunu pr
 
 > `<ev>` = ev klasörü. Öğrenmek için: `node -e "console.log(require('os').homedir())"`
 
-Önce standardı oku: `<ev>/.claude/standartlar/teknik-borc-standardi.md`
+Önce standardı oku: `<ev>/.claude/standartlar-canli/standartlar/teknik-borc-standardi.md`
 
 1. **Dosya:** `<proje kökü>/docs/teknik-borc.md`.
    - Yoksa ve projede başka adla bir kütük varsa (`tech-debt.md`, `TECHNICAL_DEBT.md`, `TECH_DEBT.md`): **yeni dosya açma**; kullanıcıya kütüğün önce standarda taşınması gerektiğini söyle ve onay iste.

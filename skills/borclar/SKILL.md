@@ -14,4 +14,4 @@ description: Tüm projelerin (SNN-AI-Asus-Z14 altı) sürüm, commit'lenmemiş i
    - Kütüğü `standart-disi` veya `yok` olan projeler → standarda taşınmayı bekliyor
 3. `P?` sayısı yüksekse kayıtlara öncelik atanmadığını belirt.
 
-Standart: `<ev>/.claude/standartlar/teknik-borc-standardi.md`. Bu skill yalnızca okur; hiçbir dosyayı değiştirmez.
+Standart: `<ev>/.claude/standartlar-canli/standartlar/teknik-borc-standardi.md`. Bu skill yalnızca okur; hiçbir dosyayı değiştirmez.
