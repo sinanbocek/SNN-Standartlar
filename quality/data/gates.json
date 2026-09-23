@@ -116,6 +116,12 @@
       "module": "core/propagate.js",
       "vaka": "2026-09-19: cekirdek bir gunde bes surum yayimladi; her yayilim yeni PR acti, eskisini KAPATMADI. 8 tuketicide 25 acik PR yigildi ve Gunum-Var'da altisi da ayni tabandan geliyordu. Zarar gorsel degil: listeden 4.0.0'i secen gozden geciren, 4.1.1'deki duzeltmeyi almamis olurdu — o duzeltme 1000 kat sapma ureten bir hatayi kapatiyordu.",
       "test": "eski önekli PR da kapatılır"
+    },
+    {
+      "id": "actions-kotasi",
+      "module": "quality/actions-quota.js",
+      "vaka": "2026-09-19: trade-kasa'da bir is 'spending limit' gerekcesiyle HIC BASLATILMADI; sinira dayaninca is faturalanmaz, calismaz. Kimse kotaya bakmadigi icin kimse bilmedi. Olcum (2026-09-23): Temmuz 53 dk, Agustos 972 dk, Eylul 23 gunde 2.527 dk — uc ayda 50 kat.",
+      "test": "eşiğe değince kırmızı"
     }
   ]
 }
