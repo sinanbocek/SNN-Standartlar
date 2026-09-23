@@ -39,21 +39,23 @@ expect('kalan beşi kapatılır', yeni.close.map((p) => p.number).sort((a, b) =>
 // EN KRİTİK SATIR: eski önekli PR kaçarsa sonsuza kadar açık kalır.
 expect('eski önekli PR da kapatılır', yeni.close.some((p) => p.number === 176), true);
 
-console.log('— insan emeği dokunulmaz');
-// Üstüne ikinci commit atılmış ya da inceleme almış PR KAPATILMAZ, yalnız bildirilir.
-// Ölçüm (#79 eki): kapatılan 14 PR'ın 14'ü tek makine commit'iydi — koruma nadiren devreye
-// girer, ama girdiğinde birinin işini korur.
-const insan = P.supersede([
+console.log('— dokunulmuş PR da kapatılır, ama sessizce değil');
+// PROJE SAHİBİ KARARI (2026-09-23, #79'un önerisi): inceleme ya da ek commit almış PR da
+// kapatılır. Gerekçe: açık kalan eski PR tam da bu talebin şikâyet ettiği riski sürdürür.
+// Ama DOKUNULMUŞ olduğu sayılır ve yazılır — sessiz kapatma, emeğini koyan kişinin
+// "benim PR'ıma ne oldu?" diye aramasına yol açar.
+const touchedCase = P.supersede([
   pr(215, 'core/abacus-core-v4.1.1'),
   pr(214, 'core/abacus-core-v4.1.0', { commits: 3 }),
   pr(213, 'core/abacus-core-v4.0.0', { reviews: 1 }),
   pr(212, 'core/abacus-core-v3.5.1'),
 ], '4.1.1');
-expect('ek commit alan kapatılmaz', insan.close.some((p) => p.number === 214), false);
-expect('inceleme alan kapatılmaz', insan.close.some((p) => p.number === 213), false);
-expect('dokunulanlar bildirilir', insan.touched.map((p) => p.number).sort((a, b) => a - b), [213, 214]);
-expect('dokunulmamış olan kapatılır', insan.close.map((p) => p.number), [212]);
+expect('ek commit alan da kapatılır', touchedCase.close.some((p) => p.number === 214), true);
+expect('inceleme alan da kapatılır', touchedCase.close.some((p) => p.number === 213), true);
+// EN KRİTİK SATIR: bu boş dönerse dokunulmuş PR sessizce kapanır ve kimse fark etmez.
+expect('dokunulanlar ayrıca bildirilir', touchedCase.touched.map((p) => p.number).sort((a, b) => a - b), [213, 214]);
 expect('dizi olarak gelen inceleme de sayılır', P.supersede([pr(1, 'core/abacus-core-v1.0.0', { reviews: [{}] }), pr(2, 'core/abacus-core-v2.0.0')], '2.0.0').touched.map((p) => p.number), [1]);
+expect('dokunulmamış PR bildirime girmez', touchedCase.touched.some((p) => p.number === 212), false);
 
 console.log('— temizlik kipi (hedef sürüm verilmez)');
 // Bugün var olan yığılma için: en yüksek sürüm kalır, kalanı kapanır.
@@ -69,11 +71,20 @@ expect('daha yeni sürüme dokunulmaz', P.supersede([pr(20, 'core/abacus-core-v5
 expect('bozuk sürüm etiketi atlanır', P.supersede([pr(5, 'core/abacus-core-vabc'), pr(6, 'core/abacus-core-v4.1.1')], '4.1.1').close, []);
 
 console.log('— kapatma yorumu');
-const comment = P.supersedeComment(pr(210, 'core/abacus-core-v3.5.0'), { number: 215, version: '4.1.1' });
+const stale = { ...pr(210, 'core/abacus-core-v3.5.0'), version: '3.5.0' };
+const comment = P.supersedeComment(stale, { number: 215, version: '4.1.1' });
 expect('yerini alan PR yazılır', comment.includes('#215'), true);
-expect('sürüm yazılır', comment.includes('4.1.1'), true);
+expect('geçiş yazılır', comment.includes('3.5.0 → 4.1.1'), true);
 // Göç notlarının kaybolmadığı SÖYLENİR: ölçüldü, yeni PR gövdesi aradaki tüm sürümleri topluyor.
-expect('göç notlarının durumu yazılır', comment.includes('göç notları'), true);
+expect('göç notlarının durumu yazılır', comment.includes('Göç notları'), true);
+// Dal silinmiyor (proje sahibi kararı) — yorumda da yazılı olmalı, yoksa "dalım da gitti mi?"
+expect('dalın silinmediği yazılır', comment.includes('Dal silinmedi'), true);
+// Dokunulmuş PR kapatılırken bunu SÖYLER ve ne yapılacağını yazar.
+const touchedComment = P.supersedeComment(stale, { number: 215, version: '4.1.1' }, true);
+expect('dokunulmuş PR yorumunda uyarı var', touchedComment.includes('inceleme ya da ek commit'), true);
+expect('ne yapılacağı yazılır', touchedComment.includes('yeni PR'), true);
+// Yeni PR açılmamışsa (tüketici zaten güncel) atıf verilecek numara yoktur.
+expect('atıfsız yorum da anlamlı', P.supersedeComment(stale, null).includes('daha yeni bir sürümünde'), true);
 
 console.log(fail ? `\n${fail} test başarısız` : '\nTüm testler geçti');
 process.exit(fail ? 1 : 0);

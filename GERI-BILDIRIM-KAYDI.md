@@ -45,10 +45,11 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 - **Karar:** **Kabul.** Kural tek cümle: *bir tüketicide aynı anda yalnız bir açık çekirdek
   güncelleme PR'ı bulunur — en güncel olan.*
 - **Bana bırakılan iki karar:**
-  1. **İnceleme görmüş PR ne olmalı?** Bildiren (a) *"yine kapat"* öneriyordu. **Ortası seçildi:**
-     üstüne ikinci commit atılmış ya da inceleme/yorum almış PR **kapatılmaz**, ayrıca bildirilir.
-     Ölçüm (bildirimin eki): kapatılan 14 PR'ın 14'ü tek makine commit'iydi, hiçbirinde inceleme
-     yoktu — yani koruma nadiren devreye girer, ama girdiğinde birinin işini korur.
+  1. **İnceleme görmüş PR ne olmalı?** İlk uygulamada "kapatma, bildir" seçilmişti; **proje sahibi
+     2026-09-23'te bildirenin önerisini seçti: yine kapatılsın.** Gerekçe: açık kalan eski PR tam
+     da bu talebin şikâyet ettiği riski sürdürür. Ama **sessizce kapatılmaz** — PR'ın dokunulmuş
+     olduğu hem çıktıda hem kapatma yorumunda yazılır ve *"kaybolmasını istemediğiniz bir değişiklik
+     varsa yeni PR'a taşıyın"* denir.
   2. **Dal silinsin mi?** **Hayır.** Bildiren silmenin bilgi kaybettirmediğini ölçmüştü ve haklı
      (göç notları yeni PR gövdesinde toplanıyor), ama silme **geri alınamaz** bir iştir ve bu
      aracın işi değildir. Araç kapatır, silmez.
@@ -58,8 +59,14 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
   GitHub'ın GraphQL düğüm sınırını aşıyor ve çağrı **komple** başarısız oluyor. İlk sürüm hatayı
   yutup boş liste döndürdü: temizlik *"aşılmış PR yok"* dedi ve **üç açık PR duran bir depoyu
   sessizce atladı**. İki adıma bölündü; okunamayan depo artık bildiriliyor ve çıkış kodu 1 veriyor.
-- **Bugünkü yığılma:** bildiren `sinanbocek/*` tüketicilerini elle temizlemişti (14 PR + 7 öksüz
-  dal). Kalan tek yer kurum deposu; `--temizle` kipi onu **2 PR** olarak bildiriyor.
+- **Üçüncü karar (2026-09-23):** tüketici **zaten güncelse** ne olacak? Eski tasarımda o durumda
+  yeni PR açılmadığı için eski açık PR'lar **sonsuza kadar** açık kalıyordu. Proje sahibi kararı:
+  **onlar da kapatılsın.** Kurum deposundaki iki PR tam bu durumdaydı.
+- **Kuru çalıştırma artık kapatmayı da yazar.** Eskiden yalnız `--temizle` kipinde görünüyordu;
+  yayılımın kuru çalıştırmasında "şu PR'lar kapatılacak" satırı yoktu ve uygulama anı sürpriz olurdu.
+- **Bugünkü yığılma kapandı:** bildiren `sinanbocek/*` tüketicilerini elle temizlemişti (14 PR +
+  7 öksüz dal); kurum deposundaki üç PR'ı da o ekip 2026-09-23'te kendisi kapattı. Ölçüldü:
+  `--temizle` artık *"aşılmış PR yok"* diyor.
 
 ### 2026-09-19 · Çok satırlı şablon dizgesinin gövdesi taranıyor — **KABUL**
 
