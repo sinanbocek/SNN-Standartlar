@@ -20,6 +20,20 @@ Son vakanın sebebi ölçüldü: ajan aynı şeye tek bir mesajda **dört ayrı 
 
 Kaynak: `quality/session-digest.js` (`kullanici-duzeltmesi` işareti ve sessiz kalma sayısı).
 
+### Komut kuralının nedeni (ölçüm, 2026-09-24)
+
+Talep SNN-Piyasa-Core oturumundan geldi. Asistan sahibe `cd "C:/…/SNN-Piyasa-Core" && npx supabase functions deploy …` verdi. Sahip PowerShell'de hata aldı ve komutu elle düzeltti. Bu tek vaka değil. 99 oturum tarandı (2026-08-15 → 2026-09-24):
+
+| Ölçü | Sayı |
+|---|---|
+| Asistanın `bash` etiketli komut blokları | 334 |
+| Bunlardan bash sözdizimi taşıyan (`&&`, `\|\|`, `/dev/null`, `$(…)`) | 38 |
+| Sahibin şikâyeti | 2 — 2026-08-15 Portföy `fcfefdd2` L112 (`git add -A && git commit …`, PowerShell hatası "At line:1 char:12"), 2026-09-24 Piyasa-Core `bb9f3899` L661 |
+
+Kalan 36 komutta sahip muhtemelen sessizce düzeltti; bu kısım ölçülmedi. Proje hafızasına yazmak yetmedi: yalnız o projede geçerli. `~/.claude/CLAUDE.md`'ye elle yazmak da yetmez: `setup-machine.js` dosyayı bu standarttan yeniden üretir.
+
+Etiket notu: masaüstü uygulaması kabuk etiketli bloklara "Çalıştır" düğmesi koyar. Düğmenin `powershell` etiketinde çıkıp çıkmadığı ölçülmedi; çıkmıyorsa etiket `bash` olur, sözdizimi yine PowerShell kalır.
+
 ## Kurallar
 
 Aşağıdaki işaretli bölüm, `setup/setup-machine.js` tarafından her makinede `~/.claude/CLAUDE.md` dosyasına kopyalanır. Claude Code bu dosyayı her projede, her oturumda okur. Bölümü değiştirirsen makinede `node setup/setup-machine.js --uygula` çalıştır.
@@ -39,6 +53,15 @@ Bu kurallar SNN aile standardıdır (`SNN-Standartlar/standartlar/iletisim-stand
 8. **Güvenlik ve geri alınamaz işlemlerde kısaltma yapma.** Tam cümleyle yaz.
 
 Kısa, açık demek değildir. Anlaşılmak için gereken kelimeyi silme.
+
+## Proje sahibine komut verirken
+
+Proje sahibinin terminali Windows PowerShell 5.1'dir. Ona çalıştırması için verilen her komut PowerShell sözdiziminde yazılır; kod bloğu `powershell` etiketi taşır.
+
+- **Tek komut, tek blok.** Sıralı adımları ayrı bloklara böl; sahip hangisinin hata verdiğini görsün.
+- `&&` ve `||` PowerShell 5.1'de yoktur, hata verir. Zorunluysa `A; if ($?) { B }` yaz.
+- Bash sözdizimi kullanma: `export X=1` yerine `$env:X = '1'`, `/dev/null` yerine `$null`, `cd` yerine `Set-Location "C:\yol"`.
+- Kural yalnız sahibe verilen komutlar içindir. Asistanın kendi Bash aracında `&&` serbesttir.
 <!-- kullanici-talimati:bitir -->
 
 ## Nereden alındı
@@ -57,6 +80,8 @@ Bu kural makineyle zorlanamaz: bir cümlenin anlaşılır olup olmadığını ma
 | "Kullanıcı bir süredir haber almadı" uyarısı | `session-digest.js` → sessiz kalma sayısı | Azalmalı |
 
 Kural yürürlüğe girdikten sonraki oturumlar bu tabloyla karşılaştırılır. Azalma görülmezse kural değiştirilir.
+
+**Komut kuralı ise makineyle zorlanabilir:** kabuk etiketli bir kod bloğunda `&&` olup olmadığını makine görür. Zorlaması komut bekçisidir (`hooks/`; kaydı `quality/data/gates.json`). Asistan cevabını bitirirken kabuk etiketli bloklara bakar. Bash sözdizimi görürse cevabı düzelttirir.
 
 ## Dağıtım
 
