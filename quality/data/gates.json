@@ -4,6 +4,12 @@
   "_why": "2026-09-19: uyum olceri, yakalamasi gereken boslugu 'tamam' diye isaretledi (kod-dili.yml yalniz workflow_call'du). Olcut yazilirken 'ayni gunku liste hatasini yakalar miydi?' diye sorulmamisti. Bu defter o sorunun sorulmasini zorunlu kilar.",
   "gates": [
     {
+      "id": "kabuk-komutu",
+      "module": "quality/shell-command.js",
+      "vaka": "2026-09-24: SNN-Piyasa-Core oturumunda (bb9f3899 L657) asistan sahibe `cd \"C:/.../SNN-Piyasa-Core\" && npx supabase functions deploy ...` verdi; sahibin terminali Windows PowerShell 5.1, `&&` yok, hata aldi ve elle duzeltti. Ikinci kayitli vaka 2026-08-15 Portfoy (fcfefdd2 L108, 'At line:1 char:12'). Olcum (99 oturum, 3.575 tur sonu): bekci 35 turu durdururdu; 23'unde komut gercekten sahibe verilmisti, 12'si asistanin kendi calistirdigi komutun gosterimiydi (duzeltmesi: `text` etiketi). Etiketsiz 1.407 bloga bakilmaz (cogu kod ornegi).",
+      "test": "Piyasa-Core vakası yakalanır"
+    },
+    {
       "id": "kod-dili-tarama",
       "module": "quality/code-language-scan.js",
       "vaka": "2026-09-17: SNN-Piyasa-Core'da 52 dosya / ~3.650 satir ve 10 tablo Turkce adlandirilmisti; aile capinda kural yoktu.",

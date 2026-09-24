@@ -89,6 +89,7 @@ const REGISTRY = [
   { file: 'stop-gate.js', event: 'Stop' },
   { file: 'stop-debt-push.js', event: 'Stop' },
   { file: 'stop-schema-doc.js', event: 'Stop' },
+  { file: 'stop-shell-command.js', event: 'Stop' },
 ];
 
 // SAF: eski adlari yenileriyle degistirir. Yalniz hooks/ yolundaki adlara dokunur.

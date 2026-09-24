@@ -17,6 +17,7 @@ Bu makine kaybolsaydı **7 kapı birden** susardı:
 | `stop-gate` | Kırmızı tiple "bitti" denebilir |
 | `stop-debt-push` | Kütük değişikliği GitHub'a ulaşmadan oturum kapanabilir |
 | `stop-schema-doc` | Şema değişip belge güncellenmeden iş biter |
+| `stop-shell-command` | Sahibe PowerShell 5.1'de çalışmayan komut (`&&`, `export`) verilebilir — 2026-09-24'te eklendi, sayım öncesinde yoktu |
 
 Kayıp ölçümü: 530 kod satırının **~%88'i** gerçekten kaybolurdu; gerisi ortak depoya yönlendiriciydi. En kritik tek dosya `hooks/lib/shared.js` (32 satır) — o giderse kalan her şey ortak depoyu bulamaz.
 
