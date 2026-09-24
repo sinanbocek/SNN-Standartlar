@@ -32,7 +32,7 @@ Talep SNN-Piyasa-Core oturumundan geldi. Asistan sahibe `cd "C:/…/SNN-Piyasa-C
 
 Kalan 36 komutta sahip muhtemelen sessizce düzeltti; bu kısım ölçülmedi. Proje hafızasına yazmak yetmedi: yalnız o projede geçerli. `~/.claude/CLAUDE.md`'ye elle yazmak da yetmez: `setup-machine.js` dosyayı bu standarttan yeniden üretir.
 
-Etiket notu: masaüstü uygulaması kabuk etiketli bloklara "Çalıştır" düğmesi koyar. Düğmenin `powershell` etiketinde çıkıp çıkmadığı ölçülmedi; çıkmıyorsa etiket `bash` olur, sözdizimi yine PowerShell kalır.
+Etiket notu (ölçüm, 2026-09-24): masaüstü uygulaması `powershell` etiketli bloklara "Çalıştır" düğmesi **koymuyor**, yalnız kopyalama simgesi var. Bu, proje sahibinin ekran görüntüsüyle görüldü; PR #106'nın kurulum talimatındaki üç blok örnek alındı. Uygulamanın asistana verdiği talimat, düğmenin `bash` etiketinde çıktığını söylüyor. Bunu proje sahibi henüz görmedi. Bu yüzden etiket `bash`, içerik PowerShell sözdiziminde. Komut bekçisi `bash` etiketli blokları zaten denetler.
 
 ## Kurallar
 
@@ -56,7 +56,7 @@ Kısa, açık demek değildir. Anlaşılmak için gereken kelimeyi silme.
 
 ## Proje sahibine komut verirken
 
-Proje sahibinin terminali Windows PowerShell 5.1'dir. Ona çalıştırması için verilen her komut PowerShell sözdiziminde yazılır; kod bloğu `powershell` etiketi taşır.
+Proje sahibinin terminali Windows PowerShell 5.1'dir. Ona çalıştırması için verilen her komut PowerShell sözdiziminde yazılır. Kod bloğu `bash` etiketi taşır: masaüstü uygulaması "Çalıştır" düğmesini `powershell` etiketinde göstermiyor. Etiket `bash`, içerik PowerShell.
 
 - **Tek komut, tek blok.** Sıralı adımları ayrı bloklara böl; sahip hangisinin hata verdiğini görsün.
 - `&&` ve `||` PowerShell 5.1'de yoktur, hata verir. Zorunluysa `A; if ($?) { B }` yaz.
