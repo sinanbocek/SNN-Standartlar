@@ -31,10 +31,30 @@ Bu yüzden her giriş alanında iki savunma **birlikte** bulunur:
 
 ### 1. Para alanları
 
-- Yalnız **rakam** kabul edilir.
-- **Binlik ayracı yazıldıkça kurulur**: kullanıcı `1250000` yazarken kutuda `1.250.000` görür.
+> **Düzeltme (2026-09-24, K20):** Bu bölüm önceden "yalnız rakam" diyordu. Araç değeri vakası (2026-09-17)
+> bütün para alanlarına genellenmişti ve **kuruş yazılamayan kutular** doğurdu. Vaka aşağıda.
+
+- **Girişte kuruş asla kısıtlanmaz.** Kabul edilen: **rakam + tek virgül + en fazla 2 kuruş hanesi**. Gösterimde kuruş isteğe bağlı olabilir, girişte olamaz.
+- Harf, eksi işareti ve kısaltma (`Mn`, `B`) kutuya girmez. Eksi gerekiyorsa ayrı bir seçimle (gelir/gider, iade) alınır; işaret sessizce silinip değer pozitif kaydedilmez.
+- **Binlik ayracı yazıldıkça kurulur**: kullanıcı `1250000` yazarken kutuda `1.250.000` görür; `1250000,5` yazarken `1.250.000,5`.
+- Kutu `inputMode="decimal"` kullanır. `numeric` iOS'ta virgülsüz rakam klavyesi açar; kullanıcı telefondan kuruş yazamaz.
+- Yapıştırılan kuruşlu tutar (`85.340,50`) aynı değer olarak okunur; **100 katına çıkamaz**. Bunun testi zorunludur.
 - Biçim **ABACUS para motorundan** gelir: `money.formatGroupedInput(raw)` kutunun canlı biçimidir, `money.parseNumber(raw)` kaydetmeden önce metni sayıya çevirir (boş ya da geçersizse `null`). Proje içinde bunların kopyası yazılmaz.
+- **Çekirdekte bilinen iki açık (ABACUS 4.1.1, ölçüldü 2026-09-24; talep ABACUS #48):** `formatGroupedInput` kuruş hanesini sınırlamaz (`1234,567` → `1.234,567`) ve ondalık için yazılan noktayı binlik sayar (`85340.5` → `853.405`, 10 kat). Sürüm gelene kadar proje, çekirdek çağrısının **önünde** ince bir kural tutar: üçüncü kuruş hanesi kutuya girmez; virgül yoksa ve noktadan sonra 1–2 hane varsa o nokta virgül sayılır. Bu kuralın testi yazılır; çekirdek sürümü gelince kural silinir, testler değişmeden geçer.
+
 - **Yasak:** ham `toLocaleString`, `Intl.*`, `toFixed`, `toUpperCase`, `toLowerCase`. Bunlar tarayıcıya ve dil ayarına göre farklı sonuç verir; ABACUS tek ve ölçülmüş bir biçim üretir. **ABACUS 3.3.0'dan itibaren bu beş çağrı ESLint kuralıyla yakalanır** (`@snn/abacus-core/eslint`, hata seviyesi). Bilinçli kullanım `// eslint-disable-next-line no-restricted-properties -- gerekçe` ile geçer.
+
+#### Gerçek vaka (GHS-Panel, 2026-09-24)
+
+Yenileme penceresinin prim ve komisyon kutuları bu standardın eski "yalnız rakam" maddesine göre yazılmıştı (`groupedAmountInput`, 2026-09-18). Virgül silindiği için:
+
+| Kutuya giren | Kutuda görünen | Kaydedilen |
+|---|---|---|
+| `85340,50` tuş tuş | `8.534.050` | **8.534.050** |
+| `85.340,50` yapıştır | `8.534.050` | **8.534.050** |
+| `₺1.234,56` yapıştır | `123.456` | **123.456** |
+
+Canlı veride primlerin ve komisyonların çoğu kuruşludur; kuruş istisna değil, olağan veridir. Kaynak: GHS-Panel `docs/reports/gorsel-dil/06-tutar-girisleri.md`.
 
 ### 2. Yıl, adet, hane sayısı belli alanlar
 
@@ -90,7 +110,7 @@ Yani **tek bir büyütme işi her alana uymaz**:
 4. Giriş bileşeni (input) yalnız bu yardımcıyı ya da ABACUS işini çağırır; süzme mantığı bileşenin içine yazılmaz.
 5. **Her projede kopya mantık yazılmaz.** Proje içinde kalanlar tek dosyada toplanır (`src/utils/numberInput.ts` gibi).
 
-**Referans uygulama:** GHS-Panel `src/utils/numberInput.ts` + `src/utils/numberInput.test.ts`. (Bu dosya ABACUS 3.3.0'dan önce yazıldı; `digitsOnlyInput` ve `groupedAmountInput` artık çekirdekteki karşılıklarına devredilebilir — kütüğe kayıt konusu.)
+**Referans uygulama:** GHS-Panel `src/utils/numberInput.ts` + `src/utils/numberInput.test.ts` — **yalnız rakam ve kod alanları için** (`digitsOnlyInput`). Oradaki `groupedAmountInput` para alanı için **referans değildir**: virgülü siler, kuruşu kaybettirir (vaka yukarıda, 2026-09-24). Para alanı için referans GHS-Panel'in Faz 1-B'de yazacağı `MoneyInput` olacaktır; o gelene kadar kural bu bölümdeki maddelerdir.
 
 ### Örnek kod
 
@@ -110,7 +130,7 @@ import { money, text } from '@snn/abacus-core';
 <input
   value={aracDegeri}
   onChange={(e) => setAracDegeri(money.formatGroupedInput(e.target.value))}
-  inputMode="numeric"
+  inputMode="decimal"   // numeric değil: iOS'ta virgül tuşu çıkmaz
 />
 
 <input
@@ -131,6 +151,14 @@ money.formatGroupedInput('121212scca')  // '121.212'
 money.formatGroupedInput('1250000')     // '1.250.000'
 money.parseNumber('1.250.000')          // 1250000
 money.parseNumber('abc')                // null
+
+// Kuruş (ABACUS 4.1.1, 2026-09-24)
+money.formatGroupedInput('85340,50')    // '85.340,50'
+money.formatGroupedInput('85.340,50')   // '85.340,50'   yapıştırma, 100 kat yok
+money.parseNumber('85.340,50')          // 85340.5
+money.formatGroupedInput('1234,567')    // '1.234,567'   ← hane sınırı yok (#48); proje kuralı keser
+money.formatGroupedInput('85340.5')     // '853.405'     ← nokta ondalık sayılmıyor (#48); proje kuralı çevirir
+money.formatGroupedInput('-100')        // '100'         ← işaret sessizce düşer; eksi kutuya hiç alınmaz
 text.digits('2o0a7')                    // '207'
 text.digits('20267', 4)                 // '2026'
 text.toAsciiUpper('irmaksasi')          // 'IRMAKSASI'
@@ -146,7 +174,7 @@ expect(codeInput('', 17)).toBe('');
 
 Kod incelemesinde (`standartlar/kod-inceleme-kontrol-listesi.md`) şu madde sorulur:
 
-> Yeni giriş alanı eklendi mi? Yasak karakterler `onChange`'de süzülüyor mu, biçim yazarken kuruluyor mu, saf yardımcının testi var mı?
+> Yeni giriş alanı eklendi mi? Yasak karakterler `onChange`'de süzülüyor mu, biçim yazarken kuruluyor mu, saf yardımcının testi var mı? **Para alanıysa:** kuruş yazılabiliyor mu (`inputMode="decimal"`), yapıştırılan `85.340,50` aynı değer olarak mı kaydediliyor?
 
 ## ABACUS'a taşıma — sonuçlandı (3.3.0, 2026-09-18)
 
