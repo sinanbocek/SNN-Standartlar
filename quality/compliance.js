@@ -30,8 +30,12 @@ const EXEMPT_FILE = '.snn-uyum.json';
 const readFileOr = (p, fallback = '') => {
   try { return fs.readFileSync(p, 'utf8'); } catch { return fallback; }
 };
-const listOr = (p) => {
-  try { return fs.readdirSync(p); } catch { return []; }
+// Yerel okuma ÜÇ durumlu (olcum-standardi.md, Kural 3): yok → '' / [], okunamadı → null.
+const readLocal = (p) => {
+  try { return fs.readFileSync(p, 'utf8'); } catch (e) { return e && e.code === 'ENOENT' ? '' : null; }
+};
+const listLocal = (p) => {
+  try { return fs.readdirSync(p); } catch (e) { return e && e.code === 'ENOENT' ? [] : null; }
 };
 
 // Aile listesinde GEREKCELI olarak dislanmis depolar olculmez. Neden (2026-09-19): yerelde duran
@@ -81,40 +85,58 @@ const gitOut = (root, args) => {
 
 const hasMain = (root) => gitOut(root, ['rev-parse', '--verify', '--quiet', 'origin/main']) !== null;
 
-// Ana daldaki bir klasörün dosya adları (yoksa çalışma klasörü)
-// KÖK için `origin/main:.` GEÇERSİZDİR ("Not a valid object name"); kökte `origin/main:`
-// kullanılır. İlk sürüm `:.` yazdı, rehber listesi hep boş döndü ve üç projeye yanlış
-// "rehber yok" dedi — 2026-09-19'da ölçüldü.
+// Ana daldaki bir klasörün dosya adları (yoksa çalışma klasörü).
+// Döner: [] = klasör yok ya da boş · null = OKUNAMADI (Kural 3).
+//
+// 2026-09-19: ilk sürüm kök için `origin/main:.` yazdı; git hata verdi, hata boş liste sayıldı ve
+// üç projeye yanlış "rehber yok" dendi. Aynı kök 2026-09-24'e kadar sürdü: `origin/main:<klasör>`
+// biçimi olmayan klasörde de hata veriyor, yani "yok" ile "okuma hatası" aynı değeri üretiyordu.
+// `ls-tree origin/main -- <klasör>/` olmayan klasörde boş döner (çıkış 0), yalnız gerçek hatada
+// başarısız olur (2026-09-24'te ölçüldü).
 function listAt(root, dir, fromMain) {
-  if (!fromMain) return listOr(path.join(root, dir));
-  const ref = dir === '.' || dir === '' ? 'origin/main:' : `origin/main:${dir}`;
-  const out = gitOut(root, ['ls-tree', '--name-only', ref]);
-  return out === null ? [] : out.split('\n').filter(Boolean);
+  if (!fromMain) return listLocal(path.join(root, dir));
+  const atRoot = dir === '.' || dir === '';
+  const out = gitOut(root, atRoot
+    ? ['ls-tree', '--name-only', 'origin/main']
+    : ['ls-tree', '--name-only', 'origin/main', '--', `${dir.replace(/\/$/, '')}/`]);
+  if (out === null) return null;
+  return out.split('\n').filter(Boolean).map((p) => p.split('/').pop());
 }
 
-// Ana daldaki bir dosyanın içeriği (yoksa çalışma klasörü)
-function readAt(root, file, fromMain) {
-  if (!fromMain) return readFileOr(path.join(root, file));
-  const out = gitOut(root, ['show', `origin/main:${file}`]);
-  return out === null ? '' : out;
+// Ana daldaki bir dosyanın içeriği (yoksa çalışma klasörü).
+// Döner: '' = dosya yok · null = OKUNAMADI (Kural 3).
+// listed: dosya zaten bir klasör listesinden geldiyse varlığı bilinir; ek "var mı" sorusu sorulmaz.
+// Sorulsaydı GHS-Panel'de ölçüm 1,5 sn'den 3,2 sn'ye çıkıyordu (2026-09-24'te ölçüldü).
+function readAt(root, file, fromMain, listed = false) {
+  if (!fromMain) return readLocal(path.join(root, file));
+  if (!listed) {
+    const found = gitOut(root, ['ls-tree', '--name-only', 'origin/main', '--', file]);
+    if (found === null) return null;
+    if (found === '') return '';
+  }
+  return gitOut(root, ['show', `origin/main:${file}`]);
 }
 
 function readState(root) {
   const fromMain = hasMain(root);
   const WF = '.github/workflows';
+  // Okunamayan girdi null kalır; ona dayanan ölçütler evaluate()'te "ölçülemedi" olur.
+  const allOrNull = (texts) => (texts === null || texts.includes(null) ? null : texts);
   const workflows = listAt(root, WF, fromMain);
-  const guideNames = (fromMain ? listAt(root, '.', fromMain) : listOr(root))
-    .filter((f) => /^(CLAUDE|AI-RULES)\.md$/i.test(f));
+  const rootNames = fromMain ? listAt(root, '.', fromMain) : listLocal(root);
+  const guideNames = rootNames === null ? null : rootNames.filter((f) => /^(CLAUDE|AI-RULES)\.md$/i.test(f));
   const ledgerText = readAt(root, 'docs/teknik-borc.md', fromMain);
+  const workflowTexts = allOrNull(workflows === null ? null : workflows.map((f) => readAt(root, `${WF}/${f}`, fromMain, true)));
+  const guideTexts = allOrNull(guideNames === null ? null : guideNames.map((f) => readAt(root, f, fromMain, true)));
   return {
     repo: repoSlug(readRemote(root)),
     fromMain,
     workflows,
-    workflowText: workflows.map((f) => readAt(root, `${WF}/${f}`, fromMain)).filter((t) => isTriggered(t)),
-    hasLedger: fromMain ? ledgerText !== '' : fs.existsSync(path.join(root, 'docs', 'teknik-borc.md')),
+    workflowText: workflowTexts === null ? null : workflowTexts.filter((t) => isTriggered(t)),
+    hasLedger: ledgerText === null ? null : (fromMain ? ledgerText !== '' : fs.existsSync(path.join(root, 'docs', 'teknik-borc.md'))),
     ledgerText,
     guideNames,
-    guideText: guideNames.map((f) => readAt(root, f, fromMain)).join('\n'),
+    guideText: guideTexts === null ? null : guideTexts.join('\n'),
     exemptRaw: readFileOr(path.join(root, EXEMPT_FILE), null),
     findings: countFindings(root),
   };
@@ -182,6 +204,7 @@ const mentions = (text, re) => re.test(text || '');
 const CHECKS = [
   {
     id: 'kod-dili-akisi',
+    input: 'workflowText',
     title: 'Kod dili turnikesi',
     ok: (s) => runsGate(s, /kod-dili\.yml|code-language-scan/),
     detail: (s) => (has(s, 'kod-dili.yml')
@@ -191,6 +214,7 @@ const CHECKS = [
   },
   {
     id: 'kod-dili-kaydi',
+    input: 'ledgerText',
     title: 'Kod dili teknik borç kaydı',
     // Bulgu yoksa kayıt da gerekmez; bilinmiyorsa (tarama çalışmadı) istenmez.
     ok: (s) => s.findings === 0 || s.findings === null || s.findings === undefined
@@ -202,6 +226,7 @@ const CHECKS = [
   },
   {
     id: 'teknik-borc-akisi',
+    input: 'workflowText',
     title: 'Teknik borç akışı',
     ok: (s) => runsGate(s, /teknik-borc\.yml|borc-senkron|debt-sync/),
     detail: (s) => (has(s, 'teknik-borc.yml')
@@ -211,6 +236,7 @@ const CHECKS = [
   },
   {
     id: 'kutuk',
+    input: 'ledgerText',
     title: 'Teknik borç kütüğü',
     ok: (s) => s.hasLedger,
     detail: () => 'docs/teknik-borc.md yok',
@@ -218,6 +244,7 @@ const CHECKS = [
   },
   {
     id: 'kutuk-adresi',
+    input: 'ledgerText',
     title: 'Kütükteki standart adresi',
     // Adres hiç yazılmamışsa eksik sayılmaz: ölçüt "yazılan adres doğru olsun" der.
     ok: (s) => brokenLedgerRefs(s.ledgerText).length === 0,
@@ -226,6 +253,7 @@ const CHECKS = [
   },
   {
     id: 'anahtar-tarama',
+    input: 'workflowText',
     title: 'Anahtar taraması',
     ok: (s) => runsGate(s, /anahtar-tarama\.yml|secret-scan/),
     detail: (s) => (has(s, 'anahtar-tarama.yml')
@@ -235,6 +263,7 @@ const CHECKS = [
   },
   {
     id: 'rehber-atfi',
+    input: 'guideText',
     title: 'Rehberde aile standardı atfı',
     ok: (s) => s.guideNames.length > 0 && mentions(s.guideText, /SNN-Standartlar|SNN aile standard|aile standard[ıi]/i),
     detail: (s) => (s.guideNames.length ? 'CLAUDE.md / AI-RULES.md aile standardına atıf yapmıyor' : 'CLAUDE.md ya da AI-RULES.md yok'),
@@ -243,17 +272,26 @@ const CHECKS = [
 ];
 
 // SAF: durum -> bulgular. Muaf olanlar listeden dusulur.
+// Dayandigi girdi OKUNAMAMIS (null) olcut eksik de temiz de sayilmaz: `unknown` listesine girer
+// (olcum-standardi.md, Kural 3). compliance-issues bu olcutlerin issue'larina dokunmaz.
 function evaluate(state, exempt = exemptions(state.exemptRaw), excluded = excludedRepos()) {
   if (state.repo && excluded.includes(state.repo)) {
-    return { gaps: [], warnings: [], total: CHECKS.length, exemptCount: 0, excluded: true };
+    return { gaps: [], unknown: [], warnings: [], total: CHECKS.length, exemptCount: 0, excluded: true };
   }
   const gaps = [];
+  const unknown = [];
   for (const c of CHECKS) {
     if (exempt.ids.has(c.id)) continue;
+    if (c.input && state[c.input] === null) { unknown.push(c.id); continue; }
     if (c.ok(state)) continue;
     gaps.push({ id: c.id, title: c.title, detail: c.detail(state), fix: c.fix });
   }
-  return { gaps, warnings: exempt.warnings, total: CHECKS.length, exemptCount: exempt.ids.size };
+  const warnings = [...exempt.warnings];
+  if (unknown.length) {
+    const titles = CHECKS.filter((c) => unknown.includes(c.id)).map((c) => c.title);
+    warnings.push(`ölçülemedi (okuma hatası; eksik sayılmadı): ${titles.join(', ')}`);
+  }
+  return { gaps, unknown, warnings, total: CHECKS.length, exemptCount: exempt.ids.size };
 }
 
 // SAF: oturum acilisinda gosterilecek satirlar. Kisa tutulur; acilis ozeti bir rapor degildir.

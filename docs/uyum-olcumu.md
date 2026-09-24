@@ -50,6 +50,8 @@ Oturum açılışında, o projenin kendi eksiği:
 | `anahtar-tarama` | `.github/workflows/anahtar-tarama.yml` |
 | `rehber-atfi` | `CLAUDE.md`/`AI-RULES.md` içinde `SNN-Standartlar` ya da "aile standardı" atfı |
 
+**Okunamayan girdi eksik sayılmaz** (2026-09-24, `olcum-standardi.md` Kural 3). Her ölçüt dayandığı girdiyi bildirir: akış dosyaları, kütük ya da rehber. Girdi okunamazsa, örneğin git okuması hata verirse, o ölçüt "ölçülemedi" olur. Eksik de temiz de sayılmaz. Oturum açılışında uyarı olarak görünür; issue akışı o ölçütün issue'sunu ne açar ne kapatır. Eskiden okuma hatası "dosya yok" sayılıyordu: gerçek bir klonda denendiğinde ölçer 6 yanlış issue açıp gerçek bir issue'yu kapatacaktı.
+
 **Hız kuralı:** ölçüm oturum açılışında çalışır, bu yüzden pahalı iş yapmaz. Kod dili taraması (Yönetici-Özeti'nde 10.153 bulgu) burada **çalıştırılmaz**; yalnız turnikenin takılı olup olmadığına bakılır.
 
 ## İlk ölçüm (2026-09-19)

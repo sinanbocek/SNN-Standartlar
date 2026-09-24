@@ -30,6 +30,10 @@ expect('başlık değişmişse güncelle', types({ gaps: [GAP], issues: [{ numbe
 // Baska kaynaktan gelen issue'lara DOKUNULMAZ.
 expect('yabancı issue kapatılmaz', types({ gaps: [], issues: [{ number: 9, title: '[TB-004] başka iş', state: 'OPEN' }] }), []);
 expect('hiç eksik ve issue yoksa boş', s.plan({}), []);
+// Ölçülemeyen ölçüt "giderildi" sayılmaz: açık issue KAPATILMAZ, yeni issue da açılmaz (Kural 3).
+// Kapatılsaydı ertesi gün okuma düzelince yeniden açılırdı: boşuna aç-kapa.
+expect('ölçülemeyen ölçütün açık issue\'su kapatılmaz', types({ gaps: [], unknown: ['kod-dili-akisi'], issues: [{ number: 5, title: s.issueTitle(GAP), state: 'OPEN' }] }), []);
+expect('ölçülemeyen ölçüt için issue açılmaz', types({ gaps: [], unknown: ['kod-dili-akisi'], issues: [] }), []);
 
 console.log('— birden çok eksik');
 const IKI = [GAP, { id: 'rehber-atfi', title: 'Rehberde aile standardı atfı', detail: 'yok', fix: 'ekle' }];
@@ -67,6 +71,8 @@ expect('açılacak issue görünür', text.includes('issue AÇ'), true);
 expect('değişmeyen proje görünür', text.includes('değişiklik yok'), true);
 expect('hatalı proje görünür', text.includes('klonlanamadı'), true);
 expect('toplam sayılır', text.startsWith('Toplam 1 işlem'), true);
+const unknownText = s.report([{ project: 'D', actions: [], unknown: ['kutuk', 'kutuk-adresi'] }]);
+expect('ölçülemeyen ölçüt raporda görünür', /D: ölçülemedi — kutuk, kutuk-adresi/.test(unknownText), true);
 
 console.log(fail ? `\n${fail} test başarısız` : '\nTüm testler geçti');
 process.exit(fail ? 1 : 0);

@@ -153,7 +153,7 @@ Kapı, doğru davranışı **kolaylaştırmalı**. Engelleyen kapı, yarım kalm
 - **Kural 1 tam zorlanamaz.** Yukarıda açıkça yazıldı.
 - **Defter, kaydın doğruluğunu değil varlığını denetler.** Vakayı uyduran bir kayıt tarih taşıdığı sürece geçer. Denetim biçimseldir; içeriği kod incelemesi denetler.
 - **Sabotaj testi zorunlu tutulamıyor.** "Bu testi bozunca kırmızıya dönüyor mu?" sorusunun makine karşılığı yok; kontrol listesi maddesidir.
-- **Kural 3 uyum ölçerinde tam uygulanmıyor** (2026-09-23, kod okunarak bulundu, gerçekleştiği görülmedi). `compliance.js` içindeki `readAt` ve `listAt`, okunamayan dosyayı olmayan dosyayla aynı değerle (`''`, `[]`) döndürüyor. Git okuması hata verirse ölçer "kütük yok" ya da "turnike yok" der ve o gün açık bir uyum issue'sunu yanlışlıkla kapatabilir.
+- ~~Kural 3 uyum ölçerinde tam uygulanmıyor~~ **Kapandı (2026-09-24).** `compliance.js` artık okunamayan girdiyi `null` döndürüyor; ona dayanan ölçüt "ölçülemedi" olur ve `compliance-issues.js` o ölçütün issue'sunu ne açar ne kapatır. Gerçek bir klonda git okuması bozularak denendi: eski ölçer trade-kasa'da 6 yanlış issue açıp gerçek bir issue'yu kapatacaktı, yeni ölçer hiçbir işlem yapmadı.
 
 ## Kontrol listesi maddeleri
 

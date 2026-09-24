@@ -107,6 +107,19 @@ expect('kayıt gövdesindeki eski adres sayılmaz', c.brokenLedgerRefs(`${YENI}\
 expect('başlıktaki eksik dosya yakalanır', c.brokenLedgerRefs('> Bkz. `~/.claude/hooks/yok-artik.js`\n\n---'), ['~/.claude/hooks/yok-artik.js']);
 expect('kütük yoksa adres ölçütü düşmez', ids({ ...TAM, hasLedger: false, ledgerText: '' }).includes('kutuk-adresi'), false);
 
+console.log('— okunamayan girdi eksik sayılmaz (olcum-standardi.md, Kural 3)');
+// 2026-09-19: kök klasör geçersiz adla listelendi, git hata verdi, liste boş döndü ve üç projeye
+// "rehber yok" dendi. Okuma hatası "yok" değil "bilinmiyor"dur: o ölçüt atlanır, issue'ya dokunulmaz.
+const unreadable = c.evaluate({ ...TAM, workflowText: null, workflows: null });
+expect('okunamayan akışlar eksik sayılmaz', unreadable.gaps.map((g) => g.id), []);
+expect('okunamayan akış ölçütleri bilinmiyor listesinde', unreadable.unknown, ['kod-dili-akisi', 'teknik-borc-akisi', 'anahtar-tarama']);
+expect('bilinmeyen ölçüt uyarı üretir', unreadable.warnings.some((w) => /ölçülemedi/.test(w)), true);
+const noLedger = c.evaluate({ ...TAM, hasLedger: null, ledgerText: null });
+expect('okunamayan kütük "kütük yok" demez', noLedger.gaps.map((g) => g.id), []);
+expect('okunamayan kütük ölçütleri bilinmiyor', noLedger.unknown, ['kod-dili-kaydi', 'kutuk', 'kutuk-adresi']);
+expect('okunamayan rehber "rehber yok" demez', c.evaluate({ ...TAM, guideNames: null, guideText: null }).unknown, ['rehber-atfi']);
+expect('her şey okunduysa bilinmeyen yok', c.evaluate(TAM).unknown, []);
+
 console.log('— muafiyet');
 const muaf = JSON.stringify({ exempt: [{ check: 'kod-dili-akisi', reason: 'dışarıdan tüketilen MCP sunucusu' }] });
 expect('gerekçeli muafiyet düşer', ids({ ...TAM, workflowText: [] }, c.exemptions(muaf)).includes('kod-dili-akisi'), false);
@@ -151,6 +164,12 @@ console.log('— ANA DALDAN okur, çalışma klasöründen değil');
   fs2.writeFileSync(path.join(repo, '.github', 'workflows', 'kod-dili.yml'), 'on:\n  pull_request:\njobs:\n  x:\n    uses: a/b/.github/workflows/kod-dili.yml@main');
   expect('commit edilmemiş akış ana dalda görünmez', c.listAt(repo, '.github/workflows', true), ['anahtar-tarama.yml']);
   expect('çalışma klasöründe ise görünür', c.listAt(repo, '.github/workflows', false).sort(), ['anahtar-tarama.yml', 'kod-dili.yml']);
+
+  // Yok ile okunamadı AYRI: olmayan dosya/klasör boş döner, okuma hatası null döner.
+  expect('ana dalda olmayan klasör boş liste', c.listAt(repo, 'yok-klasor', true), []);
+  expect('ana dalda olmayan dosya boş metin', c.readAt(repo, 'docs/yok.md', true), '');
+  expect('okunamayan klasör null', c.listAt(path.join(os2.tmpdir(), 'snn-olmayan-depo-xyz'), '.github/workflows', true), null);
+  expect('okunamayan dosya null', c.readAt(path.join(os2.tmpdir(), 'snn-olmayan-depo-xyz'), 'docs/teknik-borc.md', true), null);
 
   const state = c.readState(repo);
   expect('durum ana daldan okundu', state.fromMain, true);
