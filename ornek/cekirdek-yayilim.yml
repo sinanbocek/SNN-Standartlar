@@ -1,4 +1,6 @@
-# YALNIZ çekirdek deposuna (SNN-Abacus-Core) konacak dosya: .github/workflows/cekirdek-yayilim.yml
+# YALNIZ çekirdek deposuna konacak dosya: .github/workflows/cekirdek-yayilim.yml
+# Çekirdek, SNN-Standartlar'da core/data/cores.json listesinde olmalı (bugün: SNN-Abacus-Core, SNN-Piyasa-Core).
+# Etiketi atan akış PROJECT_TOKEN ile göndermeli: GITHUB_TOKEN ile gönderilen etiket bu akışı TETİKLEMEZ.
 # Yeni sürüm etiketi (v1.2.3) gönderilince, çekirdeği kullanan her projeye güncelleme PR'ı açılır.
 # Elle tetikleme: önce "uygula" işaretsiz (yalnız plan), sonra işaretli.
 name: cekirdek-yayilim

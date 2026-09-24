@@ -1,0 +1,23 @@
+{
+  "_description": "Yayılımı ortak araçla yapılan çekirdekler. core/propagate.js hangi çekirdeği yayacağını bu listeden seçer.",
+  "_why": "SNN-Piyasa-Core talebi #103 (2026-09-24): paket kimliği araçta sabit yazılıydı; ikinci çekirdeğin v0.4.0 etiketi hiçbir tüketicide PR açmadı. Yayılım çekirdek başına kopyalanmaz — iki kopya bir gün ayrışır.",
+  "_fields": "branchPrefixes: İLKİ yeni dal adı içindir; tamamı aşılmış PR aranırken okunur (eski önekler silinmez, yoksa eski PR'lar sonsuza kadar açık kalır — Gunum-Var #176).",
+  "cores": [
+    {
+      "package": "@snn/abacus-core",
+      "repo": "sinanbocek/SNN-Abacus-Core",
+      "summary": "ortak hesaplama çekirdeği",
+      "analogy": "Bütün şubelerin kullandığı hesap makinesinin yeni modeli çıktı; tuşların bir kısmı yer değiştirmiş olabilir. Eski modelde kalan şube, merkezde düzeltilen hataların düzeltmesini de almaz.",
+      "drift": "aynı hesap farklı sonuç verebilir",
+      "branchPrefixes": ["core/abacus-core-v", "cekirdek/abacus-core-v"]
+    },
+    {
+      "package": "@snn/piyasa-core",
+      "repo": "sinanbocek/SNN-Piyasa-Core",
+      "summary": "ortak piyasa verisi çekirdeği",
+      "analogy": "Bütün şubelerin baktığı ortak kur panosunun yeni modeli çıktı; bazı satırların adı ya da yeri değişmiş olabilir. Eski panoya bakan şube, merkezde düzeltilen hatalı kurların düzeltmesini de almaz.",
+      "drift": "aynı günün kuru ya da fiyatı farklı görünebilir",
+      "branchPrefixes": ["core/piyasa-core-v"]
+    }
+  ]
+}

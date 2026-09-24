@@ -3,6 +3,10 @@
 //           node core/propagate.js --surum v3.2.0 --uygula       → dal açar, sürümü yükseltir, PR açar
 //           ... --yalniz sinanbocek/SNN-Yonetici-Ozeti             → yalnız bu depo (deneme için)
 //           node core/propagate.js --temizle                      → sürüm yaymadan, yığılmış eski PR'ları kapatır
+//           ... --cekirdek sinanbocek/SNN-Piyasa-Core               → hangi çekirdek (yoksa SNN-Abacus-Core)
+//
+// ÇEKİRDEK LİSTESİ (talep #103, 2026-09-24): core/data/cores.json. Akış çekirdeğin kendi deposundan
+// çağrılır; hangi çekirdeğin yayıldığı çağıran deponun adından çıkar (core-propagate.yml).
 //
 // AŞILMIŞ PR'LAR KAPATILIR: bir tüketicide aynı anda yalnız BİR açık çekirdek PR'ı bulunur.
 // Neden (bildirim #79, 2026-09-19): beş ardışık sürüm 8 tüketicide 25 açık PR bıraktı; biri hariç
@@ -25,7 +29,11 @@ const OWNER = 'sinanbocek';
 // Kişisel hesap dışındaki tüketiciler (kurum depoları kullanıcı listesinde görünmez)
 const EXTRA_REPOS = ['globalhedef/global-hedef-web-platform'];
 const CLEAN = argv.includes('--temizle');
-const BRANCH = `core/abacus-core-v${String(TARGET || '').replace(/^v/, '')}`;
+// Listede olmayan çekirdek SESSİZCE Abacus sayılmaz; main() durdurur.
+const CORE_ARG = arg('--cekirdek');
+const CORE = CORE_ARG ? P.coreOf(CORE_ARG) : P.ABACUS;
+const BRANCH = CORE ? P.branchFor(CORE, TARGET) : '';
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
 
 const gh = (args, opts = {}) => execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 1e8, stdio: ['ignore', 'pipe', 'pipe'], ...opts });
 const ghJson = (args) => JSON.parse(gh(args));
@@ -42,7 +50,7 @@ function fileAt(repo, file, ref) {
 function consumers() {
   if (ONLY) return [ONLY];
   const own = ghJson(['api', 'user/repos?per_page=100&affiliation=owner', '--paginate'])
-    .filter((r) => !r.fork && !r.archived && r.owner.login === OWNER && r.full_name.toLowerCase() !== P.CORE_REPO.toLowerCase())
+    .filter((r) => !r.fork && !r.archived && r.owner.login === OWNER && r.full_name.toLowerCase() !== CORE.repo.toLowerCase())
     .map((r) => r.full_name);
   return [...own, ...EXTRA_REPOS];
 }
@@ -50,7 +58,7 @@ function consumers() {
 function lockedVersion(lockText) {
   try {
     const lock = JSON.parse(lockText);
-    const entry = lock.packages && lock.packages[`node_modules/${P.PACKAGE}`];
+    const entry = lock.packages && lock.packages[`node_modules/${CORE.package}`];
     return entry ? entry.version : null;
   } catch {
     return null;
@@ -66,7 +74,7 @@ function usageSummary(dir) {
       if (e.isDirectory()) walk(p);
       else if (/\.(ts|tsx|js|jsx|mjs|cjs)$/.test(e.name)) {
         const t = fs.readFileSync(p, 'utf8');
-        for (const m of t.matchAll(/import\s*\{([^}]*)\}\s*from\s*['"]@snn\/abacus-core[^'"]*['"]/g)) {
+        for (const m of t.matchAll(new RegExp(`import\\s*\\{([^}]*)\\}\\s*from\\s*['"]${escapeRe(CORE.package)}(?:/[^'"]*)?['"]`, 'g'))) {
           m[1].split(',').map((s) => s.trim().split(/\s+as\s+/)[0]).filter(Boolean).forEach((n) => { counts[n] = (counts[n] || 0) + 1; });
         }
       }
@@ -93,9 +101,9 @@ function applyOne(repo, plan, pkgText, changelog) {
   run('git', ['switch', '-q', '-c', BRANCH], dir);
 
   const pkg = JSON.parse(pkgText);
-  const section = pkg.dependencies && pkg.dependencies[P.PACKAGE] ? 'dependencies' : 'devDependencies';
-  const oldSpec = pkg[section][P.PACKAGE];
-  const newSpec = P.rewriteSpec(oldSpec, plan.to);
+  const section = pkg.dependencies && pkg.dependencies[CORE.package] ? 'dependencies' : 'devDependencies';
+  const oldSpec = pkg[section][CORE.package];
+  const newSpec = P.rewriteSpec(oldSpec, plan.to, CORE);
   const pkgPath = path.join(dir, 'package.json');
   const raw = fs.readFileSync(pkgPath, 'utf8');
   if (!raw.includes(`"${oldSpec}"`)) throw new Error('package.json içinde tanım metni bulunamadı');
@@ -112,20 +120,20 @@ function applyOne(repo, plan, pkgText, changelog) {
     const archive = path.join(dir, 'docs', 'teknik-borc-arsiv.md');
     const texts = [fs.readFileSync(debtPath, 'utf8'), fs.existsSync(archive) ? fs.readFileSync(archive, 'utf8') : ''];
     const id = P.nextDebtId(texts);
-    const record = P.majorDebtRecord({ id, from: plan.from, to: plan.to, date: new Date().toISOString().slice(0, 10), usage });
+    const record = P.majorDebtRecord({ id, from: plan.from, to: plan.to, date: new Date().toISOString().slice(0, 10), usage, core: CORE });
     fs.writeFileSync(debtPath, P.insertRecord(texts[0], record));
     recordNote = `\n\n**Ana sürüm geçişi:** kütüğe **${id} (P2)** kaydı bu PR'ın içinde eklendi; PR birleşince kütüğe girer.`;
   }
 
   run('git', ['add', '-A'], dir);
   run('git', ['-c', 'user.name=SNN Standartlar Görevlisi', '-c', 'user.email=sbocek@gmail.com', 'commit', '-q', '-m',
-    `chore(deps): @snn/abacus-core ${plan.from} → ${plan.to}\n\nÇekirdek v${plan.to} yayını; otomatik güncelleme PR'ı (SNN-Standartlar/cekirdek).`], dir);
+    `chore(deps): ${CORE.package} ${plan.from} → ${plan.to}\n\nÇekirdek v${plan.to} yayını; otomatik güncelleme PR'ı (SNN-Standartlar/cekirdek).`], dir);
   run('git', ['push', '-q', '-u', 'origin', BRANCH], dir);
 
   const MAX = 50000;
   const log = changelog.length > MAX ? `${changelog.slice(0, MAX)}\n\n… (kısaltıldı; tamamı çekirdeğin CHANGELOG.md dosyasında)` : changelog;
   const body = [
-    `Çekirdek **SNN-Abacus-Core v${plan.to}** yayınlandı. Bu PR projeyi **${plan.from} → ${plan.to}** sürümüne yükseltir; projenin kendi kontrolleri yeni sürümü bu PR'da sınar.`,
+    `Çekirdek **${CORE.name} v${plan.to}** yayınlandı. Bu PR projeyi **${plan.from} → ${plan.to}** sürümüne yükseltir; projenin kendi kontrolleri yeni sürümü bu PR'da sınar.`,
     '',
     `- Bağımlılık: \`${oldSpec}\` → \`${newSpec}\``,
     `- Çekirdek kullanımı (ölçüm): ${usage}`,
@@ -144,7 +152,7 @@ function applyOne(repo, plan, pkgText, changelog) {
   ].join('\n');
   const bodyFile = path.join(dir, '..', `pr-govde-${Date.now()}.md`);
   fs.writeFileSync(bodyFile, body);
-  const prUrl = gh(['pr', 'create', '-R', repo, '--head', BRANCH, '--title', `chore(deps): çekirdek @snn/abacus-core ${plan.from} → ${plan.to}`, '--body-file', bodyFile]).trim();
+  const prUrl = gh(['pr', 'create', '-R', repo, '--head', BRANCH, '--title', `chore(deps): çekirdek ${CORE.package} ${plan.from} → ${plan.to}`, '--body-file', bodyFile]).trim();
   fs.rmSync(dir, { recursive: true, force: true });
   fs.rmSync(bodyFile, { force: true });
   return prUrl;
@@ -166,7 +174,7 @@ function openCorePrs(repo) {
     console.log(`    ⚠ ${repo}: açık PR listesi okunamadı — ${(e.stderr || e.message || '').toString().trim().split('\n').pop()}`);
     return null;
   }
-  const core = list.filter((pr) => P.versionOfBranch(pr.headRefName));
+  const core = list.filter((pr) => P.versionOfBranch(pr.headRefName, CORE));
   return core.map((pr) => {
     try {
       const detail = ghJson(['pr', 'view', String(pr.number), '-R', repo, '--json', 'commits,reviews']);
@@ -183,7 +191,7 @@ function openCorePrs(repo) {
 function closeSuperseded(repo, keepVersion, apply) {
   const prs = openCorePrs(repo);
   if (prs === null) return { closed: 0, touched: 0, unreadable: true };
-  const { close, keep, touched } = P.supersede(prs, keepVersion);
+  const { close, keep, touched } = P.supersede(prs, keepVersion, CORE);
   const wasTouched = new Set(touched.map((pr) => pr.number));
   for (const pr of close) {
     const mark = wasTouched.has(pr.number) ? ' ⚠ (inceleme/ek commit vardı)' : '';
@@ -202,7 +210,7 @@ function closeSuperseded(repo, keepVersion, apply) {
 
 // Sürüm yaymadan yığılmayı temizler: her tüketicide EN YÜKSEK sürüm kalır.
 function cleanOnly() {
-  console.log(`${APPLY ? '▶ UYGULAMA' : '🔍 KURU ÇALIŞTIRMA (hiçbir şey değişmez)'} · aşılmış çekirdek PR temizliği`);
+  console.log(`${APPLY ? '▶ UYGULAMA' : '🔍 KURU ÇALIŞTIRMA (hiçbir şey değişmez)'} · aşılmış çekirdek PR temizliği · ${CORE.name}`);
   let total = 0;
   let unreadable = 0;
   for (const repo of consumers()) {
@@ -221,10 +229,11 @@ function cleanOnly() {
 }
 
 function main() {
+  if (!CORE) throw new Error(`çekirdek listede yok: ${CORE_ARG} · bilinenler: ${P.CORES.map((c) => c.repo).join(', ')} (core/data/cores.json)`);
   if (CLEAN) return cleanOnly();
   if (!P.parse(TARGET)) throw new Error('Kullanım: --surum vX.Y.Z · ya da --temizle');
-  const coreLog = fileAt(P.CORE_REPO, 'CHANGELOG.md', TARGET.startsWith('v') ? TARGET : `v${TARGET}`) || fileAt(P.CORE_REPO, 'CHANGELOG.md') || '';
-  console.log(`${APPLY ? '▶ UYGULAMA' : '🔍 KURU ÇALIŞTIRMA (hiçbir şey değişmez)'} · çekirdek ${TARGET}${ONLY ? ` · yalnız ${ONLY}` : ''}`);
+  const coreLog = fileAt(CORE.repo, 'CHANGELOG.md', TARGET.startsWith('v') ? TARGET : `v${TARGET}`) || fileAt(CORE.repo, 'CHANGELOG.md') || '';
+  console.log(`${APPLY ? '▶ UYGULAMA' : '🔍 KURU ÇALIŞTIRMA (hiçbir şey değişmez)'} · çekirdek ${CORE.name} ${TARGET}${ONLY ? ` · yalnız ${ONLY}` : ''}`);
   if (APPLY) assertNpm11();
   let failed = 0;
   for (const repo of consumers()) {
@@ -232,7 +241,7 @@ function main() {
     if (!pkgText) continue;
     let pkg;
     try { pkg = JSON.parse(pkgText); } catch { continue; }
-    const spec = (pkg.dependencies || {})[P.PACKAGE] || (pkg.devDependencies || {})[P.PACKAGE];
+    const spec = (pkg.dependencies || {})[CORE.package] || (pkg.devDependencies || {})[CORE.package];
     if (!spec) continue;
     const locked = lockedVersion(fileAt(repo, 'package-lock.json') || '');
     let hasOpenPr = false;

@@ -86,5 +86,22 @@ expect('ne yapılacağı yazılır', touchedComment.includes('yeni PR'), true);
 // Yeni PR açılmamışsa (tüketici zaten güncel) atıf verilecek numara yoktur.
 expect('atıfsız yorum da anlamlı', P.supersedeComment(stale, null).includes('daha yeni bir sürümünde'), true);
 
+console.log('— iki çekirdek, tek tüketici (#103)');
+// KURAL ÇEKİRDEK BAŞINADIR: "bir tüketicide yalnız bir açık çekirdek PR'ı" Abacus için bir,
+// Piyasa için bir demektir. Abacus yayılımı Piyasa PR'ını "aşılmış" sayıp KAPATMAMALI.
+const piyasa = P.coreOf('sinanbocek/SNN-Piyasa-Core');
+expect('Piyasa dalı Piyasa sürümü verir', P.versionOfBranch('core/piyasa-core-v0.4.0', piyasa), '0.4.0');
+expect('Abacus dalı Piyasa için sayılmaz', P.versionOfBranch('core/abacus-core-v4.1.1', piyasa), null);
+expect('Piyasa dalı varsayılan (Abacus) için sayılmaz', P.versionOfBranch('core/piyasa-core-v0.4.0'), null);
+const MIXED = [
+  pr(31, 'core/piyasa-core-v0.4.0'),
+  pr(30, 'core/abacus-core-v4.1.1'),
+  pr(29, 'core/abacus-core-v4.1.0'),
+  pr(28, 'core/piyasa-core-v0.3.0'),
+];
+expect('Abacus yayılımı yalnız Abacus PR\'ını kapatır', P.supersede(MIXED, '4.1.1').close.map((p) => p.number), [29]);
+expect('Piyasa yayılımı yalnız Piyasa PR\'ını kapatır', P.supersede(MIXED, '0.4.0', piyasa).close.map((p) => p.number), [28]);
+expect('Piyasa temizliği en yüksek Piyasa sürümünü tutar', P.supersede(MIXED, null, piyasa).keep.number, 31);
+
 console.log(fail ? `\n${fail} test başarısız` : '\nTüm testler geçti');
 process.exit(fail ? 1 : 0);
