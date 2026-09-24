@@ -169,7 +169,43 @@ function sourceBranch(dir) {
   } catch { return null; }
 }
 
-function measure({ sourceDir, targetDir, settingsFile, skillsSource, skillsTarget }) {
+// ─── Kullanıcı talimatı (~/.claude/CLAUDE.md) ───────────────────────────────
+// İletişim kuralları (standartlar/iletisim-standardi.md) her projedeki her oturuma ulaşmalı;
+// Claude Code ~/.claude/CLAUDE.md dosyasını her oturumda okur. Kaynak, standarttaki işaretli
+// bölümdür (2026-09-24: proje sahibi 6 günde 5 kez "anlamadım" dedi).
+// Becerilerdeki kuralın aynısı: BİZİM OLMAYAN dosyaya dokunulmaz. İlk satırdaki işaret yoksa
+// dosya proje sahibinindir; üzerine yazılmaz, birleştirme ona bırakılır.
+const INSTRUCTIONS_BEGIN = '<!-- kullanici-talimati:basla -->';
+const INSTRUCTIONS_END = '<!-- kullanici-talimati:bitir -->';
+const MANAGED_MARK = '<!-- SNN-Standartlar yönetir: standartlar/iletisim-standardi.md · elle değiştirme, setup-machine.js yeniden yazar -->';
+
+// SAF: standart metni → kullanıcı talimatı (işaretli bölüm yoksa null)
+function instructionsFrom(standardText) {
+  const text = String(standardText || '').replace(/\r\n/g, '\n');
+  const a = text.indexOf(INSTRUCTIONS_BEGIN);
+  const b = text.indexOf(INSTRUCTIONS_END);
+  if (a < 0 || b < a) return null;
+  return `${MANAGED_MARK}\n\n${text.slice(a + INSTRUCTIONS_BEGIN.length, b).trim()}\n`;
+}
+
+// SAF: istenen içerik + hedefin durumu → eylem.
+// current: { state: 'var', text } | { state: 'yok' } | { state: 'okunamadi' } (olcum-standardi.md, Kural 3)
+function planInstructions(wanted, current) {
+  if (wanted === null) return { action: 'no-source' };
+  if (current.state === 'okunamadi') return { action: 'unreadable' };
+  if (current.state === 'yok') return { action: 'create', content: wanted };
+  const text = current.text.replace(/\r\n/g, '\n');
+  if (!text.startsWith(MANAGED_MARK)) return { action: 'conflict' };
+  return text === wanted ? { action: 'same' } : { action: 'update', content: wanted };
+}
+
+function readState(file) {
+  try { return { state: 'var', text: fs.readFileSync(file, 'utf8') }; } catch (e) {
+    return e && e.code === 'ENOENT' ? { state: 'yok' } : { state: 'okunamadi' };
+  }
+}
+
+function measure({ sourceDir, targetDir, settingsFile, skillsSource, skillsTarget, instructionsSource, instructionsTarget }) {
   const sourceFiles = listFiles(sourceDir);
   const targetFiles = listFiles(targetDir);
   const same = (f) => {
@@ -186,7 +222,11 @@ function measure({ sourceDir, targetDir, settingsFile, skillsSource, skillsTarge
   const sources = [{ name: 'SNN-Standartlar (canlı kopya)', dir: skillsSource }, ...extraSkillSources()];
   const skills = planSkills(sources, skillsTarget, sameSkill);
   const settingsText = (() => { try { return fs.readFileSync(settingsFile, 'utf8'); } catch { return ''; } })();
-  return { files, skills, settings: planSettings(settingsText, sourceFiles), sourceFiles, targetFiles, settingsText, skillsSource, skillsTarget };
+  const source = instructionsSource ? readState(instructionsSource) : { state: 'yok' };
+  const instructions = instructionsTarget
+    ? planInstructions(source.state === 'var' ? instructionsFrom(source.text) : null, readState(instructionsTarget))
+    : { action: 'no-source' };
+  return { files, skills, settings: planSettings(settingsText, sourceFiles), instructions, sourceFiles, targetFiles, settingsText, skillsSource, skillsTarget };
 }
 
 function backup(targetDir) {
@@ -196,7 +236,7 @@ function backup(targetDir) {
   return dest;
 }
 
-function apply({ sourceDir, targetDir, settingsFile, skillsSource, skillsTarget }, plan) {
+function apply({ sourceDir, targetDir, settingsFile, skillsSource, skillsTarget, instructionsTarget }, plan) {
   // ÇAKIŞMA VARSA HİÇBİR ŞEY UYGULANMAZ. Yanlış becerinin kurulması, hiç kurulmamasından
   // daha pahalıdır: yanlış olan sessizce çalışır (SNN-Abacus-Core bildirimi #59).
   if (plan.skills && plan.skills.conflicts && plan.skills.conflicts.length) {
@@ -230,6 +270,13 @@ function apply({ sourceDir, targetDir, settingsFile, skillsSource, skillsTarget 
     JSON.parse(next); // bozuk JSON yazmaktansa patla
     fs.writeFileSync(settingsFile, next);
   }
+  // Yalnız oluşturma ve güncelleme yazılır; çakışma ve okunamama durumunda dosyaya dokunulmaz.
+  const ins = plan.instructions || { action: 'no-source' };
+  if (instructionsTarget && (ins.action === 'create' || ins.action === 'update')) {
+    if (ins.action === 'update' && backupDir) fs.copyFileSync(instructionsTarget, path.join(backupDir, 'CLAUDE.md.yedek'));
+    fs.mkdirSync(path.dirname(instructionsTarget), { recursive: true });
+    fs.writeFileSync(instructionsTarget, ins.content);
+  }
   return { backupDir };
 }
 
@@ -249,6 +296,15 @@ function report(plan) {
   lines.push(`settings.json: ${plan.settings.stale.length} eski ad, ${plan.settings.missing.length} eksik kayit`);
   plan.settings.stale.forEach((s) => lines.push(`   ~ ${s.from} -> ${s.to || 'KARSILIGI YOK (elle bak)'}`));
   plan.settings.missing.forEach((s) => lines.push(`   ! ${s.file} (${s.event}) settings.json'da kayitli degil`));
+  const INSTRUCTION_STATUS = {
+    create: 'oluşturulacak',
+    update: 'güncellenecek',
+    same: 'güncel',
+    conflict: '✗ senin kendi dosyan var, dokunulmadı. standartlar/iletisim-standardi.md içindeki işaretli bölümü elle ekle',
+    unreadable: '? okunamadı, dokunulmadı',
+    'no-source': 'kaynak yok (standartlar/iletisim-standardi.md işaretli bölüm)',
+  };
+  lines.push(`Kullanıcı talimatı (~/.claude/CLAUDE.md): ${INSTRUCTION_STATUS[(plan.instructions || { action: 'no-source' }).action]}`);
   return lines.join('\n');
 }
 
@@ -260,6 +316,8 @@ function main() {
     settingsFile: process.env.SNN_SETTINGS || path.join(home, '.claude', 'settings.json'),
     skillsSource: process.env.SNN_SKILLS_SOURCE || path.join(home, '.claude', 'standartlar-canli', 'skills'),
     skillsTarget: process.env.SNN_SKILLS_TARGET || path.join(home, '.claude', 'skills'),
+    instructionsSource: process.env.SNN_INSTRUCTIONS_SOURCE || path.join(home, '.claude', 'standartlar-canli', 'standartlar', 'iletisim-standardi.md'),
+    instructionsTarget: process.env.SNN_INSTRUCTIONS_TARGET || path.join(home, '.claude', 'CLAUDE.md'),
   };
   if (!fs.existsSync(paths.sourceDir)) {
     console.error(`Kaynak yok: ${paths.sourceDir}\nCanli kopyayi indirin: docs/makine-kurulumu.md`);
@@ -283,4 +341,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { listFiles, planFiles, planSkills, skillNames, extraSkillSources, planSettings, rewriteSettings, measure, apply, report, RENAMES, REGISTRY, BACKUP_PREFIX };
+module.exports = { listFiles, planFiles, planSkills, skillNames, extraSkillSources, planSettings, rewriteSettings, measure, apply, report, instructionsFrom, planInstructions, RENAMES, REGISTRY, BACKUP_PREFIX, INSTRUCTIONS_BEGIN, INSTRUCTIONS_END, MANAGED_MARK };
