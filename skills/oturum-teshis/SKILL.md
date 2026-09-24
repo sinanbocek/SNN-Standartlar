@@ -32,6 +32,8 @@ node "<ev>/.claude/standartlar-canli/quality/session-digest.js" --oturum <id>
 
 Bu oturum için `--oturum <id>` yerine `--son` kullan.
 
+Şikâyet maliyetle ilgiliyse ("neden bu kadar pahalı") token satırına bak. Yük genellikle girdidir: her model yanıtı, o ana kadarki bütün bağlamı yeniden okur. Para karşılığını hesaplama; fiyat oranları betiğin bilgisi dışında.
+
 ## 4. İşaretli yerleri oku
 
 ```

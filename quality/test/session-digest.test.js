@@ -3,7 +3,7 @@
 // Örnek satırlar gerçek Claude Code oturum kaydının yapısını taklit eder (alan adları birebir).
 // Gerçek kayıt depoya konmaz: kişisel veridir ve bu depo herkese açıktır.
 'use strict';
-const { parseTranscript, detect, stats, render, projectDirName } = require('../session-digest');
+const { parseTranscript, detect, stats, render, report, projectDirName } = require('../session-digest');
 
 let fail = 0;
 const expect = (name, actual, wanted) => {
@@ -60,6 +60,22 @@ expect('araç hatası', s.toolErrors, 1);
 expect('sessiz kalma uyarısı', s.silentTurns, 2);
 expect('PR bağlantıları', s.prs, [91]);
 expect('süre dakika', s.minutes, 42);
+
+console.log('— token sayıları');
+// Kayıtta aynı model yanıtı birden çok satıra bölünür ve her satır aynı `usage` değerini taşır
+// (2026-09-24: bu oturumda 173 yanıt, 477 satır). Yanıt kimliğiyle bir kez sayılmazsa toplam ~3 kat şişer.
+const usage = { input_tokens: 2, cache_creation_input_tokens: 100, cache_read_input_tokens: 5000, output_tokens: 40 };
+const reply = (id, content) => ({ type: 'assistant', message: { id, role: 'assistant', usage, content: [content] } });
+const tok = stats(parseTranscript(jsonl([
+  reply('m1', { type: 'thinking', thinking: '' }), reply('m1', { type: 'text', text: 'a' }), reply('m1', { type: 'tool_use', name: 'Bash', input: { command: 'ls' } }),
+  reply('m2', { type: 'text', text: 'b' }),
+]))).tokens;
+expect('aynı yanıt bir kez sayılır: çıktı', tok.output, 80);
+expect('girdi (önbellek dahil)', tok.input, 2 * (2 + 100 + 5000));
+expect('önbellekten okunan', tok.cacheRead, 10000);
+expect('model yanıtı sayısı', tok.replies, 2);
+expect('raporda token satırı', /çıktı 80 · girdi 10\.204/.test(report('x', parseTranscript(jsonl([reply('m1', { type: 'text', text: 'a' }), reply('m2', { type: 'text', text: 'b' })])))), true);
+expect('token yoksa bilinmiyor denir', stats(parseTranscript(jsonl([human('a')]))).tokens.replies, 0);
 
 console.log('— okuma güvenliği');
 const lines = parseTranscript(jsonl([human('ilk'), '{bozuk satır', bash('echo x')]));

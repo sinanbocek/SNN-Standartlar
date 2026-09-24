@@ -32,7 +32,19 @@ Aynı oturumda dört tökezleme oldu. Üçü kullanıcıya yanlış bilgi olarak
 | `kendi-hatasi` | Ajanın metninde "yanlıştı", "benim hatam", "yanlışlıkla", "düzeltmemi sildi" gibi itiraflar ("yanlış alarm" konuşması sayılmaz) |
 | `tekrarlanan-engel` | Aynı bekçi engeline 2 ya da daha fazla kez takılma |
 
-Sayılar da raporlanır: süre, kullanıcı mesajı, araç çağrısı, araç hatası, "kullanıcı bir süredir haber almadı" uyarısı ve PR'lar.
+Sayılar da raporlanır: süre, kullanıcı mesajı, araç çağrısı, araç hatası, "kullanıcı bir süredir haber almadı" uyarısı, PR'lar ve **token**.
+
+## Token (2026-09-24)
+
+Fikir caveman'in `caveman-stats` becerisinden alındı. Kayıttaki her model yanıtı kendi token sayılarını taşıyor. Aynı yanıt kayıtta birden çok satıra bölünür ve her satırda aynı sayılar tekrarlanır; betik bu yüzden yanıt kimliğiyle **bir kez** sayar. Tekrarlar sayılsaydı toplam yaklaşık 3 kat şişerdi (bu oturumda 173 yanıt, 477 satır).
+
+| Oturum | Model yanıtı | Çıktı | Girdi | Yanıt başına ortalama girdi | Çıktının hacimdeki payı |
+|---|---:|---:|---:|---:|---:|
+| 088c2398 | 175 | 226.801 | 48.221.712 | 275.553 | %0,5 |
+| 52cff32d | 69 | 51.281 | 10.470.888 | 151.752 | %0,5 |
+| 8da3e54e | 1.630 | 1.360.979 | 819.665.780 | 502.862 | %0,2 |
+
+**Ders:** Token hacminin neredeyse tamamı girdi, yani her turda yeniden okunan bağlam. Maliyeti en çok etkileyen şey oturumun uzunluğu, cevapların kısalığı değil. Para karşılığı hesaplanmaz: girdi, önbellek ve çıktı fiyat oranları bu betiğin bilgisi dışında.
 
 ## Ölçüm (2026-09-23, bu depodaki oturumlar)
 
