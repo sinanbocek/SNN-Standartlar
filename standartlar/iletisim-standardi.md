@@ -32,7 +32,7 @@ Talep SNN-Piyasa-Core oturumundan geldi. Asistan sahibe `cd "C:/…/SNN-Piyasa-C
 
 Kalan 36 komutta sahip muhtemelen sessizce düzeltti; bu kısım ölçülmedi. Proje hafızasına yazmak yetmedi: yalnız o projede geçerli. `~/.claude/CLAUDE.md`'ye elle yazmak da yetmez: `setup-machine.js` dosyayı bu standarttan yeniden üretir.
 
-Etiket notu (ölçüm, 2026-09-24): masaüstü uygulaması `powershell` etiketli bloklara "Çalıştır" düğmesi **koymuyor**, yalnız kopyalama simgesi var. Bu, proje sahibinin ekran görüntüsüyle görüldü; PR #106'nın kurulum talimatındaki üç blok örnek alındı. Uygulamanın asistana verdiği talimat, düğmenin `bash` etiketinde çıktığını söylüyor. Bunu proje sahibi henüz görmedi. Bu yüzden etiket `bash`, içerik PowerShell sözdiziminde. Komut bekçisi `bash` etiketli blokları zaten denetler.
+Etiket notu (ölçüm, 2026-09-24): masaüstü uygulaması `powershell` etiketli bloklara "Çalıştır" düğmesi **koymuyor**, yalnız kopyalama simgesi var. Bu, proje sahibinin ekran görüntüsüyle görüldü; PR #106'nın kurulum talimatındaki üç blok örnek alındı. `bash` etiketinde düğme **çıkıyor** ve komutu sahibin PowerShell terminalinde çalıştırıyor (2026-09-25, proje sahibi PR #107'yi `gh pr merge 107 …` bloğunun düğmesiyle birleştirdi). Bu yüzden etiket `bash`, içerik PowerShell sözdiziminde. Komut bekçisi `bash` etiketli blokları zaten denetler.
 
 ## Kurallar
 
