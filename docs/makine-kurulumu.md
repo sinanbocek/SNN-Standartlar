@@ -91,6 +91,12 @@ makinede boş çıkar. İlk çalıştırmada bu yüzden iki bulgu çıktı: `bor
 `<proje kökü>`, `<depo>` gibi yer tutucular başka projelerin dosyalarıdır ve atlanır.
 Bir betiği taşıdığında ya da adını değiştirdiğinde onu çağıran beceriyi de aynı PR'da güncelle.
 
+## Kullanıcı talimatı da aynı paketle gelir (2026-09-24)
+
+`standartlar/iletisim-standardi.md` içindeki işaretli bölüm, aynı betikle `~/.claude/CLAUDE.md` dosyasına **kopyalanır**. Claude Code bu dosyayı her projede, her oturumda okur. Böylece proje sahibine nasıl yazılacağı kuralı her projedeki ajana ulaşır.
+
+**Silme kuralının aynısı:** dosyanın ilk satırında "SNN-Standartlar yönetir" işareti yoksa dosya proje sahibinindir; **üzerine yazılmaz**, rapor "senin kendi dosyan var, dokunulmadı" der. Dosya okunamıyorsa da dokunulmaz (Kural 3). Güncelleme öncesi eski hâl yedek klasörüne `CLAUDE.md.yedek` olarak konur. Testler: `setup/test/setup-machine.test.js` → *"BAŞKASININ CLAUDE.md dosyasına dokunulmaz"*.
+
 ## Kurulum
 
 1. Node.js, `git`, `gh` kurulu olmalı; `gh auth login` yapılmış olmalı.
