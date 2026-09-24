@@ -568,7 +568,52 @@ function grownNames(baseFindings, headFindings) {
   return out;
 }
 
+// SAF: bu satırda ad TANIM konumunda mı? Tanım dört biçimde gelir:
+//   bildirim   : const/let/var/function/class/interface/type/enum ardından
+//   yapı bozma : const { a, b: c } = … · const [a, b] = …
+//   parametre  : function f(a, b) · (a: T) => · a => · metot(a) { · catch (a)
+// İçe aktarma satırı tanım değildir: `import { type X } from …` var olan bir adı kullanır.
+// Parametre ve yapı bozma ilk sürümde yoktu; aile ölçümünde (2026-09-24) uyarıya kaçan gerçek yeni
+// tanımlar bunlardı (Piyasa-Core `saglikliDurum(piyasaZamani = …)`, `const [yil, ay, gn] = …`).
+// Satır tabanlı bir sezgidir, ayrıştırıcı değildir: yapı bozmadaki anahtar (`{ hesapKodu: code }`)
+// da tanım sayılır. Belirsizlikte KATI tarafa, yani kırmızıya düşer.
+const IMPORT_LINE = /^\s*(import|export)\b[^;]*\bfrom\b/;
+const IDENT = '[\\p{L}_$][\\p{L}\\p{N}_$]*';
+function paramLists(text) {
+  const out = [];
+  for (const m of text.matchAll(/\bfunction\b[^(]*\(([^)]*)\)/g)) out.push(m[1]);
+  for (const m of text.matchAll(/\bcatch\s*\(([^)]*)\)/g)) out.push(m[1]);
+  for (const m of text.matchAll(/\(([^()]*)\)\s*(?::\s*[^=()]+)?\s*=>/g)) out.push(m[1]);
+  for (const m of text.matchAll(new RegExp(`(?:^|[^\\p{L}\\p{N}_$.)])(${IDENT})\\s*=>`, 'gu'))) out.push(m[1]);
+  const method = text.match(new RegExp(`^\\s*(?:(?:async|static|public|private|protected|readonly|get|set)\\s+)*${IDENT}\\s*\\(([^)]*)\\)\\s*(?::\\s*[^{]+)?\\{\\s*$`, 'u'));
+  if (method && !/^\s*(if|for|while|switch|catch|return|else)\b/.test(text)) out.push(method[1]);
+  return out;
+}
+function isDefinition(text, name) {
+  if (IMPORT_LINE.test(text)) return false;
+  const n = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const whole = new RegExp(`(?<![\\p{L}\\p{N}_$])${n}(?![\\p{L}\\p{N}_$])`, 'u');
+  if (new RegExp(`(?<![\\p{L}\\p{N}_$])(?:const|let|var|function|class|interface|type|enum)\\s+${n}(?![\\p{L}\\p{N}_$])`, 'u').test(text)) return true;
+  const destructure = text.match(/\b(?:const|let|var)\s*([{[][^=]*[}\]])\s*(?::[^=]*)?=/);
+  if (destructure && whole.test(destructure[1])) return true;
+  const param = new RegExp(`(?:^|[,{[(])\\s*(?:\\.\\.\\.)?${n}\\s*(?=[?:=,)}\\]]|$)`, 'u');
+  return paramLists(text).some((p) => param.test(p));
+}
+
+// Git çağrısı, hata metni günlüğe sızmadan. "fatal: path … exists on disk, but not in <taban>"
+// satırı her yeni dosyada CI günlüğüne düşüyordu (tüketici bildirimi #100 yan gözlemi, 2026-09-24).
+const quietGit = (root, args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', maxBuffer: 1e9, stdio: ['ignore', 'pipe', 'ignore'] });
+const SCANNED_GLOBS = ['*.ts', '*.tsx', '*.js', '*.jsx', '*.mjs', '*.cjs'];
+
 // Diff kipi: yalnız eklenen satırlar + yeni eklenen dosyaların adları
+//
+// ÜÇ SINIF (tüketici bildirimi #100, proje sahibi kararı 2026-09-24):
+//   bulgu (kırmızı) : tabanda depoda HİÇ olmayan Türkçe ad, ya da var olan adın YENİ TANIMI
+//   kullanım (uyarı): tabanda depoda zaten TANIMLAYICI olarak duran bir adın kullanımı — görünür, engellemez
+// Gerekçe: var olan bir adı İngilizceye çevirmek, kaç yerde kullanıldığından bağımsız tek bir yeniden
+// adlandırmadır. Türkçe tipli projelerde (Yönetici-Özeti) bu tipleri kullanan her PR kırmızı yanıyordu;
+// ölçüm (son 137 birleştirme): bulguların %61'i bu türdü, 16 kırmızı birleştirmenin 4'ü yalnız bundan.
+// SQL dosyalarında sınıflama yapılmaz, eski davranış (her büyüyen ad kırmızı) sürer.
 function scanDiff(root, taban) {
   const words = wordSet();
   const exception = readExceptions(root);
@@ -599,12 +644,39 @@ function scanDiff(root, taban) {
     if (!grownIn.has(file)) {
       const head = linesOf(file);
       let base = [];
-      try { base = gitOut(root, ['show', `${mergeBase}:${renamedFrom.get(file) || file}`]).split(/\r?\n/); } catch { /* dosya tabanda yok: her ad yenidir */ }
+      try { base = quietGit(root, ['show', `${mergeBase}:${renamedFrom.get(file) || file}`]).split(/\r?\n/); } catch { /* dosya tabanda yok: her ad yenidir */ }
       // Baş okunamazsa karşılaştırma yapılamaz: eski davranış (her bulgu sayılır) korunur.
       grownIn.set(file, head ? grownNames(fileFindings(base, words, sql), fileFindings(head, words, sql)) : null);
     }
     return grownIn.get(file);
   };
+  // Ad tabanda depoda TANIMLAYICI olarak var mı? Yalnız metinde geçmesi yetmez: yorumda ya da dizgede
+  // duran kelime tanımlayıcı sayılmaz. Aday dosyalar git grep ile bulunur, sonra tarayıcının kendi
+  // ayıklamasıyla okunur. git grep 1 ile çıkarsa ad yoktur; başka bir hata "bilinmiyor"dur ve katı
+  // tarafa düşülür: ad yok sayılır, bulgu kırmızı kalır (olcum-standardi.md Kural 3, bilinçli temkin).
+  const baseIdentifiers = new Map();
+  const existsCache = new Map();
+  const existsAtBase = (name) => {
+    if (existsCache.has(name)) return existsCache.get(name);
+    let candidates = [];
+    try {
+      candidates = quietGit(root, ['grep', '-l', '-w', '-F', name, mergeBase, '--', ...SCANNED_GLOBS])
+        .split('\n').filter(Boolean).map((l) => l.slice(l.indexOf(':') + 1));
+    } catch { /* bulunamadı ya da okunamadı: katı taraf */ }
+    let found = false;
+    for (const f of candidates) {
+      if (!isScanned(f)) continue;
+      if (!baseIdentifiers.has(f)) {
+        let names = new Set();
+        try { names = new Set(fileFindings(quietGit(root, ['show', `${mergeBase}:${f}`]).split(/\r?\n/), words, false).map((x) => x.name)); } catch { /* okunamadı: katı taraf */ }
+        baseIdentifiers.set(f, names);
+      }
+      if (baseIdentifiers.get(f).has(name)) { found = true; break; }
+    }
+    existsCache.set(name, found);
+    return found;
+  };
+  const usage = [];
   for (const { file, line, text } of addedLines(diff)) {
     if (!isScanned(file)) continue;
     const sql = SQL_EXT.test(file);
@@ -613,7 +685,9 @@ function scanDiff(root, taban) {
     const grown = grownOf(file, sql);
     for (const b of lineFindings(text, words, sql, stack)) {
       if (grown && !grown.has(b.name)) continue;
-      if (!isExcepted(b, file, exception)) findings.push({ file, line, ...b });
+      if (isExcepted(b, file, exception)) continue;
+      const isUsage = !sql && grown && !isDefinition(text, b.name) && existsAtBase(b.name);
+      (isUsage ? usage : findings).push({ file, line, ...b });
     }
   }
   const newFiles = gitOut(root, ['diff', '--name-only', '--diff-filter=A', `${taban}...HEAD`]).split('\n').filter(Boolean);
@@ -623,7 +697,7 @@ function scanDiff(root, taban) {
       if (!isExcepted(b, file, exception)) findings.push({ file, line: 0, ...b });
     }
   }
-  return { findings, warnings: [...exception.warnings, ...unusedExceptions(exception)] };
+  return { findings, usage, warnings: [...exception.warnings, ...unusedExceptions(exception)] };
 }
 
 // Tam denetim: git'teki tüm kaynak ve SQL dosyaları
@@ -648,11 +722,25 @@ function scanAll(root) {
 }
 
 // SAF: rapor metni
-function report({ findings, warnings = [], fileCount }, mode) {
+// SAF: var olan adların kullanımı (uyarı) — engellemez, görünür kalır (#100)
+function usageLines(usage) {
+  if (!usage || !usage.length) return [];
+  const byName = new Map();
+  for (const b of usage) byName.set(b.name, (byName.get(b.name) || 0) + 1);
+  const top = [...byName.entries()].sort((a, b) => b[1] - a[1]);
+  return [
+    `⚠ ${usage.length} var olan Türkçe adın kullanımı (${top.length} ayrı ad) — engellemez:`,
+    `  ${top.slice(0, 12).map(([n, c]) => `${n} ×${c}`).join(', ')}${top.length > 12 ? ` … (+${top.length - 12})` : ''}`,
+    '  Bu adlar tabanda zaten tanımlı. Çevirileri projenin kendi teknik borç kaydında yapılır.',
+  ];
+}
+
+function report({ findings, usage = [], warnings = [], fileCount }, mode) {
   const lines = [];
   for (const u of warnings) lines.push(`  ⚠ ${u}`);
   if (!findings.length) {
-    lines.push(`✓ Türkçe tanımlayıcı bulunmadı${fileCount ? ` (${fileCount} dosya tarandı)` : ''}.`);
+    lines.push(`✓ Türkçe tanımlayıcı bulunmadı${fileCount ? ` (${fileCount} dosya tarandı)` : ''}${usage.length ? ' — yeni tanım ya da yeni ad yok' : ''}.`);
+    lines.push(...usageLines(usage));
     return lines.join('\n');
   }
   // Aynı ad tekrar tekrar yazılmasın: ada göre topla, ilk 3 yeri göster
@@ -668,6 +756,8 @@ function report({ findings, warnings = [], fileCount }, mode) {
     const place = g.places.slice(0, 3).join(', ') + (g.places.length > 3 ? ` … (+${g.places.length - 3})` : '');
     lines.push(`  ✗ ${g.name} — ${g.reason} · ${place}`);
   }
+  const usageSection = usageLines(usage);
+  if (usageSection.length) lines.push('', ...usageSection);
   lines.push('');
   lines.push('Kural: standartlar/kod-dili-standardi.md — tanımlayıcılar (dosya adı, değişken, fonksiyon,');
   lines.push('tip, tablo, sütun, API alanı) İngilizce yazılır. Yorumlar, belgeler ve kullanıcıya giden');
@@ -682,6 +772,7 @@ module.exports = {
   pathFindings, readExceptions, addedLines, report, scanDiff, scanAll,
   familyExceptions, familyRoots, wordSet,
   isScanned, isExcepted, unusedExceptions, codePartAt, fileFindings, stackBefore, grownNames,
+  isDefinition,
 };
 
 if (require.main === module) {

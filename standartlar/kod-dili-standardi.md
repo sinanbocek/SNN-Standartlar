@@ -62,7 +62,10 @@ Oysa aile standardı zaten yazılıydı: `SNN-Abacus-Core/AI-RULES.md` ve `ABACU
 
 ### Geçiş kuralı (mevcut projeler)
 
-1. **Yeni kod bu kurala uyar.** Makine kapısı yalnız **eklenen satırları** tarar ve orada yalnız **dosyadaki sayısı artan** Türkçe adı bulgu sayar; bu yüzden eski adlar günlük işi kırmızıya boyamaz. Bir adı çeviren PR, aynı satırda duran eski adlar yüzünden kırılmaz; ama var olan Türkçe bir adı dosyaya bir kez daha yazmak bulgudur (tüketici bildirimi #88, 2026-09-23).
+1. **Yeni kod bu kurala uyar.** Makine kapısı yalnız **eklenen satırları** tarar ve orada yalnız **dosyadaki sayısı artan** Türkçe adı bulgu sayar; bu yüzden eski adlar günlük işi kırmızıya boyamaz. Bir adı çeviren PR, aynı satırda duran eski adlar yüzünden kırılmaz (tüketici bildirimi #88, 2026-09-23). Sayısı artan ad üç sınıfa ayrılır (tüketici bildirimi #100, 2026-09-24):
+   - **Kırmızı:** depoda tabanda hiç bulunmayan Türkçe ad, ya da var olan Türkçe adın **yeni tanımı** (`const`/`let`/`function`/`class`/`interface`/`type`/`enum`, parametre, yapı bozma).
+   - **Uyarı (engellemez):** tabanda zaten tanımlayıcı olarak duran bir adın **kullanımı**: içe aktarma, alan okuma, nesne anahtarı, çağrı. Raporda görünür; çevirisi projenin kendi teknik borç kaydında yapılır.
+   - SQL dosyalarında sınıflama yapılmaz; sayısı artan her ad kırmızıdır.
 2. **Mevcut adlar kırıcı sürüm planıyla değişir.** Tablo/sütun ve dışa açık API alan adları için: kütüğe kayıt açılır, kırıcı sürüm (MAJOR) planlanır, tüketiciler PR ile göç ettirilir. Sessiz yeniden adlandırma yapılmaz.
 3. **Canlıya uygulanmış migration dosyası düzenlenmez**; yeni migration yazılır.
 4. Dokunulan dosyada yakındaki eski adlar fırsat buldukça (aynı kırıcı sürüm planı içinde) düzeltilir.
@@ -85,7 +88,7 @@ Her projenin `AI-RULES.md` / `CLAUDE.md` dosyası bu kurala **atıf yapar**, kur
 | Kapı | Nerede | Ne yapar |
 |---|---|---|
 | **Tarayıcı** | `quality/code-language-scan.js` | Kaynak dosyalardaki tanımlayıcıları ve `.sql` dosyalarındaki tablo/sütun adlarını tarar. Türkçe harf (`ç ğ ı ö ş ü`) içeren ya da kelime listesinde geçen adları raporlar. Yorumlar, dizgeler ve belgeler **taranmaz**. |
-| **GitHub akışı** | `.github/workflows/kod-dili.yml` (görevli) + `ornek/kod-dili.yml` (projeye kopyalanan tek dosya) | Her PR'da ve main gönderiminde **eklenen satırları** tarar; tabana göre dosyadaki sayısı artan Türkçe ad varsa kırılır. |
+| **GitHub akışı** | `.github/workflows/kod-dili.yml` (görevli) + `ornek/kod-dili.yml` (projeye kopyalanan tek dosya) | Her PR'da ve main gönderiminde **eklenen satırları** tarar; yeni Türkçe ad ya da var olan Türkçe adın yeni tanımı varsa kırılır. Var olan adın kullanımı uyarıdır. |
 | **Uyarı kipi (yazma anı)** | `quality/code-language-warn.js` + `guard-code-language` bekçisi | Ajan bir kaynak dosyaya Türkçe tanımlayıcı **yazarken** not düşer. **Engellemez.** Yalnız yeni yazılan metni denetler; dosyanın geri kalanını değil. Tüm projelerde çalışır, kurulum gerekmez. |
 
 ### Kullanım
