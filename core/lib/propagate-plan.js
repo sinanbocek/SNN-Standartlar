@@ -1,11 +1,28 @@
-// Çekirdek (SNN-Abacus-Core) yeni sürümünün tüketici projelere yayılma planı. SAF: ağa ve diske dokunmaz.
+// Çekirdek yeni sürümünün tüketici projelere yayılma planı. SAF: ağa dokunmaz; yalnız çekirdek listesini okur.
+// Çekirdekler core/data/cores.json'dadır (SNN-Abacus-Core, SNN-Piyasa-Core — talep #103, 2026-09-24).
 // Karar (2026-09-15, proje sahibi): çekirdekte sürüm çıkınca her tüketiciye GÜNCELLEME PR'ı açılır; projenin kendi
 // kontrolleri yeni sürümü sınar. Ana sürüm atlanıyorsa kütük kaydı PR'ın içinde gelir (bot kütüğe doğrudan yazmaz;
 // kayıt, PR onaylanınca kütüğe girer). Otomatik birleştirme yok.
 'use strict';
 
-const PACKAGE = '@snn/abacus-core';
-const CORE_REPO = 'sinanbocek/SNN-Abacus-Core';
+// ÇEKİRDEK LİSTESİ. Yayılım mantığı çekirdek başına KOPYALANMAZ: iki kopya bir gün ayrışır ve
+// "tek açık PR" kuralı iki araçta iki ayrı şekilde uygulanır (#103'ün reddettiği yol).
+const CORES = require('../data/cores.json').cores.map((c) => ({ ...c, name: c.repo.split('/')[1] }));
+const ABACUS = CORES[0];
+
+// Geriye dönük: eski adlar Abacus'u gösterir.
+const PACKAGE = ABACUS.package;
+const CORE_REPO = ABACUS.repo;
+
+// SAF: depo adı ya da paket adı → çekirdek | null.
+// Bilinmeyen depo SESSİZCE Abacus sayılmaz: yanlış çekirdeğin sürümü tüketicilere yayılırdı.
+function coreOf(key) {
+  const k = String(key || '').trim().toLowerCase();
+  return CORES.find((c) => c.repo.toLowerCase() === k || c.package === k) || null;
+}
+
+// SAF: yeni güncelleme dalının adı → "core/piyasa-core-v0.4.0"
+const branchFor = (core, version) => `${core.branchPrefixes[0]}${String(version || '').replace(/^v/, '')}`;
 
 // SAF: "v3.2.0" / "3.2.0" → [3,2,0] | null
 function parse(v) {
@@ -27,16 +44,19 @@ function decide({ locked, target, hasOpenPr }) {
   if (!locked) return { action: 'atla', reason: 'kilit dosyasında çekirdek sürümü okunamadı' };
   if (compare(locked, target) >= 0) return { action: 'atla', reason: `güncel (${locked})` };
   if (hasOpenPr) return { action: 'atla', reason: 'bu sürüm için açık güncelleme PR\'ı zaten var' };
-  const major = parse(locked)[0] !== parse(target)[0];
+  // 0.x SÜRÜMDE İKİNCİ RAKAM ANA SÜRÜMDÜR (semver): 0.3 → 0.4 kırıcı olabilir. Yalnız ilk rakama
+  // bakmak Piyasa-Core'un (0.4.0) her geçişini "uyumlu" gösterip uyarıyı ve kütük kaydını düşürürdü.
+  const [x, y] = [parse(locked), parse(target)];
+  const major = x[0] !== y[0] || (x[0] === 0 && x[1] !== y[1]);
   return { action: 'pr', major, from: locked, to: String(target).replace(/^v/, '') };
 }
 
 // SAF: package.json bağımlılık tanımını hedef sürüme çevirir; depo yazımını (büyük/küçük harf) korur.
 // "#v2.7.0" (sabit) → "#v3.2.0"; "#semver:^3.0.0" → "#semver:^3.2.0"
-function rewriteSpec(spec, target) {
+function rewriteSpec(spec, target, core = ABACUS) {
   const t = String(target).replace(/^v/, '');
   const m = String(spec).match(/^(github:[^#]+)#(.*)$/);
-  if (!m) return `github:${CORE_REPO}#semver:^${t}`;
+  if (!m) return `github:${core.repo}#semver:^${t}`;
   if (/^v?\d+\.\d+\.\d+$/.test(m[2])) return `${m[1]}#v${t}`;
   return `${m[1]}#semver:^${t}`;
 }
@@ -64,23 +84,23 @@ function nextDebtId(texts) {
 }
 
 // SAF: ana sürüm geçişi için standart kütük kaydı (Sade Anlatım + Teknik Detay)
-function majorDebtRecord({ id, from, to, date, usage }) {
+function majorDebtRecord({ id, from, to, date, usage, core = ABACUS }) {
   return [
-    `### ${id} — Çekirdek (SNN-Abacus-Core) ${from} → ${to} ana sürüm geçişi incelenmeli`,
+    `### ${id} — Çekirdek (${core.name}) ${from} → ${to} ana sürüm geçişi incelenmeli`,
     '',
     `- **Tespit Tarihi:** ${date} (çekirdek v${to} yayını; otomatik güncelleme PR'ı)`,
     '- **Öncelik:** P2 (Planlı)',
     '',
     '#### 🟢 Sade Anlatım',
     '',
-    `- **Sorun ne?** Proje, ortak hesaplama çekirdeğinin eski ana sürümünü (${from}) kullanıyor; yeni ana sürüm (${to}) çıktı. Ana sürüm değişikliği, bazı fonksiyonların adının ya da davranışının değişmiş olabileceği anlamına gelir.`,
-    '- **Benzetme:** Bütün şubelerin kullandığı hesap makinesinin yeni modeli çıktı; tuşların bir kısmı yer değiştirmiş olabilir. Eski modelde kalan şube, merkezde düzeltilen hataların düzeltmesini de almaz.',
-    '- **Çözülmezse ne olur?** Çekirdekte yapılan düzeltmeler ve yenilikler bu projeye ulaşmaz; projeler arasında aynı hesap farklı sonuç verebilir. Aradaki fark büyüdükçe geçiş zorlaşır.',
+    `- **Sorun ne?** Proje, ${core.summary}nin eski ana sürümünü (${from}) kullanıyor; yeni ana sürüm (${to}) çıktı. Ana sürüm değişikliği, bazı fonksiyonların adının ya da davranışının değişmiş olabileceği anlamına gelir.`,
+    `- **Benzetme:** ${core.analogy}`,
+    `- **Çözülmezse ne olur?** Çekirdekte yapılan düzeltmeler ve yenilikler bu projeye ulaşmaz; projeler arasında ${core.drift}. Aradaki fark büyüdükçe geçiş zorlaşır.`,
     '- **Senden beklenen karar:** Güncelleme PR\'ının kontrolleri yeşilse birleştirmeye onay; kırmızıysa geçişin ne zaman yapılacağı.',
     '',
     '#### 🔧 Teknik Detay',
     '',
-    `- **Açıklama:** Kilit dosyasında \`@snn/abacus-core\` ${from}; hedef ${to}. Değişiklik ayrıntısı güncelleme PR'ının açıklamasında (çekirdeğin CHANGELOG bölümleri).`,
+    `- **Açıklama:** Kilit dosyasında \`${core.package}\` ${from}; hedef ${to}. Değişiklik ayrıntısı güncelleme PR'ının açıklamasında (çekirdeğin CHANGELOG bölümleri).`,
     `- **Kullanım (PR açılışındaki ölçüm):** ${usage || 'ölçülmedi'}`,
     '- **Çözüm yönü:** (1) Güncelleme PR\'ında kontrolleri oku. (2) Kırılan yerleri CHANGELOG\'daki göç notlarına göre düzelt. (3) Yeşil olunca birleştir; bu kaydı arşive taşı.',
     '- **Neden Şimdi Çözülmüyor:** Otomatik güncelleme PR\'ı ile açıldı; inceleme ve karar proje sahibinde.',
@@ -103,6 +123,8 @@ function insertRecord(debtText, record) {
 // ─── Aşılmış PR'lar ─────────────────────────────────────────────────────────
 //
 // KURAL: bir tüketicide aynı anda YALNIZ BİR açık çekirdek güncelleme PR'ı bulunur — en güncel olan.
+// Kural ÇEKİRDEK BAŞINADIR (#103, 2026-09-24): Abacus için bir, Piyasa için bir. Dal önekleri
+// çekirdeğe özgü olduğu için Abacus yayılımı Piyasa PR'ını "aşılmış" sayıp kapatmaz.
 //
 // VAKA (SNN-Abacus-Core bildirimi #79, 2026-09-19): çekirdek bir günde beş sürüm yayımladı
 // (3.5.0 → 3.5.1 → 4.0.0 → 4.1.0 → 4.1.1). Her yayılım yeni PR açtı, eskisini KAPATMADI. Sekiz
@@ -113,11 +135,11 @@ function insertRecord(debtText, record) {
 //
 // İKİ ÖNEK: dal adı bir dönem `cekirdek/`, sonra `core/` oldu. Yalnız birini aramak eskileri
 // sonsuza kadar açık bırakır — bildiren kişi elle temizlikte tam bunu yaşadı (Gunum-Var #176).
-const BRANCH_PREFIXES = ['core/abacus-core-v', 'cekirdek/abacus-core-v'];
+const BRANCH_PREFIXES = ABACUS.branchPrefixes;
 
-// SAF: dal adından çekirdek sürümü → '4.1.1' ya da null
-function versionOfBranch(branch) {
-  for (const prefix of BRANCH_PREFIXES) {
+// SAF: dal adından çekirdek sürümü → '4.1.1' ya da null. Yalnız VERİLEN çekirdeğin önekleri sayılır.
+function versionOfBranch(branch, core = ABACUS) {
+  for (const prefix of core.branchPrefixes) {
     if (String(branch || '').startsWith(prefix)) return String(branch).slice(prefix.length) || null;
   }
   return null;
@@ -132,9 +154,9 @@ function versionOfBranch(branch) {
 // KAPATILMAZ, yalnız bildirilir. Ölçüm (#79 eki, 2026-09-23): kapatılan 14 PR'ın 14'ü de tek
 // makine commit'iydi ve hiçbirinde inceleme yoktu — yani bu koruma nadiren devreye girer, ama
 // girdiğinde birinin işini korur.
-function supersede(prs, keepVersion = null) {
+function supersede(prs, keepVersion = null, forCore = ABACUS) {
   const core = (prs || [])
-    .map((pr) => ({ ...pr, version: versionOfBranch(pr.headRefName) }))
+    .map((pr) => ({ ...pr, version: versionOfBranch(pr.headRefName, forCore) }))
     .filter((pr) => pr.version && parse(pr.version));
   if (!core.length) return { close: [], keep: null, touched: [] };
 
@@ -175,4 +197,4 @@ const supersedeComment = (pr, keep, touched = false) => {
   return head + note;
 };
 
-module.exports = { PACKAGE, CORE_REPO, parse, compare, decide, rewriteSpec, changelogBetween, nextDebtId, majorDebtRecord, insertRecord, supersede, versionOfBranch, supersedeComment, BRANCH_PREFIXES };
+module.exports = { CORES, ABACUS, coreOf, branchFor, PACKAGE, CORE_REPO, parse, compare, decide, rewriteSpec, changelogBetween, nextDebtId, majorDebtRecord, insertRecord, supersede, versionOfBranch, supersedeComment, BRANCH_PREFIXES };

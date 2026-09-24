@@ -1,5 +1,7 @@
-# Ortak görevli: çekirdekte (SNN-Abacus-Core) yeni sürüm etiketi çıkınca, çekirdeği kullanan her projeye güncelleme PR'ı açar.
+# Ortak görevli: bir çekirdekte yeni sürüm etiketi çıkınca, o çekirdeği kullanan her projeye güncelleme PR'ı açar.
 # Çekirdek deposu bunu kendi .github/workflows/cekirdek-yayilim.yml dosyasından çağırır (ornek/cekirdek-yayilim.yml).
+# HANGİ ÇEKİRDEK: çağıran deponun adı (github.repository — çağrılan akışta çağıranın deposudur).
+# Çekirdekler core/data/cores.json'dadır; listede olmayan depodan çağrılırsa iş durur (talep #103, 2026-09-24).
 name: core-propagate
 
 on:
@@ -56,8 +58,9 @@ jobs:
           SURUM: ${{ inputs.version }}
           UYGULA: ${{ inputs.apply }}
           YALNIZ: ${{ inputs.only }}
+          CEKIRDEK: ${{ github.repository }}
         run: |
-          ARGS=(--surum "$SURUM")
+          ARGS=(--surum "$SURUM" --cekirdek "$CEKIRDEK")
           if [ "$UYGULA" = "true" ]; then ARGS+=(--uygula); fi
           if [ -n "$YALNIZ" ]; then ARGS+=(--yalniz "$YALNIZ"); fi
           set -o pipefail
