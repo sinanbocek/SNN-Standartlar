@@ -52,7 +52,11 @@ function issueBody(gap, ctx = {}) {
 //
 // Elle kapatilan ama eksigi SUREN issue yeniden acilir: kutuk senkronundaki kuralin aynisi.
 // Sebep: kapatmak eksigi gidermez; kapanis yalnizca olcumden gelir.
-function plan({ gaps = [], issues = [] } = {}) {
+//   unknown: ölçülemeyen ölçüt kimlikleri. Onlara dokunulmaz: açık issue KAPATILMAZ, yeni issue
+//   AÇILMAZ (olcum-standardi.md, Kural 3). Okunamayan girdi "giderildi" demek değildir; kapatılsaydı
+//   okuma düzelince ertesi gün yeniden açılırdı.
+function plan({ gaps = [], issues = [], unknown = [] } = {}) {
+  const skip = new Set(unknown);
   const actions = [];
   const open = new Map();
   for (const i of issues) {
@@ -68,7 +72,7 @@ function plan({ gaps = [], issues = [] } = {}) {
     if (existing.title !== issueTitle(g)) actions.push({ type: 'update', id: g.id, number: existing.number, title: issueTitle(g) });
   }
   for (const [id, i] of open) {
-    if (!wanted.has(id) && i.state === 'OPEN') actions.push({ type: 'close', id, number: i.number });
+    if (!wanted.has(id) && !skip.has(id) && i.state === 'OPEN') actions.push({ type: 'close', id, number: i.number });
   }
   return actions;
 }
@@ -77,8 +81,9 @@ function plan({ gaps = [], issues = [] } = {}) {
 function report(byProject) {
   const lines = [];
   let total = 0;
-  for (const { project, actions, error } of byProject) {
+  for (const { project, actions, error, unknown = [] } of byProject) {
     if (error) { lines.push(`  ✗ ${project}: ${error}`); continue; }
+    if (unknown.length) lines.push(`  ? ${project}: ölçülemedi — ${unknown.join(', ')} (bu ölçütlerin issue'larına dokunulmadı)`);
     if (!actions.length) { lines.push(`  ✓ ${project}: değişiklik yok`); continue; }
     total += actions.length;
     lines.push(`  ${project}:`);
@@ -144,9 +149,9 @@ function run({ baseDir, apply = false, only = null }) {
     try {
       const result = compliance.check(dir);
       if (result.excluded) { rows.push({ project: p.dir, actions: [] }); continue; }
-      const actions = plan({ gaps: result.gaps, issues: readIssues(p.repo) });
+      const actions = plan({ gaps: result.gaps, unknown: result.unknown, issues: readIssues(p.repo) });
       if (apply && actions.length) applyActions(p.repo, actions);
-      rows.push({ project: p.dir, actions });
+      rows.push({ project: p.dir, actions, unknown: result.unknown });
     } catch (e) {
       rows.push({ project: p.dir, error: (e.stderr || e.message || '').toString().split('\n')[0] });
     }
