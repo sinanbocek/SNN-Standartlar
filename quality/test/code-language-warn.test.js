@@ -66,5 +66,10 @@ const cok = ADLAR.map((a) => `const ${a} = 1;`).join('\n');
 const mc = w.warnMessage(w.warnFindings(cok, 'src/a.ts', words, empty), 'src/a.ts');
 expect('uzun liste kırpılır', mc.includes(`${ADLAR.length - w.MAX_NAME} ad daha`), true);
 
+console.log('— satır başındaki düzenli ifade ve JSX olmayan dosya (#102)');
+const kirik = 'const ALL_ITEMS =\n  /(kalemlerin tamamına teklif vermek zorunda)/;';
+expect('satır başındaki düzenli ifade uyarmaz', adlar(kirik), []);
+expect('noktalı virgülsüz tanım .ts dosyasında uyarır', adlar('function hesaplaTutar() {', 'src/a.ts'), ['hesaplaTutar']);
+
 console.log(fail ? `\n${fail} test başarısız` : '\nTüm testler geçti');
 process.exit(fail ? 1 : 0);

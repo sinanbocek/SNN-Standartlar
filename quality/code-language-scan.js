@@ -136,12 +136,22 @@ function stripTemplates(line, stack = []) {
 // taşıyordu. Kendi kapımız yakaladı: bu dosya 14 yanlış alarm verdi.
 // Tersi de yanlıştır: `` `http://x` `` satırında yorum önce kesilirse şablon bozulur. Bu yüzden
 // karakter karakter yürünür ve `//` yalnız ŞABLON DIŞINDAYKEN kesilir.
-const REGEX_OPENERS = /[(,=:[!&|?>]/;
+//
+// SATIR ARASI BAĞLAM (SNN-Ihale bildirimi #102, 2026-09-24): Prettier uzun bir düzenli ifadeyi
+// `=` sonrasında alt satıra kırar. Satır başındaki `/` önünde işaret göremeyince bölme sanılıyor,
+// gövdedeki Türkçe arama metni tanımlayıcı oluyordu. Bildirilen satır:
+//   const ALL_ITEMS =
+//     /(kalemlerin tamamına teklif vermek zorunda|…)/;          → tamamına, teklif, bütün
+// Çözüm: önceki satırın son kod parçası (`carry`) bir sonraki satıra taşınır. Tanımlayıcı ya da
+// `)` ile biten satırdan sonra `/` hâlâ bölmedir (`total\n  / count`).
+// `;` ve `{` deyim başıdır; `return` gibi anahtar kelimelerden sonra da düzenli ifade gelir.
+const REGEX_OPENERS = /[(,=:[!&|?>;{]/;
+const REGEX_KEYWORD = /(?:^|[^\w$])(?:return|typeof|case|do|else|in|of|void|yield|await|throw|delete|instanceof)\s*$/;
 
-function cutLineComment(line, stack = []) {
+function cutLineComment(line, stack = [], carry = '') {
   const level = [...stack];
   let out = '';
-  let prev = '';
+  let prev = String(carry).trimEnd().slice(-1);
   for (let i = 0; i < line.length; i += 1) {
     const ch = line[i];
     if (level.length) {                                  // şablonun içi: olduğu gibi aktarılır
@@ -182,7 +192,7 @@ function cutLineComment(line, stack = []) {
       continue;
     }
     if (ch === '/' && (line[i + 1] === '/' || line[i + 1] === '*')) return out;   // satır/blok yorumu
-    if (ch === '/' && REGEX_OPENERS.test(prev)) {
+    if (ch === '/' && (REGEX_OPENERS.test(prev) || REGEX_KEYWORD.test(out.trim() ? out : carry))) {
       // DÜZENLİ İFADE GÖVDESİ atlanır. `[` … `]` içindeki `/` gövdeyi KAPATMAZ — eski dizge
       // temelli kural bunu bilmiyordu ve `/`([^`\s]+)`/g` gibi bir gövdeyi yarıda kesiyordu.
       let j = i + 1;
@@ -213,12 +223,27 @@ function cutLineComment(line, stack = []) {
 // Satır bazlıdır (diff kipinde tam dosya elde yok). Bilinen sınır: çok satırlı blok yorumun
 // ortasındaki satırlar '*' ile başlamıyorsa taranabilir; bu yüzden '*' ile başlayan satır atılır.
 // Eski imza (durumsuz): tek satırı kendi başına tarar.
-function codePart(line, sql, stack = []) {
-  return codePartAt(line, sql, stack).code;
+function codePart(line, sql, stack = [], ctx = {}) {
+  return codePartAt(line, sql, stack, ctx).code;
 }
 
-// Durumu TAŞIYAN sürüm: { code, stack } döner. Çok satırlı şablonu doğru izlemek için gerekir.
-function codePartAt(line, sql, stack = []) {
+// SAF: dosya JSX taşıyabilir mi? Ekran yazısı (etiketler arası Türkçe metin) yalnız bu dosyalarda olur.
+//
+// NEDEN (2026-09-24, #102 incelemesi): ekran yazısı ayıklayıcısı HER dosyada çalışıyordu. `=` ya da
+// sonda `;` taşımayan etiketsiz satırı yazı sayıp atıyordu; noktalı virgülsüz yazılan projelerde
+// bu, gerçek kod demekti. `function mikroGorevleriBosalt() {` satırı tamamen siliniyordu.
+// Ölçüm (11 proje, JSX olmayan ts/js dosyaları): 2.514 gerçek ad görünmüyordu — Gunum-Var 1.150,
+// SNN-Yonetici-Ozeti 1.153. Yeni bir Türkçe TANIM da kapıdan geçebiliyordu.
+const isJsxFile = (yol) => /\.(tsx|jsx)$/i.test(String(yol));
+
+// Durumu TAŞIYAN sürüm: { code, stack, carry } döner.
+//   stack: çok satırlı şablon durumu (#76)
+//   carry: önceki satırın son kod parçası — satır başındaki `/` düzenli ifade mi, bölme mi? (#102)
+// ctx.jsx: dosya JSX taşıyabilir mi (isJsxFile). Verilmezse true: dosyası bilinmeyen tek satır
+// eskisi gibi değerlendirilir.
+function codePartAt(line, sql, stack = [], ctx = {}) {
+  const { jsx = true, carry = '' } = ctx;
+  const text = (code) => (jsx ? stripJsxText(code) : code);
   // CRLF SOYULUR — ÖNCE. Yorum soyma kuralları `.*$` ile biter; JavaScript'te `.` satır sonunu
   // (\r dahil) EŞLEŞTİRMEZ ve `$` dizgenin sonunu ister. Satır `\r` ile bitiyorsa `--.*$` ve
   // `//.*$` hiç eşleşmez, yani YORUM HİÇ SOYULMAZ ve içindeki Türkçe düzyazı tanımlayıcı
@@ -230,14 +255,14 @@ function codePartAt(line, sql, stack = []) {
   // ekran metninin parçasıdır, kod değil.
   if (stack.length) {
     const inside = stripTemplates(s, stack);
-    return { code: stripJsxText(inside.code), stack: inside.stack };
+    return { code: text(inside.code), stack: inside.stack, carry: '' };
   }
-  if (/^\s*\*/.test(s)) return { code: '', stack: [] }; // blok yorumun gövde satırı
+  if (/^\s*\*/.test(s)) return { code: '', stack: [], carry }; // blok yorumun gövde satırı
   if (sql) {
     s = s.replace(/'(?:[^'\\]|\\.)*'/g, "''");        // SQL dizgesi (SQL'de şablon yoktur)
     s = s.replace(/--.*$/, '');                        // SQL satır yorumu
     s = s.replace(/\/\*[\s\S]*?(\*\/|$)/g, ' ');
-    return { code: s, stack: [] };
+    return { code: s, stack: [], carry: '' };
   }
   // DİZGE, YORUM ve DÜZENLİ İFADE tek yürüyüşte soyulur. Eskiden üçü ayrı ayrı ve sabit sırayla
   // değiştiriliyordu; her sıralama bir diğerini bozuyordu (üçü de 2026-09-19'da ölçüldü):
@@ -245,7 +270,9 @@ function codePartAt(line, sql, stack = []) {
   //   - şablon önce soyulunca, yorumdaki ters tırnak durumu açıyordu,
   //   - düzenli ifade dizgeyle soyulunca, `[^/]` içindeki bölü gövdeyi erken kapatıyordu.
   // Tek yürüyüş, hangi bağlamda olduğumuzu bildiği için sıralama sorusunu ortadan kaldırır.
-  s = cutLineComment(s, stack);
+  s = cutLineComment(s, stack, carry);
+  // Boş ya da yalnız yorum taşıyan satır bağlamı KESMEZ: `=` ile düzenli ifade arasına yorum girebilir.
+  const nextCarry = s.trim() ? s.trimEnd().slice(-40) : carry;
   const tpl = stripTemplates(s, stack);                // şablon dizge (satırlar arası durum taşınır)
   s = tpl.code;
   // Düzenli ifade (regex) gövdesi ekran yazısı taşıyabilir (testlerde getByText(/Ürün ekle/));
@@ -261,7 +288,7 @@ function codePartAt(line, sql, stack = []) {
   s = s.replace(/([(,=:[!&|?>]\s*)\/(?:[^/\n\\]|\\.)+\/[gimsuyd]*/g, '$1/re/');
   s = s.replace(/\/\/.*$/, '');                        // satır yorumu
   s = s.replace(/\/\*[\s\S]*?(\*\/|$)/g, ' ');         // blok yorum (satır içi)
-  return { code: stripJsxText(s), stack: tpl.stack };
+  return { code: text(s), stack: tpl.stack, carry: nextCarry };
 }
 
 // SAF: JSX/HTML etiketleri ARASINDAKİ yazıyı atar. Bu yazı kullanıcıya görünen Türkçe metindir,
@@ -379,8 +406,8 @@ function stripJsxText(line) {
 const IDENTIFIER = /[A-Za-z_$çğıöşüÇĞİÖŞÜ][A-Za-z0-9_$çğıöşüÇĞİÖŞÜ]*/g;
 
 // SAF: tek satırdaki kuralı bozan tanımlayıcılar → [{ ad, neden }]
-function lineFindings(line, words, sql = false, stack = []) {
-  const code = codePart(line, sql, stack);
+function lineFindings(line, words, sql = false, stack = [], ctx = {}) {
+  const code = codePart(line, sql, stack, ctx);
   const out = [];
   const seen = new Set();
   for (const m of code.matchAll(IDENTIFIER)) {
@@ -395,11 +422,14 @@ function lineFindings(line, words, sql = false, stack = []) {
 
 // SAF: bir DOSYANIN tüm satırları — şablon durumu satırdan satıra taşınır.
 // Çok satırlı şablonun orta satırları ancak böyle doğru değerlendirilir (#76).
-function fileFindings(lines, words, sql = false) {
+// Önceki satırın son kod parçası da taşınır: satır başındaki düzenli ifade (#102).
+function fileFindings(lines, words, sql = false, jsx = true) {
   let stack = [];
+  let carry = '';
   const out = [];
   lines.forEach((line, i) => {
-    const { code, stack: next } = codePartAt(line, sql, stack);
+    const { code, stack: next, carry: nextCarry } = codePartAt(line, sql, stack, { jsx, carry });
+    carry = nextCarry;
     const seen = new Set();
     for (const m of code.matchAll(IDENTIFIER)) {
       const name = m[0];
@@ -415,9 +445,17 @@ function fileFindings(lines, words, sql = false) {
 
 // SAF: dosyanın ilk `upto` satırından sonra şablon durumu ne? (diff kipinde bağlam kurar)
 function stackBefore(lines, upto, sql = false) {
-  let stack = [];
-  for (let i = 0; i < upto && i < lines.length; i += 1) stack = codePartAt(lines[i], sql, stack).stack;
-  return stack;
+  return stateBefore(lines, upto, sql).stack;
+}
+
+// SAF: dosyanın ilk `upto` satırından sonraki bağlam → { stack, carry } (diff kipi, #102)
+function stateBefore(lines, upto, sql = false, jsx = true) {
+  let state = { stack: [], carry: '' };
+  for (let i = 0; i < upto && i < lines.length; i += 1) {
+    const r = codePartAt(lines[i], sql, state.stack, { jsx, carry: state.carry });
+    state = { stack: r.stack, carry: r.carry };
+  }
+  return state;
 }
 
 // SAF: dosya/klasör adı kuralı bozuyor mu? → [{ ad, neden }]
@@ -646,7 +684,8 @@ function scanDiff(root, taban) {
       let base = [];
       try { base = quietGit(root, ['show', `${mergeBase}:${renamedFrom.get(file) || file}`]).split(/\r?\n/); } catch { /* dosya tabanda yok: her ad yenidir */ }
       // Baş okunamazsa karşılaştırma yapılamaz: eski davranış (her bulgu sayılır) korunur.
-      grownIn.set(file, head ? grownNames(fileFindings(base, words, sql), fileFindings(head, words, sql)) : null);
+      const jsx = isJsxFile(file);
+      grownIn.set(file, head ? grownNames(fileFindings(base, words, sql, jsx), fileFindings(head, words, sql, jsx)) : null);
     }
     return grownIn.get(file);
   };
@@ -668,7 +707,7 @@ function scanDiff(root, taban) {
       if (!isScanned(f)) continue;
       if (!baseIdentifiers.has(f)) {
         let names = new Set();
-        try { names = new Set(fileFindings(quietGit(root, ['show', `${mergeBase}:${f}`]).split(/\r?\n/), words, false).map((x) => x.name)); } catch { /* okunamadı: katı taraf */ }
+        try { names = new Set(fileFindings(quietGit(root, ['show', `${mergeBase}:${f}`]).split(/\r?\n/), words, false, isJsxFile(f)).map((x) => x.name)); } catch { /* okunamadı: katı taraf */ }
         baseIdentifiers.set(f, names);
       }
       if (baseIdentifiers.get(f).has(name)) { found = true; break; }
@@ -681,9 +720,10 @@ function scanDiff(root, taban) {
     if (!isScanned(file)) continue;
     const sql = SQL_EXT.test(file);
     const all = linesOf(file);
-    const stack = all ? stackBefore(all, line - 1, sql) : [];
+    const jsx = isJsxFile(file);
+    const { stack, carry } = all ? stateBefore(all, line - 1, sql, jsx) : { stack: [], carry: '' };
     const grown = grownOf(file, sql);
-    for (const b of lineFindings(text, words, sql, stack)) {
+    for (const b of lineFindings(text, words, sql, stack, { jsx, carry })) {
       if (grown && !grown.has(b.name)) continue;
       if (isExcepted(b, file, exception)) continue;
       const isUsage = !sql && grown && !isDefinition(text, b.name) && existsAtBase(b.name);
@@ -714,7 +754,7 @@ function scanAll(root) {
     try { icerik = fs.readFileSync(path.join(root, file), 'utf8'); } catch { continue; }
     const sql = SQL_EXT.test(file);
     // Şablon durumu satırdan satıra taşınır: çok satırlı şablonun gövdesi ekran metnidir (#76).
-    for (const { line, ...rest } of fileFindings(icerik.split(/\r?\n/), words, sql)) {
+    for (const { line, ...rest } of fileFindings(icerik.split(/\r?\n/), words, sql, isJsxFile(file))) {
       if (!isExcepted(rest, file, exception)) findings.push({ file, line, ...rest });
     }
   }
@@ -771,7 +811,8 @@ module.exports = {
   asciiFold, splitWords, stripJsxText, turkishWord, identifierProblem, codePart, lineFindings,
   pathFindings, readExceptions, addedLines, report, scanDiff, scanAll,
   familyExceptions, familyRoots, wordSet,
-  isScanned, isExcepted, unusedExceptions, codePartAt, fileFindings, stackBefore, grownNames,
+  isScanned, isExcepted, unusedExceptions, codePartAt, fileFindings, stackBefore, stateBefore, grownNames,
+  isJsxFile,
   isDefinition,
 };
 

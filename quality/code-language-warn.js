@@ -40,10 +40,13 @@ function warnFindings(text, file, words, exception) {
   const seen = new Set();
   // Şablon durumu satırdan satıra taşınır: tek bir Edit çağrısı çok satırlı bir şablonun
   // tamamını taşıyabilir; orta satırlar ekran metnidir, kod değil (#76).
+  // Önceki satırın son kod parçası da taşınır: satır başındaki düzenli ifade (#102).
+  const jsx = scan.isJsxFile(file);
   let stack = [];
+  let carry = '';
   for (const line of String(text).split(/\r?\n/)) {
-    const findings = scan.lineFindings(line, words, sql, stack);
-    stack = scan.codePartAt(line, sql, stack).stack;
+    const findings = scan.lineFindings(line, words, sql, stack, { jsx, carry });
+    ({ stack, carry } = scan.codePartAt(line, sql, stack, { jsx, carry }));
     for (const b of findings) {
       if (seen.has(b.name)) continue;
       if (scan.isExcepted(b, file, exception)) continue;

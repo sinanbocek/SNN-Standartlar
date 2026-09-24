@@ -406,5 +406,51 @@ console.log('— diff kipi: var olan adın kullanımı uyarıdır (tüketici bil
   fs.rmSync(repo, { recursive: true, force: true });
 }
 
+console.log('— satır başındaki düzenli ifade ve JSX olmayan dosya (#102)');
+{
+  const fileNames = (lines, jsx) => t.fileFindings(lines, words, false, jsx).map((b) => b.name);
+  const has = (lines, jsx, name) => fileNames(lines, jsx).includes(name);
+  // Bildirilen satır (SNN-Ihale #116, administrative.ts:108-109): Prettier satırı `=` sonrasında kırdı.
+  const reported = ['const ALL_ITEMS =', '  /(kalemlerin tamamına teklif vermek zorunda|bütün kalemlere teklif verilmesi zorunlu)/;'];
+  expect('bildirilen satır: .ts', fileNames(reported, false), []);
+  expect('bildirilen satır: .tsx', fileNames(reported, true), []);
+  // Bildirimdeki yapay örnek: önceki satırın son işareti ne olursa olsun düzenli ifade atılır.
+  const sample = [
+    'const AFTER_EQUALS =', '  /(tamamına eşittir)/;',
+    'check(', '  /(tamamına parantez)/,', ')',
+    'const L = [ONE_LINE,', '  /(tamamına virgül)/];',
+    'function f() {', '  return (', '    /(tamamına dönüş)/', '  );', '}',
+    'const o = { key:', '  /(tamamına ikinokta)/ };',
+    'const a = ONE_LINE ||', '  /(tamamına veya)/;',
+    'const b = ONE_LINE ?', '  /(tamamına soru)/ : ONE_LINE;',
+    'const c = x;', '/(tamamına deyim)/.test(c);',
+    'function g() {', '  return', '    /(tamamına anahtar)/.test(c);', '}',
+  ];
+  expect('yapay örnek: hiçbiri işaretlenmez (.ts)', fileNames(sample, false), []);
+  expect('yapay örnek: hiçbiri işaretlenmez (.tsx)', fileNames(sample, true), []);
+  // Arada boş satır ve yorum satırı olsa da bağlam taşınır.
+  // PR kipi (--diff): yalnız eklenen satır taranır; bağlam dosyanın önceki satırlarından kurulur.
+  const state = t.stateBefore(reported, 1, false, false);
+  expect('PR kipi: bağlam önceki satırdan gelir', t.lineFindings(reported[1], words, false, state.stack, { jsx: false, carry: state.carry }).map((b) => b.name), []);
+  expect('boş satır ve yorum bağlamı kesmez', fileNames(['const R =', '', '  // açıklama', '  /(tamamına)/;'], false), []);
+  // BÖLME KORUMASI: önceki işaret tanımlayıcıysa satır başındaki `/` bölmedir, sonrası taranır.
+  expect('satır başındaki bölme: sonraki ad taranır', has(['const rate = total', '  / tutarı;'], false, 'tutarı'), true);
+  expect('parantez sonrası bölme: sonraki ad taranır', has(['const rate = (total)', '  / tutarı;'], false, 'tutarı'), true);
+
+  // KAÇAK: ekran yazısı ayıklayıcısı JSX olmayan dosyada gerçek kod satırını siliyordu (2026-09-24
+  // ölçümü: 11 projede 2.514 gerçek ad). Satırlar Gunum-Var'dan (noktalı virgülsüz yazım).
+  expect('tanım satırı (.ts)', has(['function mikroGorevleriBosalt() {'], false, 'mikroGorevleriBosalt'), true);
+  expect('çağrı zinciri (.ts)', has(['  sahte.from.mockReturnValue(kullaniciZinciri(KULLANICILAR))'], false, 'kullaniciZinciri'), true);
+  expect('argüman satırı (.ts)', has(['  toplamTutar,'], false, 'toplamTutar'), true);
+  expect('yayma satırı (.ts)', has(['  ...temelParams,'], false, 'temelParams'), true);
+  // JSX dosyasında ekran yazısı hâlâ atılır.
+  expect('ekran yazısı (.tsx) atılır', fileNames(['<p>', '  Kalemlerin tamamı seçilmeli', '</p>'], true), []);
+
+  expect('JSX dosyası: .tsx', t.isJsxFile('src/App.tsx'), true);
+  expect('JSX dosyası: .jsx', t.isJsxFile('src/App.jsx'), true);
+  expect('JSX dosyası değil: .ts', t.isJsxFile('src/app.ts'), false);
+  expect('JSX dosyası değil: .js', t.isJsxFile('scripts/x.js'), false);
+}
+
 console.log(fail ? `\n${fail} test başarısız` : '\nTüm testler geçti');
 process.exit(fail ? 1 : 0);
