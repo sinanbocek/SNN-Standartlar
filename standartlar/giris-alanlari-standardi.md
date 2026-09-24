@@ -40,7 +40,8 @@ Bu yüzden her giriş alanında iki savunma **birlikte** bulunur:
 - Kutu `inputMode="decimal"` kullanır. `numeric` iOS'ta virgülsüz rakam klavyesi açar; kullanıcı telefondan kuruş yazamaz.
 - Yapıştırılan kuruşlu tutar (`85.340,50`) aynı değer olarak okunur; **100 katına çıkamaz**. Bunun testi zorunludur.
 - Biçim **ABACUS para motorundan** gelir: `money.formatGroupedInput(raw)` kutunun canlı biçimidir, `money.parseNumber(raw)` kaydetmeden önce metni sayıya çevirir (boş ya da geçersizse `null`). Proje içinde bunların kopyası yazılmaz.
-- **Çekirdekte bilinen iki açık (ABACUS 4.1.1, ölçüldü 2026-09-24; talep ABACUS #48):** `formatGroupedInput` kuruş hanesini sınırlamaz (`1234,567` → `1.234,567`) ve ondalık için yazılan noktayı binlik sayar (`85340.5` → `853.405`, 10 kat). Sürüm gelene kadar proje, çekirdek çağrısının **önünde** ince bir kural tutar: üçüncü kuruş hanesi kutuya girmez; virgül yoksa ve noktadan sonra 1–2 hane varsa o nokta virgül sayılır. Bu kuralın testi yazılır; çekirdek sürümü gelince kural silinir, testler değişmeden geçer.
+- **Kuruş hanesi ve kontrollü kutu (ABACUS 4.2.0+, ölçüldü 2026-09-24):** para kutusu `maxDigits: 2` ve `previous` (kutunun önceki metni) ile çağrılır: `money.formatGroupedInput(raw, { maxDigits: 2, previous: value })`. `maxDigits` üçüncü kuruş hanesini keser (`1234,567` → `1.234,56`). 4.1.1'de bu sınır yoktu (talep ABACUS #48, madde 40).
+- **`dotAsDecimal` para kutusunda tek başına açılmaz.** Açılınca tek noktalı metin ondalık sayılır: listede kuruşsuz görünen `₺1.234` kopyalanıp yapıştırılırsa `1,23` olur (**1000 kat küçük**), `12.500` → `12,50`. Kapalıyken de `98.5` → `985` olur (10 kat). İki yönde de sessiz sapma var; bu yüzden **tek nokta + virgülsüz** belirsiz girdi sessizce çevrilmez: proje ya reddedip "kuruş için virgül kullanın" der ya da kullanıcıya sorar. Seçilen kuralın testi yazılır, `₺1.234` yapıştırma vakası testte bulunur.
 
 - **Yasak:** ham `toLocaleString`, `Intl.*`, `toFixed`, `toUpperCase`, `toLowerCase`. Bunlar tarayıcıya ve dil ayarına göre farklı sonuç verir; ABACUS tek ve ölçülmüş bir biçim üretir. **ABACUS 3.3.0'dan itibaren bu beş çağrı ESLint kuralıyla yakalanır** (`@snn/abacus-core/eslint`, hata seviyesi). Bilinçli kullanım `// eslint-disable-next-line no-restricted-properties -- gerekçe` ile geçer.
 
@@ -129,7 +130,7 @@ import { money, text } from '@snn/abacus-core';
 
 <input
   value={aracDegeri}
-  onChange={(e) => setAracDegeri(money.formatGroupedInput(e.target.value))}
+  onChange={(e) => setAracDegeri(money.formatGroupedInput(e.target.value, { maxDigits: 2, previous: aracDegeri }))}
   inputMode="decimal"   // numeric değil: iOS'ta virgül tuşu çıkmaz
 />
 
@@ -152,13 +153,15 @@ money.formatGroupedInput('1250000')     // '1.250.000'
 money.parseNumber('1.250.000')          // 1250000
 money.parseNumber('abc')                // null
 
-// Kuruş (ABACUS 4.1.1, 2026-09-24)
-money.formatGroupedInput('85340,50')    // '85.340,50'
-money.formatGroupedInput('85.340,50')   // '85.340,50'   yapıştırma, 100 kat yok
-money.parseNumber('85.340,50')          // 85340.5
-money.formatGroupedInput('1234,567')    // '1.234,567'   ← hane sınırı yok (#48); proje kuralı keser
-money.formatGroupedInput('85340.5')     // '853.405'     ← nokta ondalık sayılmıyor (#48); proje kuralı çevirir
-money.formatGroupedInput('-100')        // '100'         ← işaret sessizce düşer; eksi kutuya hiç alınmaz
+// Kuruş (ABACUS 4.3.0, 2026-09-24; o = { maxDigits: 2 })
+money.formatGroupedInput('85340,50', o)    // '85.340,50'
+money.formatGroupedInput('85.340,50', o)   // '85.340,50'   yapıştırma, 100 kat yok
+money.parseNumber('85.340,50')             // 85340.5
+money.formatGroupedInput('1234,567', o)    // '1.234,56'    üçüncü hane kesilir
+money.formatGroupedInput('1234,567')       // '1.234,567'   maxDigits verilmezse sınır yok
+money.formatGroupedInput('98.5', o)        // '985'         ← tek nokta binlik sayılır (10 kat); belirsiz girdi
+money.formatGroupedInput('₺1.234', { ...o, dotAsDecimal: true })  // '1,23'  ← 1000 kat küçük; bu yüzden dotAsDecimal tek başına açılmaz
+money.formatGroupedInput('-100', o)        // '100'         ← işaret sessizce düşer; eksi kutuya hiç alınmaz
 text.digits('2o0a7')                    // '207'
 text.digits('20267', 4)                 // '2026'
 text.toAsciiUpper('irmaksasi')          // 'IRMAKSASI'
