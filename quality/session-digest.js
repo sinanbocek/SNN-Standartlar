@@ -46,6 +46,7 @@ const resultText = (c) => (typeof c === 'string' ? c : Array.isArray(c) ? c.map(
 // SAF: JSONL metni → olaylar. Bozuk satır atlanır; satır numaraları dosyadakiyle aynı kalır.
 function parseTranscript(text) {
   const out = [];
+  const seenReplies = new Set();
   String(text).split('\n').forEach((raw, i) => {
     if (!raw.trim()) return;
     let o;
@@ -56,6 +57,12 @@ function parseTranscript(text) {
     if (o.type === 'user' && typeof content === 'string' && (!o.origin || o.origin.kind === 'human')) out.push({ line, at, kind: 'user-text', text: content });
     if (o.type === 'user' && Array.isArray(content)) {
       for (const c of content) if (c.type === 'tool_result') out.push({ line, at, kind: 'tool-result', error: !!c.is_error, text: resultText(c.content) });
+    }
+    // Aynı model yanıtı birden çok satıra bölünür, her satır aynı `usage`'ı taşır: yanıt kimliğiyle bir kez sayılır.
+    if (o.type === 'assistant' && o.message && o.message.usage && o.message.id && !seenReplies.has(o.message.id)) {
+      seenReplies.add(o.message.id);
+      const u = o.message.usage;
+      out.push({ line, at, kind: 'usage', output: u.output_tokens || 0, input: (u.input_tokens || 0) + (u.cache_creation_input_tokens || 0) + (u.cache_read_input_tokens || 0), cacheRead: u.cache_read_input_tokens || 0, text: '' });
     }
     if (o.type === 'assistant' && Array.isArray(content)) {
       for (const c of content) {
@@ -138,6 +145,9 @@ function stats(events) {
     toolErrors: events.filter((e) => e.kind === 'tool-result' && e.error).length,
     silentTurns: events.filter((e) => e.kind === 'silent-turn').length,
     prs: [...new Set(events.filter((e) => e.kind === 'pr-link').map((e) => e.pr))],
+    tokens: events.filter((e) => e.kind === 'usage').reduce((t, e) => ({
+      replies: t.replies + 1, output: t.output + e.output, input: t.input + e.input, cacheRead: t.cacheRead + e.cacheRead,
+    }), { replies: 0, output: 0, input: 0, cacheRead: 0 }),
     minutes: times.length > 1 ? Math.round((Math.max(...times) - Math.min(...times)) / 60000) : 0,
   };
 }
@@ -151,6 +161,16 @@ function render(events, from, to) {
   }).join('\n');
 }
 
+// SAF: token satırı. Para karşılığı hesaplanmaz: fiyat oranları bu betiğin bilgisi dışında.
+// "Neden bu kadar pahalı" sorusunda asıl yük genellikle GİRDİDİR (her turda bağlam yeniden okunur);
+// 2026-09-23 oturumunda çıktı toplam token hacminin %0,5'iydi.
+const fmt = (n) => n.toLocaleString('tr-TR');
+function tokenLine(t) {
+  if (!t.replies) return 'Token: kayıtta token bilgisi yok (bilinmiyor)';
+  const share = ((100 * t.output) / (t.output + t.input)).toFixed(1).replace('.', ',');
+  return `Token (${t.replies} model yanıtı): çıktı ${fmt(t.output)} · girdi ${fmt(t.input)} (önbellekten ${fmt(t.cacheRead)}) · çıktının hacimdeki payı %${share} · yanıt başına ortalama girdi ${fmt(Math.round(t.input / t.replies))}`;
+}
+
 // SAF: özet raporu
 function report(file, events) {
   const s = stats(events);
@@ -159,6 +179,7 @@ function report(file, events) {
   const lines = [
     `Oturum: ${file}`,
     `Süre ~${s.minutes} dk · kullanıcı mesajı ${s.userTurns} · araç çağrısı ${s.toolCalls} (${tools || '-'}) · araç hatası ${s.toolErrors} · sessiz kalma uyarısı ${s.silentTurns} · PR ${s.prs.length ? s.prs.map((n) => `#${n}`).join(' ') : '-'}`,
+    tokenLine(s.tokens),
     '',
     f.length ? `${f.length} işaret (hüküm değil; okunacak yer):` : 'İşaret yok. Bu "sorun yok" demek değildir; dedektörlerin kapsamı dardır (docs/oturum-teshisi.md).',
   ];
