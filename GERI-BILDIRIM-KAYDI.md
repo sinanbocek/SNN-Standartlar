@@ -33,6 +33,41 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 
 ## Kararlar
 
+### 2026-09-24 · Diff kapısı var olan adın kullanımını yeni ad sayıyor — **KABUL (uyarı olarak)**
+
+- **Kimden:** SNN-Yonetici-Ozeti oturumu (issue #100)
+- **Tür:** kural-degisikligi
+- **Talep:** PR #29, yeni bir test dosyasında projede **zaten tanımlı** Türkçe tiplerin alanlarını
+  kullandı (içe aktarma, nesne anahtarı, alan okuma). Kapı **62 bulgu / 23 ad** ile kırmızıydı; hiçbiri
+  PR'da tanımlanmamıştı, PR'da yeni tanımlanan adların hepsi İngilizceydi. Türkçe tipli projede
+  neredeyse her PR kırmızı yanıyordu.
+- **Yeniden üretildi:** aynı dalda 62 / 23, birebir. 23 adın her biri tabanda 3 ile 813 kez geçiyor.
+  PR'daki `for (const sinif of allSections)` satırı yeni tanım gibi görünüyordu; tabanda da vardı,
+  yalnız dönülen liste değişmişti.
+- **Kök neden:** hata değil, #88 kararının bilinçli sonucu. Kod "var olan Türkçe adın yeni kullanımı da
+  yakalanmalıdır" diyordu. Yeni dosyada her kullanım, adın sayısını 0'dan yukarı çıkarıyordu.
+- **Karar:** proje sahibi üç seçenek arasından **"kullanım uyarı olsun, PR'ı kırmızıya çevirmesin"**
+  seçeneğini seçti. Bildirenin önerisi ("kullanım hiç sayılmasın") olduğu gibi alınmadı: borcun ne
+  kadar yayıldığı görünmez olurdu. Sayısı artan ad artık üç sınıfa ayrılır:
+  - **kırmızı:** tabanda depoda **tanımlayıcı olarak** hiç bulunmayan ad (yalnız yorumda ya da dizgede
+    geçen kelime "var" sayılmaz), ya da var olan adın **yeni tanımı**;
+  - **uyarı:** var olan adın kullanımı (içe aktarma, alan okuma, nesne anahtarı, çağrı);
+  - SQL dosyalarında sınıflama yok, eski davranış.
+- **Uygularken çıkan:** ilk sürüm tanımı yalnız `const/let/var/function/class/interface/type/enum`
+  ile tanıyordu. Aile ölçümünde uyarıya kaçan gerçek yeni tanımlar bulundu: parametre
+  (`saglikliDurum(piyasaZamani = …)`) ve yapı bozma (`const [yil, ay, gn] = …`). Tanım dedektörü
+  genişletildi; kaçan 38 bulgu kırmızıya döndü.
+- **Sonuç (10 tüketici, son 137 birleştirme, eski ve yeni tarayıcı gerçek dosyalar üzerinde):**
+  kırmızı birleştirme 26 → 23; kırmızı bulgu 1.723 → 820; uyarıya taşınan 903; **kaybolan bulgu 0**.
+  Yeşile dönenler: Piyasa-Core 54307f7, Yönetici-Özeti 671683f, trade-kasa 9827b4f. PR #29: kırmızı 0,
+  uyarı 62. Uyarıya taşınan 903 bulgunun 42'si tek tek okundu, hepsi kullanım; tamamı okunmadı.
+- **Bilinen sınır:** tanım dedektörü satır tabanlı bir sezgidir, ayrıştırıcı değildir. Yapı bozmadaki
+  anahtar (`{ hesapKodu: code }`) da tanım sayılır; belirsizlikte kırmızıya düşer.
+- **Yan gözlem de düzeltildi:** yeni dosyanın tabandaki hâli okunurken git'in `fatal: path … exists on
+  disk, but not in <taban>` satırı her yeni dosyada CI günlüğüne sızıyordu. Artık susturuluyor (testli).
+- **Tüketici doğru yaptı:** susturmayı, satır bölmeyi, `any` ile dolanmayı ve testi atlamayı ayrı ayrı
+  gerekçelendirerek reddetti; kaç projeyi etkilediğini **ölçmediğini** açıkça yazdı.
+
 ### 2026-09-23 · Diff kapısı yeniden adlandırma PR'ını cezalandırıyor — **KABUL**
 
 - **Kimden:** trade-kasa oturumu (issue #88)

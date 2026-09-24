@@ -291,6 +291,7 @@ console.log('— diff kipi: yeniden adlandırma (tüketici bildirimi #88, 2026-0
   const git = (...args) => require('child_process').execFileSync('git', ['-C', repo, '-c', 'user.email=t@t', '-c', 'user.name=t', '-c', 'core.autocrlf=false', ...args], { encoding: 'utf8' });
   const write = (file, lines) => { fs.mkdirSync(path.dirname(path.join(repo, file)), { recursive: true }); fs.writeFileSync(path.join(repo, file), lines.join('\n') + '\n'); };
   const scan = () => t.scanDiff(repo, base).findings.map((b) => `${b.file}:${b.line}:${b.name}`);
+  const usage = () => (t.scanDiff(repo, base).usage || []).map((b) => `${b.file}:${b.line}:${b.name}`);
   git('init', '-q');
   write('src/insights.test.ts', ['const settings: Settings = { ...SAGLIKLI_AYARLAR, maxRiskYuzdesi: 0 };', 'const ok = 1;']);
   // Değişmeyen satırlar şart: git taşımayı ancak içerik %50'den fazla aynıysa tanır. Tamamen
@@ -313,11 +314,13 @@ console.log('— diff kipi: yeniden adlandırma (tüketici bildirimi #88, 2026-0
   git('commit', '-qm', 'yeni ad');
   expect('yeni Türkçe ad yakalanır', scan(), ['src/insights.test.ts:3:yeniToplam']);
 
-  // 3) Var olan Türkçe ad bir kez DAHA yazıldı → bulgu var ("sayı arttı mı" ölçütünün sebebi).
+  // 3) Var olan Türkçe ad bir kez DAHA yazıldı. #88'de bulguydu; #100 kararıyla (2026-09-24) tabanda
+  // zaten duran bir adın KULLANIMI kırmızı değil UYARIDIR: görünür kalır, PR'ı durdurmaz.
   write('src/insights.test.ts', ['const settings: Settings = { ...HEALTHY_SETTINGS, maxRiskYuzdesi: 0 };', 'const ok = 1;', 'const yeniToplam = 2;', 'const risk = settings.maxRiskYuzdesi;']);
   git('add', 'src/insights.test.ts');
   git('commit', '-qm', 'ek kullanim');
-  expect('eski adın yeni kullanımı yakalanır', scan().sort(), ['src/insights.test.ts:1:maxRiskYuzdesi', 'src/insights.test.ts:3:yeniToplam', 'src/insights.test.ts:4:maxRiskYuzdesi']);
+  expect('eski adın yeni kullanımı kırmızı değil', scan().sort(), ['src/insights.test.ts:3:yeniToplam']);
+  expect('eski adın yeni kullanımı uyarı olarak görünür', usage().sort(), ['src/insights.test.ts:1:maxRiskYuzdesi', 'src/insights.test.ts:4:maxRiskYuzdesi']);
 
   // 4) Dosya da yeniden adlandırıldı: tabandaki ESKİ yol okunmalı, yoksa her eski ad yeni sayılır.
   git('mv', 'src/hesap.ts', 'src/account.ts');
@@ -325,6 +328,81 @@ console.log('— diff kipi: yeniden adlandırma (tüketici bildirimi #88, 2026-0
   git('add', 'src/account.ts');
   git('commit', '-qm', 'dosya adi');
   expect('dosya taşınınca eski ad yeni sayılmaz', scan().filter((s) => s.startsWith('src/account.ts')), []);
+  fs.rmSync(repo, { recursive: true, force: true });
+}
+
+console.log('— diff kipi: var olan adın kullanımı uyarıdır (tüketici bildirimi #100, 2026-09-24)');
+// SNN-Yonetici-Ozeti PR #29: yeni bir test dosyası, projede ZATEN tanımlı Türkçe tiplerin alanlarını
+// kullanıyordu (içe aktarma, nesne anahtarı, alan okuma). 62 bulgu / 23 ad, hiçbiri PR'da tanımlanmamıştı;
+// PR'da yeni tanımlanan adların hepsi İngilizceydi. Proje sahibi kararı: kullanım UYARI, tanım ve yeni ad KIRMIZI.
+{
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'kod-dili-kullanim-'));
+  const git = (...args) => require('child_process').execFileSync('git', ['-C', repo, '-c', 'user.email=t@t', '-c', 'user.name=t', '-c', 'core.autocrlf=false', ...args], { encoding: 'utf8' });
+  const write = (file, lines) => { fs.mkdirSync(path.dirname(path.join(repo, file)), { recursive: true }); fs.writeFileSync(path.join(repo, file), lines.join('\n') + '\n'); };
+  git('init', '-q');
+  // Taban: Türkçe alan adlı tip ve fonksiyon (Yönetici-Özeti'ndeki gibi). "veri" yalnız YORUMDA geçiyor.
+  write('src/domain/IParser.ts', ['export interface BeyannameKalemi {', '  hesapKodu: string;', '  sinif: string;', '  cariDonemKurus: number;', '}', '// veri burada okunur']);
+  write('src/application/compile.ts', ['import type { BeyannameKalemi } from "../domain/IParser";', 'export function compileBilanco(items: BeyannameKalemi[]) { return items.map((k) => k.hesapKodu); }']);
+  git('add', '.');
+  git('commit', '-qm', 'taban');
+  const base = git('rev-parse', 'HEAD').trim();
+  const result = () => t.scanDiff(repo, base);
+  const list = (arr) => (arr || []).map((b) => `${b.line}:${b.name}`).sort();
+
+  // Bildirilen desen: yeni dosya, yalnız var olan adları KULLANIYOR; yeni adlar İngilizce.
+  write('src/application/unresolved.test.ts', [
+    'import { compileBilanco } from "./compile";',
+    'import type { BeyannameKalemi } from "../domain/IParser";',
+    'const items: BeyannameKalemi[] = [{ hesapKodu: "371", sinif: "3", cariDonemKurus: 5 }];',
+    'const codes = compileBilanco(items);',
+    'const first = items[0].hesapKodu;',
+  ]);
+  git('add', '.');
+  git('commit', '-qm', 'kullanim');
+  expect('yalnız kullanım içeren PR kırmızı değil', list(result().findings), []);
+  expect('kullanımlar uyarı olarak görünür', list(result().usage).includes('5:hesapKodu'), true);
+
+  // Var olan Türkçe adın YENİ TANIMI hâlâ kırmızı (#88'in korumak istediği durum).
+  write('src/application/extra.ts', ['export const sinif = 1;', 'export function cariDonemKurus() { return 0; }']);
+  git('add', '.');
+  git('commit', '-qm', 'tanim');
+  expect('var olan adın yeni tanımı kırmızı', result().findings.filter((b) => b.file === 'src/application/extra.ts').map((b) => `${b.line}:${b.name}`), ['1:sinif', '2:cariDonemKurus']);
+
+  // Parametre ve yapı bozma da TANIMDIR. İlk sürüm yalnız const/let/function… tanıyordu; aile ölçümünde
+  // (2026-09-24, son 137 birleştirme) uyarıya kaçan gerçek tanımlar bunlardı (Piyasa-Core, Gunum-Var):
+  expect('fonksiyon parametresi tanımdır', t.isDefinition("function saglikliDurum(piyasaZamani = '2026-09-17T19:55:00Z', resmiZamani = 'x'): Map<string, R> {", 'resmiZamani'), true);
+  expect('metot parametresi tanımdır', t.isDefinition('  async son(semboller: readonly Sembol[], s: SonSecenekleri = {}): Promise<Zarf<DegerKaydi>> {', 'semboller'), true);
+  expect('ok fonksiyonu parametresi tanımdır', t.isDefinition('const f = (hesapKodu: string) => hesapKodu.trim();', 'hesapKodu'), true);
+  expect('tek parametreli ok fonksiyonu tanımdır', t.isDefinition('items.map(kalem => kalem.ad)', 'kalem'), true);
+  expect('dizi yapı bozma tanımdır', t.isDefinition("const [yil, ay, gn] = gun.split('-').map(Number);", 'yil'), true);
+  expect('nesne yapı bozma tanımdır', t.isDefinition('const { data: grup } = await supabase', 'grup'), true);
+  expect('catch parametresi tanımdır', t.isDefinition('} catch (hata) {', 'hata'), true);
+  // Kullanımlar tanım sayılmaz:
+  expect('parametrenin tipi tanım değil', t.isDefinition('  async son(semboller: readonly Sembol[]): Promise<Zarf> {', 'Sembol'), false);
+  expect('çağrıya verilen argüman tanım değil', t.isDefinition('const codes = compileBilanco(items, hesapKodu);', 'hesapKodu'), false);
+  expect('alan okuma tanım değil', t.isDefinition('if (zamanMs === null) {', 'zamanMs'), false);
+  expect('içe aktarma tanım değil', t.isDefinition('import { type BeyannameKalemi } from "../domain/IParser";', 'BeyannameKalemi'), false);
+
+  // Tabanda hiç olmayan Türkçe ad, nesne anahtarı olsa bile kırmızı.
+  write('src/application/key.ts', ['export const row = { yepyeniAlan: 1 };']);
+  git('add', '.');
+  git('commit', '-qm', 'yeni anahtar');
+  expect('tabanda olmayan nesne anahtarı kırmızı', result().findings.filter((b) => b.file === 'src/application/key.ts').map((b) => b.name), ['yepyeniAlan']);
+
+  // Tabanda yalnız YORUMDA geçen kelime "var" sayılmaz: tanımlayıcı olarak ilk kez giriyor.
+  write('src/application/data.ts', ['export const holder = { veri: 1 };']);
+  git('add', '.');
+  git('commit', '-qm', 'yorumdaki kelime');
+  expect('yalnız yorumda geçen ad yeni sayılır', result().findings.filter((b) => b.file === 'src/application/data.ts').map((b) => b.name), ['veri']);
+
+  // Rapor: uyarı kırmızı değildir; çıkış kodu yalnız bulguya bakar.
+  const onlyUsage = t.report({ findings: [], usage: [{ file: 'a.ts', line: 1, name: 'hesapKodu', reason: 'x' }] }, 'diff');
+  expect('raporda uyarı satırı var', /⚠ 1 var olan Türkçe adın kullanımı/.test(onlyUsage), true);
+  expect('yalnız uyarı varken rapor kırmızı değil', /✗/.test(onlyUsage), false);
+
+  // Yeni dosyanın tabandaki hâli okunurken git'in hata metni günlüğe sızmaz (#100 yan gözlem).
+  const cli = require('child_process').spawnSync(process.execPath, [path.join(__dirname, '..', 'code-language-scan.js'), '--diff', base, repo], { encoding: 'utf8' });
+  expect('yeni dosyada "fatal:" günlüğe sızmaz', /fatal:/.test(cli.stderr || ''), false);
   fs.rmSync(repo, { recursive: true, force: true });
 }
 
