@@ -66,6 +66,45 @@ expect('dışlananlar korunur', JSON.parse(added).excluded.length, 1);
 expect('zaten varsa null döner', K.familyWithEntry(FAMILY_JSON, 'sinanbocek/Var', 'Var'), null);
 expect('büyük harfle de yinelemez', K.familyWithEntry(FAMILY_JSON, 'SINANBOCEK/VAR', 'Var'), null);
 
+// 2026-09-25 (#109): ekleme tüm dosyayı yeniden yazıyor, her tek satırlık kaydı dört satıra
+// açıyordu; PR farkı 11 kaydın hepsini değişmiş gösterdi. Yalnız yeni satır eklenmeli.
+const ONE_LINE = [
+  '{',
+  '  "_description": "Aile projeleri.",',
+  '  "projects": [',
+  '    { "repo": "sinanbocek/A", "dir": "A" },',
+  '    { "repo": "sinanbocek/B", "dir": "B" }',
+  '  ],',
+  '  "excluded": [',
+  '    {',
+  '      "repo": "baskasi/Dislanan",',
+  '      "reason": "üçüncü taraf [dizi değil]"',
+  '    }',
+  '  ]',
+  '}',
+  '',
+];
+const ONE_LINE_ADDED = [...ONE_LINE];
+ONE_LINE_ADDED.splice(4, 1, '    { "repo": "sinanbocek/B", "dir": "B" },', '    { "repo": "sinanbocek/Yeni", "dir": "Yeni" }');
+expect('tek satırlık biçim korunur, yalnız yeni satır eklenir',
+  K.familyWithEntry(ONE_LINE.join('\n'), 'sinanbocek/Yeni', 'Yeni'), ONE_LINE_ADDED.join('\n'));
+expect('CRLF satır sonu korunur',
+  K.familyWithEntry(ONE_LINE.join('\r\n'), 'sinanbocek/Yeni', 'Yeni'), ONE_LINE_ADDED.join('\r\n'));
+expect('boş listeye ekler', JSON.parse(K.familyWithEntry('{ "projects": [] }\n', 'sinanbocek/Yeni', 'Yeni')).projects, [{ repo: 'sinanbocek/Yeni', dir: 'Yeni' }]);
+
+// Gerçek listeyle: satır sayısı bir artar, eski satırların hepsi aynen kalır.
+{
+  const real = require('fs').readFileSync(require('path').join(__dirname, '../../quality/data/family-projects.json'), 'utf8');
+  // Depoda LF, Windows çalışma kopyasında CRLF olabilir; ikisinde de satır satır karşılaştırılır.
+  const out = K.familyWithEntry(real, 'sinanbocek/Deneme-Proje', 'Deneme-Proje').split(/\r?\n/);
+  const before = real.split(/\r?\n/);
+  const rest = out.filter((l) => !l.includes('Deneme-Proje'));
+  const changed = before.map((l, i) => [l, rest[i]]).filter(([a, b]) => a !== b);
+  expect('gerçek liste: yalnız bir satır eklenir', out.length - before.length, 1);
+  expect('gerçek liste: eski satırlardan yalnız son kayda virgül eklenir',
+    changed.length === 1 && changed[0][1] === `${changed[0][0]},`, true);
+}
+
 const familyStep = (inFamily) => K.plan(base({ inFamily })).find((s) => s.id === 'aile-listesi');
 expect('listede → yapılacak iş yok', familyStep(true).status, 'present');
 expect('listede değil → eklenir', familyStep(false).status, 'toAdd');
