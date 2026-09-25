@@ -1,6 +1,8 @@
 # SNN-Standartlar — bu depoda çalışma rehberi
 
-**Aile standartları:** bu depo `sinanbocek/SNN-Standartlar`, ailenin kural kaynağıdır. 11 proje buradaki akışları çalıştırır.
+**Aile standartları:** bu depo `sinanbocek/SNN-Standartlar`, ailenin kural kaynağıdır. Aile listesindeki her proje buradaki akışları çalıştırır.
+
+**Aile listesi:** `quality/data/family-projects.json` — hangi projelerin aileden olduğunu söyleyen tek kaynak. Proje sayısı bu dosyada yazılmaz; gerektiğinde listeden sayılır (proje eklendikçe elle yazılan sayı eskiyor, 2026-09-25).
 
 Bu dosya **projeye özgü** olanı anlatır. Kuralların kendisi `standartlar/` altındadır; burada tekrar edilmez.
 
@@ -8,7 +10,7 @@ Bu dosya **projeye özgü** olanı anlatır. Kuralların kendisi `standartlar/` 
 
 ## 1. Bu depo ne yapar
 
-Kural metni tutan bir kitaplık değil — **11 projenin her PR'da çalıştırdığı makine**.
+Kural metni tutan bir kitaplık değil — **aile projelerinin her PR'da çalıştırdığı makine**.
 
 ```
 trade-kasa'da PR açılır
@@ -16,7 +18,7 @@ trade-kasa'da PR açılır
   → GitHub buradaki dosyayı okur ve çalıştırır   (@main)
 ```
 
-Sonuç: **buradaki bir değişiklik, bir sonraki çalışmada 11 projede geçerli olur.** Kimse bir şey kopyalamaz. Bu güç, dikkatin sebebidir.
+Sonuç: **buradaki bir değişiklik, bir sonraki çalışmada tüm aile projelerinde geçerli olur.** Kimse bir şey kopyalamaz. Bu güç, dikkatin sebebidir.
 
 Depo **herkese açık kalmak zorunda**: GHS-Panel başka bir hesapta (`globalhedef`) ve SNN-Abacus-Core herkese açık; GitHub gizli deponun akışlarını bu ikisine vermez. Ölçüldü, belgeyle doğrulandı (2026-09-19).
 
@@ -37,7 +39,7 @@ Kanca kodunun elle olması bilinçlidir: 2026-09-15'te canlı kopya bozulunca t�
 2. **Dal aç** — `git checkout -b <tur>/<kisa-ad>` **ayrı bir komutta**
 3. **Yaz + test** — saf mantık ayrı, IO ayrı
 4. **Sabotaj** — kuralı bilerek boz, kırmızıya döndüğünü gör
-5. **Gerçek veride çalıştır** — 11 projede ölç, yanlış alarmı say
+5. **Gerçek veride çalıştır** — aile listesindeki her projede ölç, yanlış alarmı say
 6. **PR aç** — ölçümü gövdeye yaz
 7. **Kontroller yeşil** olunca birleştir, **canlı kopyayı tazele**
 
@@ -100,7 +102,7 @@ Bir proje "bu yanlış alarm" diye bildirirse:
 1. **Yeniden üret** — bildirimi olduğu gibi kabul etme
 2. **Kök nedeni bul** — belirtiyi değil
 3. **Düzelt + gerileme testi** — bildirilen gerçek satırı teste koy
-4. **11 projede ölç** — düzeltme gerçek bulguları da gizledi mi? Düşen her bulguyu oku
+4. **Tüm aile projelerinde ölç** — düzeltme gerçek bulguları da gizledi mi? Düşen her bulguyu oku
 5. Düzeltme birleşince tüketiciye kendiliğinden gider
 
 `.snn-kod-dili.json` ile susturmak **yasaktır**: doğru olana muafiyet yazmak kaydı kirletir ve yarın aynı dosyaya girecek gerçek bir adı da kör eder.

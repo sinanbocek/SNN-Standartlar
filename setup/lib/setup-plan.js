@@ -100,12 +100,59 @@ function familyLookup(raw, full) {
   return (parsed.projects || []).some((p) => p && eq(p.repo));
 }
 
+// SAF: metindeki `"projects": [ … ]` dizisinin açılış ve kapanış konumu; bulunamazsa null.
+// Dize içindeki köşeli ayraçlar sayılmaz.
+function projectsArraySpan(raw) {
+  const m = /"projects"\s*:\s*\[/.exec(raw);
+  if (!m) return null;
+  const open = m.index + m[0].length - 1;
+  let depth = 0;
+  let inString = false;
+  for (let i = open; i < raw.length; i += 1) {
+    const c = raw[i];
+    if (inString) {
+      if (c === '\\') i += 1;
+      else if (c === '"') inString = false;
+    } else if (c === '"') inString = true;
+    else if (c === '[') depth += 1;
+    else if (c === ']') {
+      depth -= 1;
+      if (depth === 0) return { open, close: i };
+    }
+  }
+  return null;
+}
+
 // SAF: listeye yeni kayıt ekler, sırayı korur, yinelemez. Döner: yeni metin ya da null.
+// Yalnız yeni kayıt satırı eklenir; dosyanın geri kalanı bayt bayt korunur. Tüm dosyayı
+// yeniden yazmak her tek satırlık kaydı dört satıra açıyordu (#109, 2026-09-25).
 function familyWithEntry(raw, repo, dir) {
   const parsed = JSON.parse(raw);
   if ((parsed.projects || []).some((p) => p && String(p.repo).toLowerCase() === repo.toLowerCase())) return null;
-  parsed.projects = [...(parsed.projects || []), { repo, dir }];
-  return `${JSON.stringify(parsed, null, 2)}\n`;
+  const expected = { ...parsed, projects: [...(parsed.projects || []), { repo, dir }] };
+  const span = projectsArraySpan(raw);
+  if (!span) return `${JSON.stringify(expected, null, 2)}\n`;
+
+  const body = raw.slice(span.open + 1, span.close);
+  const lastEnd = span.open + 1 + body.trimEnd().length;
+  const isEmpty = body.trim() === '';
+  let next;
+  if (body.includes('\n') && !isEmpty) {
+    // Çok satırlı liste: son kaydın girintisiyle, dosyanın satır sonuyla tek satır.
+    const eol = raw.includes('\r\n') ? '\r\n' : '\n';
+    const lineStart = raw.lastIndexOf('\n', lastEnd - 1) + 1;
+    const indent = /^[ \t]*/.exec(raw.slice(lineStart))[0];
+    const line = `{ "repo": ${JSON.stringify(repo)}, "dir": ${JSON.stringify(dir)} }`;
+    next = `${raw.slice(0, lastEnd)},${eol}${indent}${line}${raw.slice(lastEnd)}`;
+  } else {
+    const entry = JSON.stringify({ repo, dir });
+    next = `${raw.slice(0, lastEnd)}${isEmpty ? '' : ','}${entry}${raw.slice(lastEnd)}`;
+  }
+  // Metin düzeyinde ekleme bozuk JSON üretmemeli; üretirse yazılmaz, hata verilir.
+  if (JSON.stringify(JSON.parse(next)) !== JSON.stringify(expected)) {
+    throw new Error('Aile listesine kayıt eklenemedi: dosya beklenmeyen biçimde.');
+  }
+  return next;
 }
 
 
