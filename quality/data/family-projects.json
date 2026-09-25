@@ -13,7 +13,8 @@
     { "repo": "sinanbocek/SNN-Standartlar", "dir": "SNN-Standartlar" },
     { "repo": "sinanbocek/SNN-Yonetici-Ozeti", "dir": "SNN-Yonetici-Ozeti" },
     { "repo": "sinanbocek/trade-kasa", "dir": "trade-kasa" },
-    { "repo": "globalhedef/global-hedef-web-platform", "dir": "GHS-Panel" }
+    { "repo": "globalhedef/global-hedef-web-platform", "dir": "GHS-Panel" },
+    { "repo": "sinanbocek/SNN-Siparis", "dir": "SNN-Siparis" }
   ],
   "excluded": [
     {
