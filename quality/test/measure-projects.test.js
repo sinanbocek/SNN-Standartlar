@@ -16,7 +16,11 @@ expect('metin de okunur', m.familyProjects('{"projects":[{"repo":"a/b","dir":"b"
 expect('liste yoksa boş', m.familyProjects({}).length, 0);
 
 const gercek = m.readList();
-expect('gerçek listede 11 proje', gercek.length, 11);
+// Sabit sayi yazilmaz: setup-project.js her yeni projeyi PR ile ekler ve sabit sayi o PR'i kirardi
+// (#109, 2026-09-25: 11 beklendi, 12 geldi). Olculen sey: gercek listedeki hicbir kayit dusmuyor.
+const rawList = JSON.parse(fs.readFileSync(m.LIST_FILE, 'utf8'));
+expect('gerçek listede kayıt düşmez', gercek.length, rawList.projects.length);
+expect('gerçek listede en az 11 proje', gercek.length >= 11, true);
 // GHS-Panel baska bir hesapta: klasor adi ile depo adi AYNI DEGIL. Liste bu yuzden acik tutulur.
 expect('GHS-Panel globalhedef altında', gercek.find((p) => p.dir === 'GHS-Panel').repo, 'globalhedef/global-hedef-web-platform');
 // ihale-mcp ucuncu tarafin deposu; aile olcumune GIRMEZ.
