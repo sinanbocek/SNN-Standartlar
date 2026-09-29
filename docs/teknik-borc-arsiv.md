@@ -9,6 +9,7 @@
 ### TB-002 — Eş zamanlı oturumlarda dosya sahipliği ölçülmüyor
 - **Tespit Tarihi:** 2026-09-18 (eş zamanlı çalışma standardı kurulurken)
 - **Kapanış:** 2026-09-19 — TB-002 kütükten kalktı. Bekleme **ölçüm kaydına** dönüştü: `quality/data/pending-measurements.json` → `OLC-001`, vade **2026-09-26**. Kütükte "sonra ölçeriz" diye bekleyen kayıt durmaz.
+- **OLC-001 kapandı (2026-09-29):** vadesinde proje sahibi "beklet" dedi; 29 Eylül'de "kapat" kararı. Yerel ölçüm: son 7 günde 115 buluşma, **98'i aynı dalda**. Karar kuralı gereği dosya iddiası işi açıldı → **TB-008** (P2). CI'daki "buluşma yok" sonucu yanlıştı (veri yalnız bu makinede); o kusur da TB-008'de.
 - **Öncelik (kapanışta):** P3 (Fırsatta)
 - **Issue:** #24
 
