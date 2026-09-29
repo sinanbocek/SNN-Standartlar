@@ -221,6 +221,24 @@ expect('gerçek yayma işleci koddur', names('  const yeniKayit = { ...eskiKayit
 expect('yazı atılır, ifadedeki ad kalır', names('  Pozisyon limiti aşıldı (max %{fmtDecimal(maxPozisyonYuzdesi, 0)})'), ['maxPozisyonYuzdesi']);
 expect('varlık arasındaki ad kalır', names('  HESAP KODU (veri): &quot;{k.hesapKodu}&quot;'), ['hesapKodu']);
 
+console.log('— ifade içindeki > etiket sanılmaz (GHS-Panel #279 ölçümü, 2026-09-29)');
+// Karşılaştırma (`a > 1`) ve ok fonksiyonu (`p => p.id`) süslü parantezin İÇİNDE `>` taşır.
+// Tarayıcı bunu etiket kapanışı sanıyor, satırı "etiketli" sayıyor ve metni atan kural hiç
+// çalışmıyordu. Üç satır da GHS-Panel PR #279'dan birebir.
+expect('karşılaştırmalı ifade önündeki metin yazıdır',
+  names('                                    Tüm teklifler {totalPagesCount > 1 && `(Sayfa ${pageNum} / ${totalPagesCount})`}'), []);
+expect('karşılaştırmalı ifade ardındaki metin yazıdır',
+  names("                        {productCount > 1 ? `${displayCount(productCount)} ürün · ` : ''}{displayCount(images.length)} sayfa"), []);
+expect('ok fonksiyonlu ifade önündeki metin yazıdır',
+  names('                            Şablon taslağı · {document.products.find(p => p.id === activeId)?.policyType}'), []);
+// KORUMA: metin atılırken ifadedeki gerçek ad ve etiket arasındaki ifade kalmalı.
+expect('ifadedeki Türkçe ad hâlâ yakalanır', names('  Toplam teklif {sayfaSayisi > 1 && sayfaSayisi}'), ['sayfaSayisi']);
+expect('etiket içinde karşılaştırmalı ifadede ad kalır', names('  <span>{kalanGun > 0 ? kalanGun : 0} gün kaldı</span>'), ['kalanGun']);
+// İlk düzeltme denemesi bunları KIRDI (her < > gizleniyordu): ifade içindeki gerçek etiketin metni.
+expect('ifade içindeki etiketin metni yazıdır', names('  {yukleniyor && <span>Yükleniyor</span>}').includes('Yükleniyor'), false);
+expect('koşullu etiketin metni yazıdır', names('  {hata ? <p className="x">Hata oluştu</p> : null}').filter((n) => n !== 'hata'), []);
+expect('ok fonksiyonlu gerçek kod hâlâ kod', names('  const secilen = liste.filter((x) => x.aktif);').sort(), ['aktif', 'liste']);
+
 console.log('— çok satırlı şablon (tüketici bildirimi #76, 2026-09-19)');
 // Şablon durumu SATIRLAR ARASINDA taşınır. Orta satırlarda ters tırnak yoktur; eski sürüm o
 // satırı sıradan kod sanıyor ve ekran metnini tanımlayıcı olarak yakalıyordu.
