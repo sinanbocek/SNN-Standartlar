@@ -50,6 +50,17 @@ function excludedRepos(file = path.join(__dirname, 'data', 'family-projects.json
   } catch { return []; }
 }
 
+// Herkese acik depolar: Actions dakikasi ucretsiz, akis butcesi olcutleri UYGULANMAZ.
+// 2026-09-29 gercek veride olculdu: Abacus-Core ve Siparis'e "main'de CI kosuyor" demek
+// bedava dakika icin dirdirdi — yanlis alarm.
+function publicRepos(file = path.join(__dirname, 'data', 'family-projects.json')) {
+  try {
+    return (JSON.parse(fs.readFileSync(file, 'utf8')).projects || [])
+      .filter((x) => x && x.repo && x.public === true)
+      .map((x) => x.repo.toLowerCase());
+  } catch { return []; }
+}
+
 // SAF: uzak adresten "sahip/depo" cikarir (https ya da ssh).
 function repoSlug(remoteUrl) {
   const m = String(remoteUrl || '').trim().match(/github\.com[:/]+([^/]+\/[^/\s]+?)(?:\.git)?$/i);
@@ -128,10 +139,17 @@ function readState(root) {
   const ledgerText = readAt(root, 'docs/teknik-borc.md', fromMain);
   const workflowTexts = allOrNull(workflows === null ? null : workflows.map((f) => readAt(root, `${WF}/${f}`, fromMain, true)));
   const guideTexts = allOrNull(guideNames === null ? null : guideNames.map((f) => readAt(root, f, fromMain, true)));
+  // Dependabot yalnız npm projesinde istenir (kök package.json). Okunamazsa null (Kural 3).
+  const hasPackageJson = rootNames === null ? null : rootNames.includes('package.json');
+  const dependabotText = hasPackageJson === null ? null
+    : (hasPackageJson ? readAt(root, '.github/dependabot.yml', fromMain) : '');
   return {
     repo: repoSlug(readRemote(root)),
     fromMain,
     workflows,
+    workflowFiles: workflowTexts === null ? null : workflows.map((name, i) => ({ name, text: workflowTexts[i] })),
+    hasPackageJson,
+    dependabotText,
     workflowText: workflowTexts === null ? null : workflowTexts.filter((t) => isTriggered(t)),
     hasLedger: ledgerText === null ? null : (fromMain ? ledgerText !== '' : fs.existsSync(path.join(root, 'docs', 'teknik-borc.md'))),
     ledgerText,
@@ -201,16 +219,24 @@ function brokenLedgerRefs(ledgerText, exists = (p) => fs.existsSync(path.join(ST
 const has = (state, file) => state.workflows.includes(file);
 const mentions = (text, re) => re.test(text || '');
 
+// Ortak adım (2026-09-29): aile kontrolü CI işinin içinde bir adım. Kod dili taraması
+// `kod-dili: false` verilerek kapatılabilir; kapalıysa kod dili turnikesi YOK sayılır.
+const FAMILY_STEP = /SNN-Standartlar\/\.github\/actions\/aile-kontrol@/;
+const familyStepRuns = (s, { codeLanguage = false } = {}) => (s.workflowText || []).some((t) => FAMILY_STEP.test(t)
+  && (!codeLanguage || !/kod-dili:\s*['"]?false/.test(t)));
+const budget = (s) => require('./workflow-budget').analyzeWorkflows(s.workflowFiles || []);
+const budgetFix = 'iskelet: ornek/ci-duzeni.yml (CI\'ı olmayan proje: ornek/aile-kontrol.yml) · gerekçe: SNN-Standartlar/docs/actions-kotasi.md';
+
 const CHECKS = [
   {
     id: 'kod-dili-akisi',
     input: 'workflowText',
     title: 'Kod dili turnikesi',
-    ok: (s) => runsGate(s, /kod-dili\.yml|code-language-scan/),
+    ok: (s) => runsGate(s, /kod-dili\.yml|code-language-scan/) || familyStepRuns(s, { codeLanguage: true }),
     detail: (s) => (has(s, 'kod-dili.yml')
       ? 'kod-dili.yml var ama PR/push ile tetiklenmiyor (yalnız workflow_call) — bu depoda hiç çalışmıyor'
-      : '.github/workflows/kod-dili.yml yok'),
-    fix: 'ornek/kod-dili.yml dosyasını projeye kopyala',
+      : 'kod dili taraması çalışmıyor (ortak adım yok ya da `kod-dili: false`)'),
+    fix: 'CI işine ortak adımı ekle: `uses: sinanbocek/SNN-Standartlar/.github/actions/aile-kontrol@main` (ornek/ci-duzeni.yml)',
   },
   {
     id: 'kod-dili-kaydi',
@@ -255,11 +281,52 @@ const CHECKS = [
     id: 'anahtar-tarama',
     input: 'workflowText',
     title: 'Anahtar taraması',
-    ok: (s) => runsGate(s, /anahtar-tarama\.yml|secret-scan/),
+    ok: (s) => runsGate(s, /anahtar-tarama\.yml|secret-scan/) || familyStepRuns(s),
     detail: (s) => (has(s, 'anahtar-tarama.yml')
       ? 'anahtar-tarama.yml var ama PR/push ile tetiklenmiyor — sır sızıntısı kapısı çalmıyor'
-      : '.github/workflows/anahtar-tarama.yml yok — sır sızıntısı PR kapısı yok'),
-    fix: 'ornek/anahtar-tarama.yml dosyasını projeye kopyala',
+      : 'gizli anahtar taraması çalışmıyor — sır sızıntısı PR kapısı yok'),
+    fix: 'CI işine ortak adımı ekle: `uses: sinanbocek/SNN-Standartlar/.github/actions/aile-kontrol@main` (CI yoksa ornek/aile-kontrol.yml)',
+  },
+  // ─── Akış bütçesi (quality/workflow-budget.js · docs/actions-kotasi.md) ───
+  {
+    id: 'ci-main-kosumu',
+    budget: true,
+    input: 'workflowFiles',
+    title: 'CI main\'de ikinci kez koşuyor',
+    ok: (s) => budget(s).mainRuns.length === 0,
+    detail: (s) => `${budget(s).mainRuns.join(', ')} main'e gönderimde de test koşuyor; PR'da test edilen kod baştan test ediliyor (eylül: ailede 1.214 dk)`,
+    fix: `\`on:\` bölümünden \`push\` tetiğini kaldır, yalnız \`pull_request\` kalsın · ${budgetFix}`,
+  },
+  {
+    id: 'aile-kontrol-adimi',
+    budget: true,
+    input: 'workflowFiles',
+    title: 'Aile kontrolü ayrı akışta',
+    ok: (s) => budget(s).separateScans.length === 0,
+    detail: (s) => `${budget(s).separateScans.join(', ')} ayrı makine açıyor; ~15 sn'lik tarama 1 dk faturalanıyor (eylül: ailede 769 dk)`,
+    fix: `bu dosyaları sil, CI işine \`uses: sinanbocek/SNN-Standartlar/.github/actions/aile-kontrol@main\` adımını ekle · ${budgetFix}`,
+  },
+  {
+    id: 'ci-iptal',
+    budget: true,
+    input: 'workflowFiles',
+    title: 'CI eski koşumu iptal etmiyor',
+    ok: (s) => budget(s).noCancel.length === 0,
+    detail: (s) => `${budget(s).noCancel.join(', ')} aynı PR'a art arda gönderimde eski koşumu bitirmeden yenisini başlatıyor`,
+    fix: `\`concurrency: { group: ci-\${{ github.ref }}, cancel-in-progress: true }\` ekle · ${budgetFix}`,
+  },
+  {
+    id: 'dependabot-aylik',
+    budget: true,
+    input: 'dependabotText',
+    title: 'Dependabot aylık ve gruplu değil',
+    ok: (s) => !s.hasPackageJson || require('./workflow-budget').dependabotState(s.dependabotText) === 'ok',
+    detail: (s) => ({
+      yok: '.github/dependabot.yml yok — güvenlik güncellemeleri paket başına ayrı PR açıyor, her biri CI koşturuyor',
+      haftalik: 'dependabot.yml haftalık/günlük — aylık olmalı',
+      grupsuz: 'dependabot.yml güvenlik güncellemelerini tek grupta toplamıyor',
+    })[require('./workflow-budget').dependabotState(s.dependabotText)],
+    fix: 'SNN-Standartlar/ornek/dependabot.yml dosyasını .github/dependabot.yml olarak kopyala',
   },
   {
     id: 'rehber-atfi',
@@ -274,7 +341,8 @@ const CHECKS = [
 // SAF: durum -> bulgular. Muaf olanlar listeden dusulur.
 // Dayandigi girdi OKUNAMAMIS (null) olcut eksik de temiz de sayilmaz: `unknown` listesine girer
 // (olcum-standardi.md, Kural 3). compliance-issues bu olcutlerin issue'larina dokunmaz.
-function evaluate(state, exempt = exemptions(state.exemptRaw), excluded = excludedRepos()) {
+function evaluate(state, exempt = exemptions(state.exemptRaw), excluded = excludedRepos(), publics = publicRepos()) {
+  const isPublic = !!state.repo && publics.includes(state.repo);
   if (state.repo && excluded.includes(state.repo)) {
     return { gaps: [], unknown: [], warnings: [], total: CHECKS.length, exemptCount: 0, excluded: true };
   }
@@ -282,6 +350,7 @@ function evaluate(state, exempt = exemptions(state.exemptRaw), excluded = exclud
   const unknown = [];
   for (const c of CHECKS) {
     if (exempt.ids.has(c.id)) continue;
+    if (c.budget && isPublic) continue; // açık depoda dakika ücretsiz
     if (c.input && state[c.input] === null) { unknown.push(c.id); continue; }
     if (c.ok(state)) continue;
     gaps.push({ id: c.id, title: c.title, detail: c.detail(state), fix: c.fix });
@@ -315,4 +384,4 @@ function check(root) {
   return evaluate(readState(root));
 }
 
-module.exports = { CHECKS, EXEMPT_FILE, brokenLedgerRefs, isTriggered, runsGate, repoSlug, excludedRepos, listAt, readAt, hasMain, readState, exemptions, evaluate, summary, check, MAX_SHOWN };
+module.exports = { CHECKS, EXEMPT_FILE, brokenLedgerRefs, isTriggered, runsGate, repoSlug, excludedRepos, publicRepos, listAt, readAt, hasMain, readState, exemptions, evaluate, summary, check, MAX_SHOWN };

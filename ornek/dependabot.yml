@@ -1,0 +1,37 @@
+# Her projeye kopyalanır: .github/dependabot.yml
+#
+# AYLIK ve GRUPLU. Neden (ölçüldü 2026-09-29): eylülde Dependabot PR'ları gizli depolarda 179 dk
+# yaktı; Proje-Nakit'te 13 ayrı güncelleme PR'ı açıldı ve her biri CI'ı baştan koştu.
+# Ayar dosyası olmayan depoda güvenlik güncellemeleri paket başına AYRI PR açar; aşağıdaki
+# `security` grubu onları tek PR'da toplar.
+#
+# Bu politika Proje-Nakit ve İhale'nin haftalık dosyasından türedi; tek fark aralık (aylık).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Istanbul
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    groups:
+      production:
+        applies-to: version-updates
+        dependency-type: production
+        update-types: [minor, patch]
+      dev-tooling:
+        applies-to: version-updates
+        dependency-type: development
+        update-types: [minor, patch]
+      security:
+        applies-to: security-updates
+        patterns: ["*"]
+    ignore:
+      # Major yükseltmeler elle yapılır.
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]

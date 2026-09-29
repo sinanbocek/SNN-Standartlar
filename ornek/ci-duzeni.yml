@@ -1,0 +1,54 @@
+# CI DÜZENİ ÖRNEĞİ — projenin kendi .github/workflows/ci.yml dosyası bu iskelete uyar.
+# Adımlar (lint, test, derleme) projeye özgüdür; aile kuralı yalnız İSKELETİ belirler.
+# Uyum ölçeri iskeleti denetler (quality/workflow-budget.js); sapma issue olarak açılır.
+#
+# Kurallar ve nedenleri (ölçüldü 2026-09-29, eylül: gizli depolarda 2.848 dk):
+#   1. Yalnız pull_request. main'e gönderimde CI KOŞMAZ. Eylülde main koşumları 1.214 dk idi:
+#      PR'da test edilen kod birleşince baştan test ediliyordu. PR'daki kodun main'e girenle
+#      aynı olmasını birleştirme kapısı sağlar: dal main'in gerisindeyse birleştirme durur.
+#   2. Aile kontrolü AYRI akış değil, bu işin içinde bir ADIM. Ayrı akış ayrı makinedir ve
+#      15 saniyelik tarama 1 dakika yazılır.
+#   3. paths-ignore YOK. Yalnız belge değişen PR'da taramalar yine çalışır, testler atlanır
+#      (aile-kontrol adımının yalniz-belge çıktısı).
+#   4. Aynı PR'a art arda gönderimde eski koşum iptal edilir.
+name: ci
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Aile kontrolü: gizli anahtar + kod dili. Testlerden ÖNCE: bulgu varsa test beklemeden kırmızı.
+      - id: aile
+        uses: sinanbocek/SNN-Standartlar/.github/actions/aile-kontrol@main
+
+      # Aşağıdaki her adım yalnız belge değişen PR'da atlanır.
+      - if: steps.aile.outputs.yalniz-belge != 'true'
+        run: npm ci
+
+      - if: steps.aile.outputs.yalniz-belge != 'true'
+        run: npm run lint
+
+      - if: steps.aile.outputs.yalniz-belge != 'true'
+        run: npx tsc --noEmit
+
+      - if: steps.aile.outputs.yalniz-belge != 'true'
+        run: npm test

@@ -62,7 +62,7 @@ function plan(o) {
     add('arsiv', 'agent', o.archive ? 'present' : 'toAdd', o.archive ? 'docs/teknik-borc-arsiv.md var.' : 'docs/teknik-borc-arsiv.md boş arşiv olarak eklenir (PR içinde).');
   }
   add('teknik-borc-akisi', 'agent', o.workflows['teknik-borc.yml'] ? 'present' : 'toAdd', 'Kütük → GitHub issue ve board senkron görevlisi (.github/workflows/teknik-borc.yml).');
-  add('anahtar-tarama-akisi', 'agent', o.workflows['anahtar-tarama.yml'] ? 'present' : 'toAdd', 'Her PR\'da eklenen satırlarda gizli anahtar taraması (.github/workflows/anahtar-tarama.yml).');
+  add('anahtar-tarama-akisi', 'agent', o.workflows['anahtar-tarama.yml'] ? 'present' : 'toAdd', 'Her PR\'da eklenen satırlarda gizli anahtar ve kod dili taraması (.github/workflows/aile-kontrol.yml).');
 
   // GitHub ayarları
   add('board', 'agent', o.board ? 'present' : 'toAdd', `"${BOARD_TITLE(o.repo.name)}" board'u (Açık / Devam / Kapandı), depoya bağlı.`);

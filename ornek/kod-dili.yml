@@ -1,3 +1,6 @@
+# ESKİ ŞABLON (2026-09-29): yeni projeye KOPYALANMAZ. Yerine ortak adım: ornek/ci-duzeni.yml ya da
+# ornek/aile-kontrol.yml (gerekçe: docs/actions-kotasi.md). Geçiş bitene kadar başvuru için durur.
+#
 # Her projeye kopyalanacak TEK dosya: .github/workflows/kod-dili.yml
 # Her PR'da ve main'e her gönderimde, EKLENEN satırlarda Türkçe tanımlayıcı arar. Bulursa kırmızı verir.
 # Yorumlar, dizgeler ve belgeler Türkçedir; taranmaz. Kural: SNN-Standartlar/standartlar/kod-dili-standardi.md

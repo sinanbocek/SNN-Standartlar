@@ -42,5 +42,13 @@ expect('kontrol tanımlı değil → izin (not ile)', decide(m, null).allow, tru
 expect('numara yok → ret', decide({ number: null, repo: null, raw: 'gh pr merge $n' }, []).allow, false);
 expect('ret gerekçesi kırmızı kontrolün adını söyler', decide(m, [{ name: 'build-and-lint', bucket: 'fail' }]).reason.includes('build-and-lint'), true);
 
+console.log('— dal main\'in gerisinde (2026-09-29, CI main\'de koşmuyor)');
+const { behindReason } = require('../merge-gate');
+const pr = { number: 42, repo: 'sinanbocek/Gunum-Var', raw: 'gh pr merge 42' };
+expect('geride gizli depo → ret', behindReason(pr, { behindBy: 3, isPublic: false, base: 'main' }) !== null, true);
+expect('ret, güncelleme komutunu verir', behindReason(pr, { behindBy: 3, isPublic: false, base: 'main' }).includes('gh pr update-branch 42 -R sinanbocek/Gunum-Var'), true);
+expect('güncel dal → geçer', behindReason(pr, { behindBy: 0, isPublic: false, base: 'main' }), null);
+expect('açık depo geride olsa da geçer (main CI ücretsiz ve kalır)', behindReason(pr, { behindBy: 5, isPublic: true, base: 'main' }), null);
+
 console.log(fail ? `\n✗ ${fail} test başarısız` : '\n✓ tümü geçti');
 process.exit(fail ? 1 : 0);

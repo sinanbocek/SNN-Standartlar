@@ -1,0 +1,30 @@
+# YALNIZ CI'I OLMAYAN projeler için: .github/workflows/aile-kontrol.yml
+#
+# CI'ı olan proje bu dosyayı KOPYALAMAZ; ortak adımı kendi CI işine ekler (ornek/ci-duzeni.yml).
+# Ayrı akış = ayrı makine = en az 1 dakika. Eylülde anahtar-tarama + kod-dili ayrı akış olarak
+# 769 dk yaktı; gerçek süreleri bunun küçük bir kısmıydı (docs/actions-kotasi.md).
+#
+# Bu dosya eski anahtar-tarama.yml ve kod-dili.yml dosyalarının İKİSİNİN de yerine geçer;
+# o ikisi silinir.
+name: aile-kontrol
+
+on:
+  pull_request:
+
+concurrency:
+  group: aile-kontrol-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  aile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: sinanbocek/SNN-Standartlar/.github/actions/aile-kontrol@main
