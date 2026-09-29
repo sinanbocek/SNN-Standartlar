@@ -61,9 +61,12 @@ expect('yoksa cwd', cg.targetDir('git push', here), here);
 console.log('— kapılar birlikte (bağımlılıklar sahte)');
 const deny = { gate: () => 'yerel kontrol yok' };
 const pass = { gate: () => null };
-const quota = (billable) => ({ askBeforePr: require('../actions-quota').askBeforePr, cachedSummary: () => ({ billable }) });
+const q0 = require('../actions-quota');
+const quota = (billable) => ({ askBeforePr: q0.askBeforePr, ownsQuota: q0.ownsQuota, cachedSummary: () => ({ billable }) });
 expect('yerel kontrol yok → deny', cg.check('git push', '.', { local: () => deny }).decision, 'deny');
-expect('yerel geçti, kota %96 → PR açarken ask', cg.check('gh pr create --title x', '.', { local: () => pass, quota: () => quota(2880) }).decision, 'ask');
+expect('yerel geçti, kota %96 → PR açarken ask', cg.check('gh pr create --title x', '.', { local: () => pass, quota: () => quota(2880), owner: 'sinanbocek' }).decision, 'ask');
+// VAKA (2026-09-29): GHS-Panel globalhedef hesabında; sinanbocek kotası orada sorulmamalı.
+expect('başka hesabın projesinde kota sorulmaz', cg.check('gh pr create --title x', '.', { local: () => pass, quota: () => quota(2880), owner: 'globalhedef' }), null);
 expect('kota %96 ama push → sorulmaz', cg.check('git push', '.', { local: () => pass, quota: () => quota(2880) }), null);
 expect('modül çökerse iş durmaz', cg.check('git push', '.', { local: () => { throw new Error('x'); } }), null);
 
