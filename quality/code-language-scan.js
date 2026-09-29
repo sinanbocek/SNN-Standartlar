@@ -370,7 +370,31 @@ const isDanglingText = (part) => {
   return !isCodeInDangling(rest);
 };
 
+// SAF: süslü parantezli ifadelerin İÇİNDEKİ `<` ve `>` işaretlerini geçici olarak gizler.
+// NEDEN (GHS-Panel PR #279 ölçümü, 2026-09-29): `Tüm teklifler {sayfa > 1 && …}` ve
+// `Şablon taslağı · {liste.find(p => p.id)}` satırlarında karşılaştırma ve ok fonksiyonunun `>`
+// işareti etiket kapanışı sanılıyordu. Satır "etiketli" sayılınca metni atan kural hiç
+// çalışmıyor, ekran yazısı tanımlayıcı gibi raporlanıyordu (4 yanlış alarm).
+// Gizleme karakterleri tanımlayıcı sayılmaz; dönüşte geri konur.
+//
+// YALNIZ İŞLEÇ BİÇİMİ gizlenir: ok (`=>`) ve iki yanı boşluklu karşılaştırma (` > `, ` <= `).
+// İfade içindeki GERÇEK etiket (`{yukleniyor && <span>Yükleniyor</span>}`) dokunulmadan kalır;
+// ilk deneme her `<`/`>` işaretini gizliyordu ve bu satırların metni yeni yanlış alarm oldu
+// (eski/yeni karşılaştırmasında görüldü). Etikette `<` ile ad arasında boşluk olmaz.
+const LT_MASK = '\u0001';
+const GT_MASK = '\u0002';
+const maskOperators = (e) => e
+  .replace(/=>/g, `=${GT_MASK}`)
+  .replace(/(\s)>(=?\s)/g, `$1${GT_MASK}$2`)
+  .replace(/(\s)<(=?\s)/g, `$1${LT_MASK}$2`);
+const maskBraceAngles = (line) => line.replace(BRACE_EXPR, maskOperators);
+const unmaskAngles = (line) => line.replace(/\u0001/g, '<').replace(/\u0002/g, '>');
+
 function stripJsxText(line) {
+  return unmaskAngles(stripJsxTextMasked(maskBraceAngles(line)));
+}
+
+function stripJsxTextMasked(line) {
   let s = line;
   // 1) <etiket> … </etiket> arasındaki gövde: yazı atılır, ifade korunur
   s = s.replace(/>([^<>]*)</g, (whole, inner) => (isPlainText(inner) ? `>${keepExpressions(inner)}<` : whole));
