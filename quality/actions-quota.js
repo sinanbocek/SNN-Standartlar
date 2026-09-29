@@ -133,6 +133,30 @@ function sessionLine(s, limit = ACCOUNT_LIMIT) {
 }
 
 // SAF: kota sınıra dayandıysa PR açmadan önce onay gerekçesi, değilse null.
+// ─── Hangi hesabın kotası? (2026-09-29, GHS-Panel sorusu) ────────────────────
+//
+// NEDEN: ölçülen kota yalnız `sinanbocek` hesabınındır (Pro, 3.000 dk). GHS-Panel başka hesapta
+// (`globalhedef`); orada açılan oturum `sinanbocek` sayısını görüyordu, %95 onayı da yanlış
+// hesaba bakıyordu. Aynı gün GHS-Panel'in işleri "spending limit" ile HİÇ başlamıyordu — yani
+// satır "%95" derken asıl kilitli olan başka hesaptı. `globalhedef` faturası bu makineden
+// okunamıyor (gh yalnız sinanbocek'te oturum açmış; ölçüldü: 404).
+
+// SAF: proje deposunun sahibi bu ölçümün hesabı mı? Sahip bilinmiyorsa (depo yok) evet sayılır.
+const ownsQuota = (owner) => !owner || String(owner).toLowerCase() === OWNER;
+
+// SAF: başka hesaptaki proje için satır — sayı UYDURULMAZ.
+const foreignLine = (owner) => `Actions (${owner} hesabı): kota bu makineden okunamıyor — fatura o hesapta. `
+  + 'İşler "spending limit" gerekçesiyle başlamıyorsa sebep o hesabın kotasıdır.';
+
+// IO: klasördeki deponun sahibi ('' = okunamadı).
+function repoOwner(root) {
+  try {
+    const url = execFileSync('git', ['-C', root, 'remote', 'get-url', 'origin'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 5000 }).trim();
+    return (require('./compliance').repoSlug(url).split('/')[0]) || '';
+  } catch { return ''; }
+}
+
 function askBeforePr(s, limit = ACCOUNT_LIMIT) {
   if (!s || s.billable < limit * ASK_RATIO) return null;
   return `Actions kotası %${Math.round((s.billable / limit) * 100)} dolu (${s.billable}/${limit} dk). `
@@ -178,7 +202,7 @@ function cachedSummary({ now = new Date(), file = CACHE_FILE, allowNetwork = tru
 
 module.exports = {
   summarize, report, minuteRows, measureMonth, DEFAULT_THRESHOLD,
-  ACCOUNT_LIMIT, sessionLine, askBeforePr, cacheFresh, cachedSummary,
+  ACCOUNT_LIMIT, sessionLine, askBeforePr, cacheFresh, cachedSummary, ownsQuota, foreignLine, repoOwner,
 };
 
 if (require.main === module) {

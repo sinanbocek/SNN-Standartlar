@@ -10,7 +10,7 @@ const expect = (name, actual, wanted) => {
   console.log(`${ok ? '✓' : '✗'} ${name}${ok ? '' : `\n    gelen: ${JSON.stringify(actual)}\n    beklenen: ${JSON.stringify(wanted)}`}`);
 };
 const row = (repo, minutes) => ({ product: 'actions', unitType: 'Minutes', repositoryName: repo, quantity: minutes });
-const quotaLine = (summary) => sl.lines('.', { summary: () => summary }).find((l) => l.includes('Actions')) || '';
+const quotaLine = (summary) => sl.lines('.', { summary: () => summary, owner: 'sinanbocek' }).find((l) => l.includes('Actions')) || '';
 
 console.log('— Actions kota satırı (2026-09-29)');
 // VAKA: 19 Eylül'de gizli depolar 2.045 dk'ya ulaştı; haftalık kota raporu yalnız akış özetinde
@@ -22,6 +22,16 @@ expect('ay başı sakin gidiş → uyarısız', quotaLine(q.summarize([row('A', 
 expect('%80 dolunca gidiş düşük olsa da uyarır', q.sessionLine({ billable: 2400, projected: null }).startsWith('⚠'), true);
 // Okunamadı ≠ iyi (olcum-standardi.md, Kural 3): ölçülemeyen kota sessiz geçilmez.
 expect('ölçülemezse bunu söyler', quotaLine(null).includes('ölçülemedi'), true);
+console.log('— başka hesaptaki proje (GHS-Panel, 2026-09-29)');
+// VAKA: GHS-Panel globalhedef hesabında. Açılış sinanbocek'in "2.848/3.000" sayısını gösteriyordu;
+// o gün asıl kilitli olan globalhedef hesabıydı (işler "spending limit" ile başlamıyordu).
+const ghs = sl.lines('.', { owner: 'globalhedef', summary: () => q.summarize([row('Gunum-Var', 2848)], { day: 29, daysInMonth: 30 }) }).join('\n');
+expect('başka hesapta bu hesabın sayısı gösterilmez', ghs.includes('2.848'), false);
+expect('hangi hesap olduğu yazılır', ghs.includes('globalhedef hesabı'), true);
+expect('okunamadığı söylenir (sayı uydurulmaz)', ghs.includes('okunamıyor'), true);
+expect('sahip okunamazsa bu hesap sayılır', q.ownsQuota(''), true);
+expect('büyük harf fark etmez', q.ownsQuota('SinanBocek'), true);
+
 expect('ölçüm çökse de satırlar döner', Array.isArray(sl.lines('.', { summary: () => { throw new Error('x'); } })), true);
 
 console.log(fail ? `\n✗ ${fail} test başarısız` : '\n✓ tümü geçti');

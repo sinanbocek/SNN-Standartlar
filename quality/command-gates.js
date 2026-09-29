@@ -49,6 +49,9 @@ function check(cmd, cwd, deps = {}) {
   try {
     if (PR_CREATE.test(cmd)) {
       const q = quota();
+      // Onay yalnız ölçülen hesabın projesinde sorulur (başka hesabın kotası bilinmiyor).
+      const owner = deps.owner !== undefined ? deps.owner : q.repoOwner(targetDir(cmd, cwd));
+      if (q.ownsQuota && !q.ownsQuota(owner)) return null;
       // Ağa çıkılmaz: yalnız oturum açılışının yazdığı önbellek okunur (bekçi hızlı kalsın).
       const reason = q.askBeforePr(q.cachedSummary({ allowNetwork: false }));
       if (reason) return { decision: 'ask', reason };
