@@ -50,9 +50,13 @@ expect('git status tabi değil', cg.needsLocalCheck('git status'), false);
 expect('commit mesajında "push" geçmesi tabi değil', cg.needsLocalCheck('git commit -m "fix push"'), false);
 
 console.log('— komutun klasörü');
-expect('git -C', cg.targetDir('git -C "C:/p/proje" push', 'C:/x'), path.resolve('C:/p/proje'));
-expect('baştaki cd', cg.targetDir('cd "C:/p/proje" && git push', 'C:/x'), path.resolve('C:/p/proje'));
-expect('yoksa cwd', cg.targetDir('git push', 'C:/x'), 'C:/x');
+// Mutlak yollar platformdan üretilir: CI Linux'ta "C:/..." göreli sayılır (2026-09-29, PR #115).
+const target = path.join(os.tmpdir(), 'p', 'proje');
+const here = path.join(os.tmpdir(), 'x');
+expect('git -C', cg.targetDir(`git -C "${target}" push`, here), target);
+expect('baştaki cd', cg.targetDir(`cd "${target}" && git push`, here), target);
+expect('göreli -C, cwd\'ye göre çözülür', cg.targetDir('git -C ../proje push', here), path.join(os.tmpdir(), 'proje'));
+expect('yoksa cwd', cg.targetDir('git push', here), here);
 
 console.log('— kapılar birlikte (bağımlılıklar sahte)');
 const deny = { gate: () => 'yerel kontrol yok' };
