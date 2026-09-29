@@ -82,6 +82,10 @@ jobs:
         run: node quality/test/actions-quota.test.js
       - name: Akış bütçesi kapısı testleri
         run: node quality/test/workflow-budget.test.js
+      - name: Oturum açılışı kota satırı testleri
+        run: node quality/test/session-lines.test.js
+      - name: Yerel test kapısı ve komut kapıları testleri
+        run: node quality/test/command-gates.test.js
       - name: Aşılmış PR kapatma testleri
         run: node core/test/propagate.test.js
       - name: Bekleyen ölçüm kapısı testleri

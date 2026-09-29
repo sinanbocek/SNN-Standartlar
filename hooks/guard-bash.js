@@ -66,6 +66,14 @@ try {
   }
 } catch { /* modül yok (canlı kopya eski) → koruma atlanır */ }
 
+// Komut kapıları canlı kopyadan (quality/command-gates.js): yerel test kapısı, kota onayı ve
+// ileride eklenecekler. Yeni kapı eklemek bekçiyi değiştirmeyi (elle kurulumu) gerektirmesin.
+// Kalite kapısıdır: modül yüklenemezse iş durmaz.
+try {
+  const hit = require(require('./lib/shared').shared('quality/command-gates.js')).check(cmd, input.cwd);
+  if (hit) decide(hit.decision, hit.decision === 'deny' ? `Engellendi: ${hit.reason}` : hit.reason);
+} catch { /* modül yok (canlı kopya eski) → kapı atlanır */ }
+
 // Birleştirme kapısı: GitHub kontrolleri yeşil değilken PR birleştirilmez (kural ortak depoda: quality/merge-gate.js).
 // Kural dosyası yüklenemezse kapı KAPALI kalır: denetlenemeyen birleştirme engellenir.
 // Tetik geniş tutulur (REST/GraphQL birleştirme, taslak kaldırma); ayrıntılı karar modülde
