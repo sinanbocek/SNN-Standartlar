@@ -93,3 +93,36 @@ yalnız 1,2 CI koşumu vardı ve başarısız koşumlar ayda 49 dk tuttu. Dakika
 
 Benzetim (eylül verisi, aynı 383 PR): iskelet + Dependabot ile **~1.260 dk** (bugünkü 2.853 yerine).
 PR başına 7,4 dk → 3,3 dk.
+
+
+## Oturum açılışı satırı ve PR onayı (2026-09-29)
+
+Her oturum açılışında tek satır (`quality/session-lines.js` → `quality/actions-quota.js`):
+
+```
+   Actions: 1.120/3.000 dk (%37) · ay sonu gidişi ~2.300
+```
+
+- Önbellek 6 saat (`~/.claude/cache/actions-kotasi.json`); açılış ağa en fazla bir istek atar.
+- `%80` dolunca ya da ay sonu gidişi sınırı aşınca satır `⚠` ile başlar.
+- `%95` (2.850 dk) dolunca `gh pr create` öncesinde **onay istenir** (bekçi önbelleği okur, ağa çıkmaz).
+- Ölçülemezse satır bunu söyler; "okunamadı" iyi demek değildir.
+
+## Yerel test kapısı (2026-09-29)
+
+Kod buluta gitmeden önce lint + tip + test bu bilgisayarda geçmeli:
+
+```bash
+node ~/.claude/standartlar-canli/quality/local-check.js
+```
+
+- Geçerse o commit için damga yazar (`.git/snn-yerel-kontrol.json`, depoya girmez).
+- Bekçi `git push` ve `gh pr create` öncesinde damgayı arar; yoksa durdurur.
+- Yalnız belge değişen dal ve main'e göre yeni commit'i olmayan dal serbesttir.
+- Komutlar `package.json`'dan: `verify` betiği varsa yalnız o; yoksa `format:check` · `lint` ·
+  `typecheck` (yoksa `tsc --noEmit`) · `test`. CI'da projeye özgü adım varsa (Gunum-Var: Deno)
+  proje `verify` betiği tanımlar.
+
+Bu iki özellik bekçi kodunda bir kerelik değişiklik ister: `node setup/setup-machine.js` (kuru),
+sonra uygulama. Sonraki kapı ve satırlar `quality/command-gates.js` ve `quality/session-lines.js`
+üzerinden canlı kopyadan akar; bekçiye yeniden dokunmak gerekmez.

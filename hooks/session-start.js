@@ -100,6 +100,12 @@ function main() {
     }
   }
 
+  // Ek açılış satırları canlı kopyadan (quality/session-lines.js): yeni satır eklemek bekçiyi
+  // değiştirmeyi, yani elle kurulumu gerektirmesin (2026-09-29, Actions kota satırı ile).
+  try {
+    lines.push(...require(require('./lib/shared').shared('quality/session-lines.js')).lines(root));
+  } catch { /* canlı kopya eski → ek satırlar bu oturum yok */ }
+
   const others = listProjects()
     .filter((d) => !root || path.resolve(d) !== root)
     .map(projectStatus)

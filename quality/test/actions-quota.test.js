@@ -68,5 +68,20 @@ expect('yapılabilecekler yazılır', over.includes('concurrency'), true);
 expect('en çok yakan depo görünür', over.includes('Gunum-Var'), true);
 expect('temizse temiz yazar', t.report(t.summarize([row('A', 10)], { threshold: 1500 })).includes('Eşiğin altında'), true);
 
+console.log('— PR açmadan önce onay');
+// VAKA: 29 Eylül'de gizli depolar 2.848 dk (%94,9) — sınırın bir gün öncesi. Eşik %95 = 2.850 dk
+// (proje sahibinin 2026-09-29 onayı).
+expect('%95 → onay istenir', t.askBeforePr({ billable: 2850 }) !== null, true);
+expect('29 Eylül (%94,9) → henüz onay yok', t.askBeforePr({ billable: 2848 }), null);
+expect('%90 → onay yok', t.askBeforePr({ billable: 2700 }), null);
+expect('ölçülemediyse onay yok (kapı tahminle durdurmaz)', t.askBeforePr(null), null);
+
+console.log('— önbellek');
+const now = new Date(Date.UTC(2026, 8, 29, 12));
+expect('taze önbellek geçerli', t.cacheFresh({ at: now.getTime() - 3600e3, month: '2026-9', summary: {} }, now), true);
+expect('6 saatten eski geçersiz', t.cacheFresh({ at: now.getTime() - 7 * 3600e3, month: '2026-9', summary: {} }, now), false);
+expect('ay değişince geçersiz', t.cacheFresh({ at: now.getTime(), month: '2026-8', summary: {} }, now), false);
+expect('önbellek yoksa geçersiz', t.cacheFresh(null, now), false);
+
 console.log(fail ? `\n${fail} test başarısız` : '\nTüm testler geçti');
 process.exit(fail ? 1 : 0);

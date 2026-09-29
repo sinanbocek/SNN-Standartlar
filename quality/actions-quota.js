@@ -108,7 +108,78 @@ function measureMonth({ threshold = DEFAULT_THRESHOLD, year, month, day = null }
   });
 }
 
-module.exports = { summarize, report, minuteRows, measureMonth, DEFAULT_THRESHOLD };
+// ─── Oturum açılışı satırı ve PR kapısı (2026-09-29) ─────────────────────────
+//
+// NEDEN: bu ölçüm 2026-09-23'ten beri haftalık koşuyordu ama sonucu yalnız akış özetine
+// yazıyordu; kimse okumadı. Kota 19 Eylül'de 2.000'i geçti, 23–24 Eylül yine 686 dk yandı.
+// Sayı artık her oturum açılışında görünür; sınıra yaklaşınca PR açmadan önce onay istenir.
+//
+// Hesabın sınırı (plan Pro, 2026-09-29'da proje sahibi yükseltti). DEFAULT_THRESHOLD (1.500)
+// erken uyarı çizgisi olarak haftalık kapıda kalır.
+const ACCOUNT_LIMIT = 3000;
+const WARN_RATIO = 0.8;
+const ASK_RATIO = 0.95;
+const CACHE_MS = 6 * 60 * 60 * 1000;
+const CACHE_FILE = require('path').join(require('os').homedir(), '.claude', 'cache', 'actions-kotasi.json');
+
+// SAF: özet → tek satır. Sınıra yaklaşınca ya da gidiş sınırı aşınca ⚠.
+function sessionLine(s, limit = ACCOUNT_LIMIT) {
+  if (!s) return null;
+  const pct = Math.round((s.billable / limit) * 100);
+  const fmt = (n) => n.toLocaleString('tr-TR');
+  const trend = s.projected !== null && s.projected !== undefined ? ` · ay sonu gidişi ~${fmt(s.projected)}` : '';
+  const warn = s.billable >= limit * WARN_RATIO || (s.projected || 0) > limit;
+  return `${warn ? '⚠ ' : ''}Actions: ${fmt(s.billable)}/${fmt(limit)} dk (%${pct})${trend}${warn ? ' — PR\'ları topla, gereksiz koşum açma (docs/actions-kotasi.md)' : ''}`;
+}
+
+// SAF: kota sınıra dayandıysa PR açmadan önce onay gerekçesi, değilse null.
+function askBeforePr(s, limit = ACCOUNT_LIMIT) {
+  if (!s || s.billable < limit * ASK_RATIO) return null;
+  return `Actions kotası %${Math.round((s.billable / limit) * 100)} dolu (${s.billable}/${limit} dk). `
+    + 'Sınıra dayanınca GitHub işi HİÇ başlatmaz. Bu PR şimdi gerekli mi, yoksa başka değişikliklerle birlikte mi açılsın?';
+}
+
+// SAF: önbellek hâlâ geçerli mi? Ay değişince eski ayın sayısı kullanılmaz.
+function cacheFresh(cache, now = new Date()) {
+  if (!cache || !cache.summary) return false;
+  const month = `${now.getUTCFullYear()}-${now.getUTCMonth() + 1}`;
+  return cache.month === month && now.getTime() - cache.at < CACHE_MS;
+}
+
+const readCache = (file = CACHE_FILE) => {
+  try { return JSON.parse(require('fs').readFileSync(file, 'utf8')); } catch { return null; }
+};
+
+// Önbellekli ölçüm. Açık depolar aile listesinden okunur (depo başına istek atılmaz; açılış hızlı
+// kalsın). Listede olmayan depo GİZLİ sayılır — temkinli taraf. Ölçülemezse null.
+function cachedSummary({ now = new Date(), file = CACHE_FILE, allowNetwork = true } = {}) {
+  const cache = readCache(file);
+  if (cacheFresh(cache, now)) return cache.summary;
+  if (!allowNetwork) return null;
+  try {
+    const y = now.getUTCFullYear();
+    const m = now.getUTCMonth() + 1;
+    const items = JSON.parse(execFileSync('gh', ['api', `users/${OWNER}/settings/billing/usage?year=${y}&month=${m}`],
+      { encoding: 'utf8', maxBuffer: 1e8, stdio: ['ignore', 'pipe', 'ignore'], timeout: 10000 })).usageItems || [];
+    const free = require('./compliance').publicRepos().map((r) => r.split('/')[1]);
+    const names = [...new Set(minuteRows(items).map((r) => r.repositoryName).filter(Boolean))];
+    const summary = summarize(items, {
+      freeRepos: names.filter((n) => free.includes(n.toLowerCase())),
+      day: now.getUTCDate(),
+      daysInMonth: new Date(Date.UTC(y, m, 0)).getUTCDate(),
+    });
+    try {
+      require('fs').mkdirSync(require('path').dirname(file), { recursive: true });
+      require('fs').writeFileSync(file, JSON.stringify({ at: now.getTime(), month: `${y}-${m}`, summary }));
+    } catch { /* önbellek yazılamazsa sonraki oturum yeniden ölçer */ }
+    return summary;
+  } catch { return null; }
+}
+
+module.exports = {
+  summarize, report, minuteRows, measureMonth, DEFAULT_THRESHOLD,
+  ACCOUNT_LIMIT, sessionLine, askBeforePr, cacheFresh, cachedSummary,
+};
 
 if (require.main === module) {
   const argv = process.argv.slice(2);

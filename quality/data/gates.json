@@ -146,6 +146,18 @@
       "module": "quality/skill-paths.js",
       "vaka": "2026-09-19: borclar ve proje-kur becerileri yeniden adlandirilmis betikleri cagiriyordu; ikisi de calismiyordu ve kimse fark etmemisti, cunku beceriler hicbir testin kapsaminda degildi (docs/makine-kurulumu.md). 2026-09-23: borc-ekle ve borclar, hicbir betigin kurmadigi <ev>/.claude/standartlar/ yerini gosteriyordu; bu makinede orada yalniz elle yazilmis bir yonlendirme notu var, yeni makinede adres bos cikar. Olcum (2026-09-23): 5 beceri, 9 adres satiri, 9'u yakalandi; 2 gercek bulgu, 0 yanlis alarm.",
       "test": "yeniden adlandırılmış betik yakalanır"
+    },
+    {
+      "id": "yerel-test",
+      "module": "quality/command-gates.js",
+      "vaka": "2026-09-29: bilgisayardaki bekci yalniz tip kontrolu yapiyordu; lint ve testler ilk kez bulutta kosuyordu. Eylul kirmizilari: Ihale 24 Eylul 'Format check' (kosum 36009419908), Gunum-Var 18 Eylul 'Lint Check' (kosum 35325709596). Git push / gh pr create oncesinde bu commit icin yerel kontrol damgasi aranir (quality/local-check.js). Gercek veride (12 proje): ilk surum main'de duran ve gonderecek commit'i olmayan 4 projeyi de durduruyordu (yanlis alarm), duzeltildi; kod degisikligi tasiyan 4 dal durduruluyor. Commit mesajinda 'push' gecmesi de gonderim sanildi — testte yakalandi, duzeltildi.",
+      "test": "İhale: format kontrolü planda"
+    },
+    {
+      "id": "kota-satiri",
+      "module": "quality/session-lines.js",
+      "vaka": "2026-09-29: kota olcumu 2026-09-23'ten beri haftalik kosuyordu ama sonucu yalniz akis ozetine yaziyordu. Gizli depolar 19 Eylul'de 2.045 dk'ya ulasti (gidis ~3.229), 23-24 Eylul yine 686 dk yandi; kimse gormedi. Acilis satiri o gun uyari verirdi.",
+      "test": "19 Eylül: gidiş sınırı aşıyor → uyarı"
     }
   ]
 }
