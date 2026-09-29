@@ -63,6 +63,40 @@ function decide(merge, checks) {
   return { allow: true };
 }
 
+// SAF: dal, hedef dalın gerisinde mi? Gerideyse birleştirme durur.
+//
+// NEDEN (2026-09-29, Actions kotası): gizli depolarda CI artık main'e gönderimde KOŞMAZ
+// (eylülde main tekrarları 1.214 dk idi; docs/actions-kotasi.md). O zaman main'e giren kodun
+// test edilmiş olmasının tek güvencesi şudur: PR, main'in son hâlinin üstünde test edilmiş olmalı.
+// Dal geride ise PR testi main'de olmayan bir tabanla koştu; iki ayrı yeşil PR birlikte main'i
+// kırabilir. Dal güncellenince PR testi yeniden koşar.
+//
+// Açık depolarda uygulanmaz: orada main CI'ı ücretsizdir ve kalır (family-projects.json "public").
+// info = { behindBy: sayı, isPublic: bool, base: 'main' }
+function behindReason(merge, info) {
+  if (!info || info.isPublic || !info.behindBy) return null;
+  const where = `${merge.repo || 'bu depo'} #${merge.number}`;
+  return `${where} birleştirilemez: dal ${info.base || 'main'} dalının ${info.behindBy} commit gerisinde. `
+    + 'CI main\'de yeniden koşmadığı için PR, main\'in son hâli üstünde test edilmiş olmalı. '
+    + `Önce "gh pr update-branch ${merge.number}${merge.repo ? ` -R ${merge.repo}` : ''}" ile güncelle, `
+    + `sonra "gh pr checks ${merge.number} --watch" ile yeni kontrolleri bekle.`;
+}
+
+// PR'ın hedef dala göre kaç commit geride olduğunu okur. Hata → fırlatır (kapı kapalı kalır).
+function readBehind(merge, cwd) {
+  const args = ['pr', 'view', String(merge.number), '--json', 'baseRefName,headRefOid,url'];
+  if (merge.repo) args.push('-R', merge.repo);
+  const pr = JSON.parse(execFileSync('gh', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+  const repo = (pr.url.match(/github\.com\/([^/]+\/[^/]+)\/pull\//) || [])[1];
+  if (!repo) throw new Error(`PR adresinden depo çözülemedi: ${pr.url}`);
+  const publics = require('./compliance').publicRepos();
+  if (publics.includes(repo.toLowerCase())) return { behindBy: 0, isPublic: true, base: pr.baseRefName };
+  const out = execFileSync('gh', ['api', `repos/${repo}/compare/${pr.baseRefName}...${pr.headRefOid}`, '--jq', '.behind_by'],
+    { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  if (!/^\d+$/.test(out)) throw new Error(`geride kalma sayısı okunamadı: "${out}"`);
+  return { behindBy: Number(out), isPublic: false, base: pr.baseRefName };
+}
+
 // GitHub'dan kontrol durumunu okur. "no checks reported" → null (kontrol tanımlı değil). Başka hata → fırlatır (kapı kapalı kalır).
 function readChecks(merge, cwd) {
   const args = ['pr', 'checks', String(merge.number), '--json', 'name,bucket'];
@@ -91,10 +125,17 @@ function gate(cmd, cwd) {
     }
     const d = decide(merge, checks);
     if (!d.allow) return d.reason;
+    let behind;
+    try {
+      behind = behindReason(merge, readBehind(merge, cwd));
+    } catch (e) {
+      return `Birleştirme kapısı ${merge.repo || ''} #${merge.number} dalının main'e göre durumunu okuyamadı (${e.message}); emin olunamadığı için engellendi.`;
+    }
+    if (behind) return behind;
   }
   return null;
 }
 
-module.exports = { parseMerges, bypassReason, decide, gate };
+module.exports = { parseMerges, bypassReason, decide, behindReason, gate };
 // Hook'un bu modülü çağırması gereken komutlar (ucuz ön süzgeç)
 module.exports.TRIGGER = /\bgh\s+pr\s+(merge|ready)\b|\/pulls\/[^/\s]+\/merge\b|mergePullRequest|enablePullRequestAutoMerge|markPullRequestReadyForReview/;

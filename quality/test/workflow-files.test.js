@@ -9,6 +9,8 @@ const ROOT = path.join(__dirname, '..', '..');
 const files = [
   ...fs.readdirSync(path.join(ROOT, '.github', 'workflows')).map((f) => path.join('.github', 'workflows', f)),
   ...fs.readdirSync(path.join(ROOT, 'ornek')).map((f) => path.join('ornek', f)),
+  // Ortak adımlar (2026-09-29): projelerin CI'ı bunları @main'den çalıştırır; bozuk YAML tümünü durdurur.
+  ...fs.readdirSync(path.join(ROOT, '.github', 'actions')).map((d) => path.join('.github', 'actions', d, 'action.yml')),
 ].filter((f) => /\.ya?ml$/.test(f));
 
 // SAF: tırnaksız düz değerde ": " ya da " #" (YAML bunları anahtar/yorum sayar) → sorunlu satırlar

@@ -1,0 +1,94 @@
+# Aile kontrolü: gizli anahtar taraması + kod dili taraması, TEK ADIMDA.
+#
+# Projenin kendi CI işine bir adım olarak eklenir; ayrı makine açmaz:
+#
+#   - uses: sinanbocek/SNN-Standartlar/.github/actions/aile-kontrol@main
+#
+# NEDEN VAR (ölçüldü 2026-09-29, eylül faturası + 1.761 koşumun iş süreleri):
+#   Gizli depolar eylülde 2.848 dk yaktı; bunun 1.120 dk'sı YUVARLAMA idi. GitHub her işi ayrı
+#   sayar ve yukarı yuvarlar: 15 saniyelik anahtar taraması 1 dakika yazılır. anahtar-tarama
+#   (613 dk) ve kod-dili (156 dk) ayrı akış olarak her PR'da ve main'e her gönderimde ayrı
+#   makine açıyordu. Aynı taramalar CI işinin içinde adım olunca yalnız gerçek saniyesi sayılır.
+#   Benzetim (eylül verisi): bu değişiklik tek başına 2.853 → 2.266 dk.
+#
+# Kural yine @main'den akar: buradaki değişiklik bir sonraki çalışmada her projeye ulaşır.
+# Betikler bu deponun kendisinden çalışır (GitHub eylemi deponun tamamını indirir); ikinci
+# checkout gerekmez.
+#
+# Değerler hiçbir çıktıya yazılmaz; yalnız dosya:satır ve bulgu türü.
+name: aile-kontrol
+description: SNN aile standardı — eklenen satırlarda gizli anahtar ve Türkçe tanımlayıcı taraması
+
+inputs:
+  kod-dili:
+    description: >-
+      Kod dili taraması çalışsın mı? Geçişini henüz yapmamış proje 'false' verebilir;
+      uyum ölçeri bunu eksik olarak göstermeye devam eder.
+    required: false
+    default: "true"
+
+outputs:
+  yalniz-belge:
+    description: >-
+      'true' = bu değişiklik yalnız belge (docs/ ya da .md). CI testleri bu çıktıyla atlanabilir;
+      taramalar yine de çalışmıştır (anahtar bir .md dosyasına da sızabilir).
+    value: ${{ steps.tara.outputs.yalniz-belge }}
+
+runs:
+  using: composite
+  steps:
+    - name: Aile kontrolü (anahtar + kod dili)
+      id: tara
+      shell: bash
+      env:
+        PR_BASE: ${{ github.event.pull_request.base.sha }}
+        PUSH_BEFORE: ${{ github.event.before }}
+        SNN_ROOT: ${{ github.action_path }}/../../..
+        KOD_DILI: ${{ inputs.kod-dili }}
+      run: |
+        BASE="${PR_BASE:-$PUSH_BEFORE}"
+        if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+          echo "Karşılaştırılacak taban commit yok (ilk gönderim ya da elle tetikleme) — aile kontrolü atlandı." | tee -a "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
+
+        # Projenin CI'ı çoğunlukla sığ checkout yapar (derinlik 1). Taramalar "BASE...HEAD" ile
+        # ortak ataya bakar; ata yoksa git hata verir. Önce ucuz yol: tabanı ve HEAD'in birkaç
+        # atasını getir. PR'da HEAD, tabanın üstüne kurulan birleştirme commit'idir; ata 1 adım
+        # geridedir. Yetmezse tam geçmiş.
+        git cat-file -e "$BASE^{commit}" 2>/dev/null || git fetch --no-tags --quiet --depth=50 origin "$BASE" || true
+        if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
+          git fetch --no-tags --quiet --deepen=50 origin || true
+        fi
+        if ! git merge-base "$BASE" HEAD >/dev/null 2>&1; then
+          git fetch --no-tags --quiet --unshallow origin || git fetch --no-tags --quiet origin
+        fi
+        if ! git merge-base "$BASE" HEAD >/dev/null 2>&1; then
+          # Okunamadı ≠ temiz (olcum-standardi.md, Kural 3): sessiz geçilmez, kırmızı verilir.
+          echo "::error::Aile kontrolü taban commit'e ($BASE) ulaşamadı; tarama yapılamadı."
+          exit 2
+        fi
+
+        set -o pipefail
+        STATUS=0
+
+        # Yalnız belge mi? Boş fark "belge" sayılmaz (testler atlanmasın).
+        CHANGED="$(git diff --name-only "$BASE...HEAD")"
+        if [ -n "$CHANGED" ] && ! printf '%s\n' "$CHANGED" | grep -qvE '^docs/|\.md$'; then
+          echo "yalniz-belge=true" >> "$GITHUB_OUTPUT"
+          echo "Yalnız belge değişti — CI testleri atlanabilir; taramalar çalışıyor." | tee -a "$GITHUB_STEP_SUMMARY"
+        else
+          echo "yalniz-belge=false" >> "$GITHUB_OUTPUT"
+        fi
+
+        node "$SNN_ROOT/quality/secret-scan.js" --diff "$BASE" 2>&1 | tee anahtar.log || STATUS=1
+        { echo '### Gizli anahtar taraması'; echo '```'; cat anahtar.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+        if [ "$KOD_DILI" = "true" ]; then
+          node "$SNN_ROOT/quality/code-language-scan.js" --diff "$BASE" . 2>&1 | tee kod-dili.log || STATUS=1
+          { echo '### Kod dili taraması (tanımlayıcılar İngilizce mi?)'; echo '```'; cat kod-dili.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo "Kod dili taraması kapalı (kod-dili: false) — uyum ölçeri bunu eksik sayar." | tee -a "$GITHUB_STEP_SUMMARY"
+        fi
+        rm -f anahtar.log kod-dili.log
+        exit $STATUS

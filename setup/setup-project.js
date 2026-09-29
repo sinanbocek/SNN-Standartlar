@@ -57,7 +57,9 @@ function measure(dir) {
     workflows: {
       'teknik-borc.yml': callerWorkflow(full, '.github/workflows/teknik-borc.yml', def),
       // Ortak deponun kendisinde bu ad çağrılabilir görevlidir; üzerine proje örneği YAZILMAMALI. Ortak depo kendi PR'larını test.yml ile tarar.
-      'anahtar-tarama.yml': /\/SNN-Standartlar$/i.test(full) ? true : callerWorkflow(full, '.github/workflows/anahtar-tarama.yml', def),
+      // Yeni ad aile-kontrol.yml (2026-09-29, kota); eski anahtar-tarama.yml taşıyan proje de "var" sayılır.
+      'anahtar-tarama.yml': /\/SNN-Standartlar$/i.test(full) ? true
+        : (callerWorkflow(full, '.github/workflows/aile-kontrol.yml', def) || callerWorkflow(full, '.github/workflows/anahtar-tarama.yml', def)),
     },
     board,
     inFamily: familyState(full),
@@ -144,7 +146,7 @@ function applyFiles(o, steps) {
   if (want('kutuk')) files.push(['docs/teknik-borc.md', K.debtFileTemplate(), 'docs(borc): standart teknik borc kutugu']);
   if (want('arsiv')) files.push(['docs/teknik-borc-arsiv.md', K.archiveFileTemplate(), 'docs(borc): standart teknik borc arsivi']);
   if (want('teknik-borc-akisi')) files.push(['.github/workflows/teknik-borc.yml', fs.readFileSync(path.join(ROOT, 'ornek', 'teknik-borc.yml'), 'utf8'), 'ci(borc): kutuk -> issue ve board senkron gorevlisi']);
-  if (want('anahtar-tarama-akisi')) files.push(['.github/workflows/anahtar-tarama.yml', fs.readFileSync(path.join(ROOT, 'ornek', 'anahtar-tarama.yml'), 'utf8'), 'ci(guvenlik): PR\'da gizli anahtar taramasi']);
+  if (want('anahtar-tarama-akisi')) files.push(['.github/workflows/aile-kontrol.yml', fs.readFileSync(path.join(ROOT, 'ornek', 'aile-kontrol.yml'), 'utf8'), 'ci(guvenlik): PR\'da aile kontrolu (anahtar + kod dili)']);
   if (!files.length) return null;
   const repo = o.repo.full;
   const sha = ghJson(['api', `repos/${repo}/git/ref/heads/${o.repo.defaultBranch}`]).object.sha;
@@ -157,7 +159,7 @@ function applyFiles(o, steps) {
     '',
     '- **Kütük** (`docs/teknik-borc.md`): açık teknik borçların tek kaynağı; kayıt biçimi `~/.claude/standartlar-canli/standartlar/teknik-borc-standardi.md`.',
     '- **Senkron görevlisi**: kütük main\'e ulaşınca, her gün ve elle tetiklenince issue + board günceller (kütüğe yazmaz).',
-    '- **Anahtar taraması**: her PR\'da eklenen satırlarda gizli anahtar arar.',
+    '- **Aile kontrolü**: her PR\'da eklenen satırlarda gizli anahtar ve Türkçe tanımlayıcı arar. Proje CI kurduğunda bu dosya silinir, ortak adım CI işine eklenir (`ornek/ci-duzeni.yml`).',
     '',
     'Otomatik birleştirme yok.',
     '',

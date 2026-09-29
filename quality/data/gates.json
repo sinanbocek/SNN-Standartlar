@@ -28,6 +28,12 @@
       "test": "yalnız workflow_call tetiklenmiş sayılmaz"
     },
     {
+      "id": "akis-butcesi",
+      "module": "quality/workflow-budget.js",
+      "vaka": "2026-09-29: gizli depolar eylulde 2.848 dk yakti (Temmuz 53, Agustos 972); gercek makine suresi 1.733 dk idi. Olcum (1.761 kosumun is sureleri): main'e gonderimde CI tekrari 1.214 dk, ayri akis olarak anahtar-tarama + kod-dili 769 dk (~15 sn'lik is 1 dk faturalandi), Dependabot 179 dk. 20 Eylul'de olcmeden eklenen iptal ayari ayda 4 kosum iptal etti. Gercek veride (12 proje, ana dal): 9 gizli projede 26 sapma, yanlis alarm 0; ilk surum acik depolara (Abacus-Core, Siparis) da diyordu, public: true ile duzeltildi.",
+      "test": "main gönderiminde CI koşması yakalanır"
+    },
+    {
       "id": "genis-etkili-komut",
       "module": "quality/wide-effect-git.js",
       "vaka": "2026-09-18: `git add -A` paralel oturumun commit'lenmemis dosyasini sahneye aldi (fark edildi, geri alindi).",

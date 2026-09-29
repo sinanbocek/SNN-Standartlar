@@ -27,7 +27,40 @@ const ids = (state, ex) => c.evaluate(state, ex).gaps.map((g) => g.id);
 
 console.log('— tam uyum');
 expect('eksik yok', ids(TAM), []);
-expect('ölçüt sayısı', c.CHECKS.length, 7);
+expect('ölçüt sayısı', c.CHECKS.length, 11);
+
+console.log('— akış bütçesi (2026-09-29 kota vakası)');
+// Yeni biçim: aile kontrolü CI işinin içinde adım; ayrı anahtar-tarama/kod-dili akışı yok.
+const ciWithStep = 'on:\n  pull_request:\nconcurrency:\n  group: ci\n  cancel-in-progress: true\njobs:\n  ci:\n    steps:\n      - uses: sinanbocek/SNN-Standartlar/.github/actions/aile-kontrol@main\n      - run: npm test\n';
+const budgetState = {
+  ...TAM,
+  workflows: ['ci.yml', 'teknik-borc.yml'],
+  workflowText: [ciWithStep, akis('teknik-borc.yml')],
+  workflowFiles: [{ name: 'ci.yml', text: ciWithStep }, { name: 'teknik-borc.yml', text: akis('teknik-borc.yml') }],
+  hasPackageJson: true,
+  dependabotText: 'updates:\n  - schedule:\n      interval: monthly\n    groups:\n      security:\n        applies-to: security-updates\n',
+};
+expect('ortak adımlı proje tam uyumlu', ids(budgetState), []);
+expect('kod-dili: false → kod dili turnikesi yok sayılır',
+  ids({ ...budgetState, workflowText: [ciWithStep.replace('@main\n', '@main\n        with:\n          kod-dili: false\n'), akis('teknik-borc.yml')] }), ['kod-dili-akisi']);
+const mainCi = ciWithStep.replace('on:\n  pull_request:\n', 'on:\n  push:\n    branches: [main]\n  pull_request:\n');
+expect('main gönderiminde CI → eksik',
+  ids({ ...budgetState, workflowFiles: [{ name: 'ci.yml', text: mainCi }] }), ['ci-main-kosumu']);
+expect('ayrı anahtar-tarama akışı → eksik',
+  ids({ ...budgetState, workflowFiles: [...budgetState.workflowFiles, { name: 'anahtar-tarama.yml', text: akis('anahtar-tarama.yml') }] }), ['aile-kontrol-adimi']);
+expect('haftalık dependabot → eksik', ids({ ...budgetState, dependabotText: 'interval: weekly' }), ['dependabot-aylik']);
+expect('package.json yoksa dependabot istenmez', ids({ ...budgetState, hasPackageJson: false, dependabotText: '' }), []);
+expect('dependabot okunamadı → eksik sayılmaz, ölçülemedi',
+  c.evaluate({ ...budgetState, dependabotText: null }).unknown, ['dependabot-aylik']);
+expect('akış dosyaları okunamadı → bütçe ölçütleri ölçülemedi',
+  c.evaluate({ ...budgetState, workflowFiles: null }).unknown, ['ci-main-kosumu', 'aile-kontrol-adimi', 'ci-iptal']);
+// VAKA (2026-09-29, gerçek veride ölçüm): Abacus-Core ve Siparis herkese açık; dakikaları ücretsiz.
+const publicCase = { ...budgetState, repo: 'sinanbocek/snn-abacus-core', workflowFiles: [{ name: 'ci.yml', text: mainCi }], dependabotText: '' };
+expect('açık depoda bütçe ölçütleri uygulanmaz',
+  c.evaluate(publicCase, undefined, [], ['sinanbocek/snn-abacus-core']).gaps.map((g) => g.id), []);
+expect('gizli depoda aynı durum eksik',
+  c.evaluate(publicCase, undefined, [], []).gaps.map((g) => g.id), ['ci-main-kosumu', 'dependabot-aylik']);
+expect('aile listesinde açık depolar okunur', c.publicRepos().includes('sinanbocek/snn-abacus-core'), true);
 
 console.log('— tek tek eksikler');
 expect('turnike yok', ids({ ...TAM, workflowText: [akis('teknik-borc.yml'), akis('anahtar-tarama.yml')] }), ['kod-dili-akisi']);
