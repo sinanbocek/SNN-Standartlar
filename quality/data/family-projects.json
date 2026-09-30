@@ -15,7 +15,8 @@
     { "repo": "sinanbocek/SNN-Yonetici-Ozeti", "dir": "SNN-Yonetici-Ozeti" },
     { "repo": "sinanbocek/trade-kasa", "dir": "trade-kasa" },
     { "repo": "globalhedef/global-hedef-web-platform", "dir": "GHS-Panel" },
-    { "repo": "sinanbocek/SNN-Siparis", "dir": "SNN-Siparis", "public": true }
+    { "repo": "sinanbocek/SNN-Siparis", "dir": "SNN-Siparis", "public": true },
+    { "repo": "sinanbocek/SNN-Games", "dir": "SNN-Games" }
   ],
   "excluded": [
     {
