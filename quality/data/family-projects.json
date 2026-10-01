@@ -17,7 +17,7 @@
     { "repo": "globalhedef/global-hedef-web-platform", "dir": "GHS-Panel" },
     { "repo": "sinanbocek/SNN-Siparis", "dir": "SNN-Siparis", "public": true },
     { "repo": "sinanbocek/SNN-Games", "dir": "SNN-Games" },
-    { "repo": "sinanbocek/SNN-Games-Bul9", "dir": "bul9-repo" }
+    { "repo": "sinanbocek/SNN-Games-Pulmaca", "dir": "SNN-Games-Pulmaca" }
   ],
   "excluded": [
     {
