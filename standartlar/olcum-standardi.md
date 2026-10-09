@@ -42,6 +42,18 @@ Bir ajan; hız, maliyet, kapsam, oran ya da "hepsi/hiçbiri" iddiası ortaya at�
 
 **Yüzde ve toplam kaynağını taşır.** "Toplam 17.562" değil, "ana daldan, `aile-olcumu.yml` akışının ürettiği ölçüm".
 
+### Komut çıktısı: kapı yeşil mi, çıkış koduna bak (#133, 2026-10-10)
+
+"Kapı yeşil" iddiası **çıkış koduyla** kanıtlanır, çıktıya bakarak değil. `komut | tail -2`, `| Out-Null`,
+`2>/dev/null` üç şeyi birden bozar: hata satırını kırpar, `$?`yi borunun son halkasından alır ve zincir
+devam eder. Durum değiştiren komutların (git, gh) çıktısı gizlenmez. Doğrusu: `komut > log 2>&1; echo $?`
+(PowerShell'de `$LASTEXITCODE`), sonra gerekirse loga bak. Commit'ten önce `git diff --cached --stat` ile
+sahnedeki içerik ölçülür.
+
+Vakalar: Abacus-Core 2026-08-31, PR #42'de lint 4 hata verirken `npm run lint | tail -2` "bütün kapılar
+yeşil" dedirtti · Portföy 2026-09-15, `git add … | Out-Null` hatayı gizledi, boş commit PR'a girdi ·
+SNN-Games 2026-10-02. Üç projede aynı tuzak; kural yalnız bellek notlarındaydı.
+
 ### Bu madde tam zorlanamaz — ve bu açıkça söylenir
 
 Deponun ilkesi: *zorlanamayan madde kural değil, öneridir.* Düzyazıdaki bir iddianın ölçülüp ölçülmediğini makine anlayamaz. Bu yüzden Kural 1'in zorlaması **kısmidir**:

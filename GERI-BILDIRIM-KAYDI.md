@@ -33,6 +33,20 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 
 ## Kararlar
 
+
+### 2026-10-10 · Bellek derleme görevinin açtığı sekiz talep (#127–#134)
+
+- **Kimden:** Haftalık bellek derleme görevi (ilk çalışma, 110 not, 14 küme); karar proje sahibinin ("önerdiğin gibi yap; #130'da kararı sen ver").
+- **#127 Yan bulgu kütüğe, asıl işe dön — KABUL.** `teknik-borc-standardi.md` yeni bölüm + kontrol listesi. Üç projede dört uyarı.
+- **#128 Oturum yalnız kendi projesinden sorumlu — KABUL.** `es-zamanli-calisma-standardi.md` §6, ev kâğıdına kopyalanır; açılış satırına "bilgi içindir" notu.
+- **#129 "Çalıştır" düğmesi: klasör değişimi aynı blokta — KABUL.** `iletisim-standardi.md` komut bölümü; tek komut tek blok kuralının tek istisnası.
+- **#130 Actions kotası: düzeltme turunda gönderim yok — KISMEN.** Madde 8'e "bitince = tur bitince, önce yerel kapı" eklendi. "Kota doluyken hiç gönderme" rejimi kalıcı kural **olmadı**: kota 2026-10-10'da %14, ödeme sorunu 2026-10-08'de çözülmüş; kota kapısı eşikte zaten uyarıyor, o günkü karar sahibin. Piyasa-Core'daki "sahip aksini söyleyene kadar push yok" notu emekliye ayrıldı.
+- **#131 İkinci yabancı anahtar PostgREST gömmesini kırar — BEKLET.** Teknik Supabase dersi, iki proje. Üçüncü projede ya da ikinci iş kaybında girer; talep açık, görev her hafta sayar.
+- **#132 Bekçi metni okur, dalı oturum klasöründen alır — KABUL.** `es-zamanli-calisma-standardi.md` §3 "Bilinen davranış". Görevin kendisi de aynı tuzağa düştü.
+- **#133 Kapı yeşil mi: çıkış koduna bak — KABUL.** `olcum-standardi.md` Kural 1 altına "Komut çıktısı" + kontrol listesi. Üç projede aynı tuzak.
+- **#134 Rol: kodu Claude yazar, Gemini emekli — RET.** Artık varsayılan durum; kural gerektirmez. İki not sonraki derleme turunda emekliye ayrılır.
+- **Ders:** sekiz talebin altısı "beceri ya da tek projenin rehberi söylüyordu, standart yazmıyordu" biçimindeydi. Beceri metni kural değildir; projeler onu miras almaz.
+
 ### 2026-09-24 · Diff kapısı var olan adın kullanımını yeni ad sayıyor — **KABUL (uyarı olarak)**
 
 - **Kimden:** SNN-Yonetici-Ozeti oturumu (issue #100)
