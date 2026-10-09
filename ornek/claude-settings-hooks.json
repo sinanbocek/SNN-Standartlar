@@ -25,6 +25,12 @@
         "hooks": [
           { "type": "command", "command": "node \"<HOME>/.claude/hooks/guard-bash.js\"", "timeout": 10 }
         ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          { "type": "command", "command": "node \"<HOME>/.claude/hooks/guard-agent.js\"", "timeout": 10 }
+        ]
       }
     ],
     "Stop": [
