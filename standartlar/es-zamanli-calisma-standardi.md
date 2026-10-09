@@ -59,6 +59,8 @@ Bekçiler `~/.claude/settings.json` üzerinden **tüm projelerde** çalışır: 
 
 **Defter kilit değildir.** Kimseyi engellemez, yalnız haber verir. Kilit yanlış güven verir ("kilitledim, artık dokunulmaz"); haber ise ajanı konuşmaya ve dikkatli olmaya iter.
 
+**Defter çatalı ayırt edemez.** Masaüstü uygulaması bir oturumu çatallayınca ya da yeniden açınca yeni oturum kimliği üretir; defter bunu ikinci usta sanır (2026-09-23 Portföy: 7 saniyede 5 kayıt). Bu yüzden "aynı dalda buluşma" sayısı kilit gerekçesi değildir. Kilit kararı `node quality/file-overlap.js` ile verilir: aynı dosyaya kısa arayla iki oturum yazdı mı, kopya mı, sıralı mı? Ölçüm (2026-10-09, 6 hafta): 109 çakışmanın 2'si gerçek, 103'ü kopya. Kilit kurulmadı (TB-008).
+
 ## 4. Kaçış kapısı
 
 Engellenen komut gerçekten gerekliyse (ör. tek başına çalışılan bir depoda toplu temizlik), komutu **proje sahibi kendisi çalıştırır**. Ajan bekçiyi devre dışı bırakmaz, kuralı gevşetmez.

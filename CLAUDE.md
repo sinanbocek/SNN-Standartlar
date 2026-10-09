@@ -115,6 +115,7 @@ Bir proje "bu yanlış alarm" diye bildirirse:
 node quality/code-language-scan.js --tumu          # bu depo temiz mi
 node quality/remote-read.js docs/teknik-borc.md    # dosya aile projelerinde var / yok / okunamadı
 node quality/session-digest.js --son               # bu oturumun özeti ve işaretleri (oturum-teshis)
+node quality/file-overlap.js                       # iki oturum aynı dosyaya yazdı mı (kilit kararı, TB-008)
 node quality/gate-registry.js                      # kapılar vakasını bildiriyor mu
 node quality/compliance-issues.js <klasor>         # uyum issue planı (kuru)
 node setup/setup-machine.js                        # makine farkı (kuru)
