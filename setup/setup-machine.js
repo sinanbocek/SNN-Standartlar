@@ -171,22 +171,41 @@ function sourceBranch(dir) {
 }
 
 // ─── Kullanıcı talimatı (~/.claude/CLAUDE.md) ───────────────────────────────
-// İletişim kuralları (standartlar/iletisim-standardi.md) her projedeki her oturuma ulaşmalı;
-// Claude Code ~/.claude/CLAUDE.md dosyasını her oturumda okur. Kaynak, standarttaki işaretli
-// bölümdür (2026-09-24: proje sahibi 6 günde 5 kez "anlamadım" dedi).
+// Her projedeki her oturuma ulaşması gereken kurallar buradan dağıtılır; Claude Code
+// ~/.claude/CLAUDE.md dosyasını her oturumda okur. Kaynak, standartlardaki işaretli bölümlerdir:
+//   - iletisim-standardi.md (2026-09-24: proje sahibi 6 günde 5 kez "anlamadım" dedi)
+//   - alt-ajan-standardi.md (2026-10-09: alt ajan modeli tahminle seçildi, seviye verilmedi; #121)
+// Bölümler INSTRUCTION_SOURCES sırasıyla art arda yazılır.
 // Becerilerdeki kuralın aynısı: BİZİM OLMAYAN dosyaya dokunulmaz. İlk satırdaki işaret yoksa
 // dosya proje sahibinindir; üzerine yazılmaz, birleştirme ona bırakılır.
 const INSTRUCTIONS_BEGIN = '<!-- kullanici-talimati:basla -->';
 const INSTRUCTIONS_END = '<!-- kullanici-talimati:bitir -->';
-const MANAGED_MARK = '<!-- SNN-Standartlar yönetir: standartlar/iletisim-standardi.md · elle değiştirme, setup-machine.js yeniden yazar -->';
+const INSTRUCTION_SOURCES = ['iletisim-standardi.md', 'alt-ajan-standardi.md'];
+const MANAGED_MARK = '<!-- SNN-Standartlar yönetir: standartlar/*.md içindeki kullanici-talimati bölümleri · elle değiştirme, setup-machine.js yeniden yazar -->';
+// Eski işaret: tek kaynaklı sürümün yazdığı dosyalar da bizimdir, güncellenir (2026-10-09 öncesi kurulumlar).
+const LEGACY_MARKS = ['<!-- SNN-Standartlar yönetir: standartlar/iletisim-standardi.md · elle değiştirme, setup-machine.js yeniden yazar -->'];
 
-// SAF: standart metni → kullanıcı talimatı (işaretli bölüm yoksa null)
-function instructionsFrom(standardText) {
+// SAF: tek standart metninden işaretli bölüm (yoksa null)
+function sectionOf(standardText) {
   const text = String(standardText || '').replace(/\r\n/g, '\n');
   const a = text.indexOf(INSTRUCTIONS_BEGIN);
   const b = text.indexOf(INSTRUCTIONS_END);
   if (a < 0 || b < a) return null;
-  return `${MANAGED_MARK}\n\n${text.slice(a + INSTRUCTIONS_BEGIN.length, b).trim()}\n`;
+  return text.slice(a + INSTRUCTIONS_BEGIN.length, b).trim();
+}
+
+// SAF: standart metinleri (tek dizge ya da dizi) → kullanıcı talimatı. Hiçbirinde işaretli bölüm yoksa null.
+// İşaretsiz kaynak atlanır: bir standardın bölümü bozulunca diğerleri dağıtılmaya devam eder.
+function instructionsFrom(standardTexts) {
+  const texts = Array.isArray(standardTexts) ? standardTexts : [standardTexts];
+  const sections = texts.map(sectionOf).filter((s) => s !== null);
+  if (!sections.length) return null;
+  return `${MANAGED_MARK}\n\n${sections.join('\n\n')}\n`;
+}
+
+// SAF: dosya bizim mi? Yeni ya da eski işaretle başlıyorsa evet.
+function isManaged(text) {
+  return [MANAGED_MARK, ...LEGACY_MARKS].some((mark) => text.startsWith(mark));
 }
 
 // SAF: istenen içerik + hedefin durumu → eylem.
@@ -196,7 +215,7 @@ function planInstructions(wanted, current) {
   if (current.state === 'okunamadi') return { action: 'unreadable' };
   if (current.state === 'yok') return { action: 'create', content: wanted };
   const text = current.text.replace(/\r\n/g, '\n');
-  if (!text.startsWith(MANAGED_MARK)) return { action: 'conflict' };
+  if (!isManaged(text)) return { action: 'conflict' };
   return text === wanted ? { action: 'same' } : { action: 'update', content: wanted };
 }
 
@@ -206,7 +225,7 @@ function readState(file) {
   }
 }
 
-function measure({ sourceDir, targetDir, settingsFile, skillsSource, skillsTarget, instructionsSource, instructionsTarget }) {
+function measure({ sourceDir, targetDir, settingsFile, skillsSource, skillsTarget, instructionsSource, instructionsSources, instructionsTarget }) {
   const sourceFiles = listFiles(sourceDir);
   const targetFiles = listFiles(targetDir);
   const same = (f) => {
@@ -223,10 +242,13 @@ function measure({ sourceDir, targetDir, settingsFile, skillsSource, skillsTarge
   const sources = [{ name: 'SNN-Standartlar (canlı kopya)', dir: skillsSource }, ...extraSkillSources()];
   const skills = planSkills(sources, skillsTarget, sameSkill);
   const settingsText = (() => { try { return fs.readFileSync(settingsFile, 'utf8'); } catch { return ''; } })();
-  const source = instructionsSource ? readState(instructionsSource) : { state: 'yok' };
+  // Birden çok kaynak: okunabilenlerin bölümleri art arda. Okunamayan kaynak atlanır ve raporda sayılır.
+  const sourceList = instructionsSources || (instructionsSource ? [instructionsSource] : []);
+  const sourceStates = sourceList.map((f) => ({ file: f, ...readState(f) }));
+  const readable = sourceStates.filter((s) => s.state === 'var').map((s) => s.text);
   const instructions = instructionsTarget
-    ? planInstructions(source.state === 'var' ? instructionsFrom(source.text) : null, readState(instructionsTarget))
-    : { action: 'no-source' };
+    ? { ...planInstructions(readable.length ? instructionsFrom(readable) : null, readState(instructionsTarget)), skipped: sourceStates.filter((s) => s.state !== 'var').map((s) => s.file) }
+    : { action: 'no-source', skipped: [] };
   return { files, skills, settings: planSettings(settingsText, sourceFiles), instructions, sourceFiles, targetFiles, settingsText, skillsSource, skillsTarget };
 }
 
@@ -301,11 +323,13 @@ function report(plan) {
     create: 'oluşturulacak',
     update: 'güncellenecek',
     same: 'güncel',
-    conflict: '✗ senin kendi dosyan var, dokunulmadı. standartlar/iletisim-standardi.md içindeki işaretli bölümü elle ekle',
+    conflict: `✗ senin kendi dosyan var, dokunulmadı. standartlar/{${INSTRUCTION_SOURCES.join(',')}} içindeki işaretli bölümleri elle ekle`,
     unreadable: '? okunamadı, dokunulmadı',
-    'no-source': 'kaynak yok (standartlar/iletisim-standardi.md işaretli bölüm)',
+    'no-source': `kaynak yok (standartlar/{${INSTRUCTION_SOURCES.join(',')}} işaretli bölümler)`,
   };
-  lines.push(`Kullanıcı talimatı (~/.claude/CLAUDE.md): ${INSTRUCTION_STATUS[(plan.instructions || { action: 'no-source' }).action]}`);
+  const ins = plan.instructions || { action: 'no-source' };
+  lines.push(`Kullanıcı talimatı (~/.claude/CLAUDE.md): ${INSTRUCTION_STATUS[ins.action]}`);
+  (ins.skipped || []).forEach((f) => lines.push(`   ? kaynak okunamadı ya da yok, atlandı: ${f}`));
   return lines.join('\n');
 }
 
@@ -317,7 +341,10 @@ function main() {
     settingsFile: process.env.SNN_SETTINGS || path.join(home, '.claude', 'settings.json'),
     skillsSource: process.env.SNN_SKILLS_SOURCE || path.join(home, '.claude', 'standartlar-canli', 'skills'),
     skillsTarget: process.env.SNN_SKILLS_TARGET || path.join(home, '.claude', 'skills'),
-    instructionsSource: process.env.SNN_INSTRUCTIONS_SOURCE || path.join(home, '.claude', 'standartlar-canli', 'standartlar', 'iletisim-standardi.md'),
+    // SNN_INSTRUCTIONS_SOURCE: birden çok dosya path.delimiter ile ayrılır (Windows ';', diğerleri ':').
+    instructionsSources: process.env.SNN_INSTRUCTIONS_SOURCE
+      ? process.env.SNN_INSTRUCTIONS_SOURCE.split(path.delimiter).filter(Boolean)
+      : INSTRUCTION_SOURCES.map((f) => path.join(home, '.claude', 'standartlar-canli', 'standartlar', f)),
     instructionsTarget: process.env.SNN_INSTRUCTIONS_TARGET || path.join(home, '.claude', 'CLAUDE.md'),
   };
   if (!fs.existsSync(paths.sourceDir)) {
@@ -342,4 +369,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { listFiles, planFiles, planSkills, skillNames, extraSkillSources, planSettings, rewriteSettings, measure, apply, report, instructionsFrom, planInstructions, RENAMES, REGISTRY, BACKUP_PREFIX, INSTRUCTIONS_BEGIN, INSTRUCTIONS_END, MANAGED_MARK };
+module.exports = { listFiles, planFiles, planSkills, skillNames, extraSkillSources, planSettings, rewriteSettings, measure, apply, report, instructionsFrom, sectionOf, isManaged, planInstructions, RENAMES, REGISTRY, BACKUP_PREFIX, INSTRUCTIONS_BEGIN, INSTRUCTIONS_END, INSTRUCTION_SOURCES, MANAGED_MARK, LEGACY_MARKS };

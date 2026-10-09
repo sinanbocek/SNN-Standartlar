@@ -122,10 +122,23 @@ console.log('— kullanıcı talimatı (~/.claude/CLAUDE.md)');
   expect('yönetim işareti ilk satırda', wanted.startsWith(m.MANAGED_MARK), true);
   expect('işaret yoksa kaynak yok', m.instructionsFrom('işaretsiz metin'), null);
 
+  // 2026-10-09 (#121): ikinci standart (alt-ajan-standardi.md) aynı dosyaya girer. Bölümler art arda,
+  // kaynak sırasıyla yazılır; işaretsiz kaynak atlanır, diğerleri dağıtılmaya devam eder.
+  const STD2 = `# Alt ajan\n${m.INSTRUCTIONS_BEGIN}\n# Alt ajan açarken\n2. Model yazılır.\n${m.INSTRUCTIONS_END}\n`;
+  const both = m.instructionsFrom([STD, STD2]);
+  expect('iki kaynağın bölümü art arda', both.indexOf('1. Önce sonuç.') < both.indexOf('2. Model yazılır.'), true);
+  expect('iki kaynakta işaret tek satırda', both.split(m.MANAGED_MARK).length, 2);
+  expect('işaretsiz kaynak atlanır, diğeri kalır', m.instructionsFrom(['işaretsiz', STD2]).includes('2. Model yazılır.'), true);
+  expect('hepsi işaretsizse kaynak yok', m.instructionsFrom(['a', 'b']), null);
+  expect('kaynak sırası sabit', m.INSTRUCTION_SOURCES, ['iletisim-standardi.md', 'alt-ajan-standardi.md']);
+
   const plan = (current) => m.planInstructions(wanted, current).action;
   expect('dosya yoksa oluşturulur', plan({ state: 'yok' }), 'create');
   expect('bizim dosyamız farklıysa güncellenir', plan({ state: 'var', text: `${m.MANAGED_MARK}\n\neski kural\n` }), 'update');
   expect('bizim dosyamız aynıysa işlem yok', plan({ state: 'var', text: wanted }), 'same');
+  // Tek kaynaklı sürümün (2026-10-09 öncesi) yazdığı dosya eski işareti taşır; o da bizimdir, güncellenir.
+  // Bu satır kırmızıya dönerse kurulu makinelerde dosya "çakışma" sayılır ve yeni kural hiç dağıtılmaz.
+  expect('eski işaretli dosyamız güncellenir', plan({ state: 'var', text: `${m.LEGACY_MARKS[0]}\n\neski kural\n` }), 'update');
   expect('satır sonu farkı aynı sayılır', plan({ state: 'var', text: wanted.replace(/\n/g, '\r\n') }), 'same');
   // Bu satır kırmızıya dönerse proje sahibinin kendi talimat dosyası silinecek demektir.
   expect('BAŞKASININ CLAUDE.md dosyasına dokunulmaz', plan({ state: 'var', text: '# Benim kendi notlarım\n' }), 'conflict');
@@ -135,14 +148,23 @@ console.log('— kullanıcı talimatı (~/.claude/CLAUDE.md)');
   // Uçtan uca: gerçek dosya sistemi
   const root = fs2.mkdtempSync(p2.join(os2.tmpdir(), 'snn-talimat-'));
   const source = p2.join(root, 'iletisim-standardi.md');
+  const source2 = p2.join(root, 'alt-ajan-standardi.md');
   const target = p2.join(root, 'CLAUDE.md');
   fs2.writeFileSync(source, STD);
-  const base = { sourceDir: p2.join(root, 'yok'), targetDir: p2.join(root, 'hooks'), settingsFile: p2.join(root, 's.json'), skillsSource: p2.join(root, 'yok'), skillsTarget: p2.join(root, 'skills'), instructionsSource: source, instructionsTarget: target };
+  fs2.writeFileSync(source2, STD2);
+  const base = { sourceDir: p2.join(root, 'yok'), targetDir: p2.join(root, 'hooks'), settingsFile: p2.join(root, 's.json'), skillsSource: p2.join(root, 'yok'), skillsTarget: p2.join(root, 'skills'), instructionsSources: [source, source2], instructionsTarget: target };
   const first = m.measure(base);
   expect('ölçüm oluşturma planlar', first.instructions.action, 'create');
   m.apply(base, first);
-  expect('dosya oluşturuldu', fs2.readFileSync(target, 'utf8'), wanted);
+  expect('dosya iki kaynaktan oluşturuldu', fs2.readFileSync(target, 'utf8'), both);
   expect('ikinci ölçümde işlem yok', m.measure(base).instructions.action, 'same');
+  // Kaynaklardan biri yoksa: okunamadı ≠ yok (olcum-standardi.md Kural 3) — atlanır, raporda görünür, diğeri dağıtılır.
+  const missing = m.measure({ ...base, instructionsSources: [source, p2.join(root, 'yok.md')] });
+  expect('eksik kaynak atlanır ve raporda sayılır', missing.instructions.skipped.length, 1);
+  expect('kalan kaynak yine dağıtılır', missing.instructions.action, 'update');
+  expect('raporda atlanan kaynak görünür', /atlandı/.test(m.report(missing)), true);
+  // Tek kaynaklı eski çağrı biçimi (instructionsSource) çalışmaya devam eder.
+  expect('tek kaynaklı eski biçim çalışır', m.measure({ ...base, instructionsSources: undefined, instructionsSource: source }).instructions.action, 'update');
   fs2.writeFileSync(target, '# Benim kendi notlarım\n');
   m.apply(base, m.measure(base));
   expect('kendi dosyası birebir korunur', fs2.readFileSync(target, 'utf8'), '# Benim kendi notlarım\n');
@@ -150,9 +172,15 @@ console.log('— kullanıcı talimatı (~/.claude/CLAUDE.md)');
   fs2.rmSync(root, { recursive: true, force: true });
 
   // Gerçek standart işaretli bölümü taşıyor ve kısa (her oturumda, her turda okunur).
-  const real = m.instructionsFrom(fs2.readFileSync(p2.join(__dirname, '..', '..', 'standartlar', 'iletisim-standardi.md'), 'utf8'));
-  expect('gerçek standartta işaretli bölüm var', real !== null, true);
-  expect('talimat 400 kelimeden kısa', real.split(/\s+/).length < 400, true);
+  const stdDir = p2.join(__dirname, '..', '..', 'standartlar');
+  const realTexts = m.INSTRUCTION_SOURCES.map((f) => fs2.readFileSync(p2.join(stdDir, f), 'utf8'));
+  realTexts.forEach((t, i) => {
+    const section = m.sectionOf(t);
+    expect(`gerçek standartta işaretli bölüm var: ${m.INSTRUCTION_SOURCES[i]}`, section !== null, true);
+    expect(`bölüm 400 kelimeden kısa: ${m.INSTRUCTION_SOURCES[i]}`, section !== null && section.split(/\s+/).length < 400, true);
+  });
+  const real = m.instructionsFrom(realTexts);
+  expect('toplam talimat 800 kelimeden kısa', real.split(/\s+/).length < 800, true);
 }
 
 console.log('— kayıt listesi tutarlı');
