@@ -36,7 +36,7 @@ Etiket notu (ölçüm, 2026-09-24): masaüstü uygulaması `powershell` etiketli
 
 ## Kurallar
 
-Aşağıdaki işaretli bölüm, `setup/setup-machine.js` tarafından her makinede `~/.claude/CLAUDE.md` dosyasına kopyalanır. Claude Code bu dosyayı her projede, her oturumda okur. Bölümü değiştirirsen makinede `node setup/setup-machine.js --uygula` çalıştır.
+Aşağıdaki işaretli bölüm, `setup/setup-machine.js` tarafından her makinede `~/.claude/CLAUDE.md` dosyasına kopyalanır (`alt-ajan-standardi.md` bölümüyle art arda). Claude Code bu dosyayı her projede, her oturumda okur. Bölümü değiştirirsen makinede `node setup/setup-machine.js --uygula` çalıştır.
 
 <!-- kullanici-talimati:basla -->
 # Proje sahibine yazarken

@@ -94,7 +94,7 @@ Bir betiği taşıdığında ya da adını değiştirdiğinde onu çağıran bec
 
 ## Kullanıcı talimatı da aynı paketle gelir (2026-09-24)
 
-`standartlar/iletisim-standardi.md` içindeki işaretli bölüm, aynı betikle `~/.claude/CLAUDE.md` dosyasına **kopyalanır**. Claude Code bu dosyayı her projede, her oturumda okur. Böylece proje sahibine nasıl yazılacağı kuralı her projedeki ajana ulaşır.
+`standartlar/iletisim-standardi.md` ve `standartlar/alt-ajan-standardi.md` içindeki işaretli bölümler, aynı betikle art arda `~/.claude/CLAUDE.md` dosyasına **kopyalanır**. Claude Code bu dosyayı her projede, her oturumda okur. Böylece proje sahibine nasıl yazılacağı ve alt ajanın nasıl açılacağı kuralı her projedeki ajana ulaşır. Kaynak listesi `setup-machine.js` içindeki `INSTRUCTION_SOURCES` dizisidir; yeni bir standart aynı dosyaya girecekse oraya eklenir.
 
 **Silme kuralının aynısı:** dosyanın ilk satırında "SNN-Standartlar yönetir" işareti yoksa dosya proje sahibinindir; **üzerine yazılmaz**, rapor "senin kendi dosyan var, dokunulmadı" der. Dosya okunamıyorsa da dokunulmaz (Kural 3). Güncelleme öncesi eski hâl yedek klasörüne `CLAUDE.md.yedek` olarak konur. Testler: `setup/test/setup-machine.test.js` → *"BAŞKASININ CLAUDE.md dosyasına dokunulmaz"*.
 
