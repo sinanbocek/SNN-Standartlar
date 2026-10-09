@@ -111,7 +111,7 @@ function main() {
     .map(projectStatus)
     .filter((p) => (p.debts.count && p.debts.count.P1) || forgottenWork(p, STALE_DIRTY_DAYS).length);
   if (others.length) {
-    lines.push('Diğer projelerde bekleyenler:');
+    lines.push('Diğer projelerde bekleyenler (bilgi içindir; bu oturumun işi değil — es-zamanli-calisma-standardi.md §6):');
     others.forEach((p) => {
       const parts = [];
       if (p.debts.count && p.debts.count.P1) parts.push(`P1:${p.debts.count.P1}`);

@@ -61,6 +61,7 @@ Proje sahibinin terminali Windows PowerShell 5.1'dir. Ona çalıştırması içi
 - **Tek komut, tek blok.** Sıralı adımları ayrı bloklara böl; sahip hangisinin hata verdiğini görsün.
 - `&&` ve `||` PowerShell 5.1'de yoktur, hata verir. Zorunluysa `A; if ($?) { B }` yaz.
 - Bash sözdizimi kullanma: `export X=1` yerine `$env:X = '1'`, `/dev/null` yerine `$null`, `cd` yerine `Set-Location "C:\yol"`.
+- **"Çalıştır" düğmesi her bloğu yeni sekmede, proje kökünde açar;** ayrı bloktaki `Set-Location` sonrakine taşınmaz. Klasöre ya da dala bağlı komutta (yayın, derleme, git) klasör değişimi, denetim ve komut **aynı blokta** verilir: `Set-Location "C:\yol"; if ((git branch --show-current) -eq 'dal') { komut } else { Write-Host 'YANLIS KLASOR' }`. Bu, "tek komut tek blok" kuralının tek istisnasıdır (vaka: GHS-Panel 2026-09-26 yayın yanlış klasörden çalıştı; SNN-Games 2026-10-03, #129).
 - Kural yalnız sahibe verilen komutlar içindir. Asistanın kendi Bash aracında `&&` serbesttir.
 <!-- kullanici-talimati:bitir -->
 

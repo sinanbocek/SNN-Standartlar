@@ -96,6 +96,19 @@ kapı zorlar: *"bakacağım" bir kontrol değildir.*
 Karar verildiğinde — kabul ya da ret — gerekçesi `GERI-BILDIRIM-KAYDI.md`'ye yazılır ve issue
 kapatılır. Reddedilen talep gerekçesiyle durur; aynı talep ikinci kez değerlendirilmez.
 
+## Yan bulgu kovalanmaz: kütüğe yaz, asıl işe dön
+
+**Kural:** bir iş sırasında görülen başka kusur (hata, ölü kod, test boşluğu) o işte düzeltilmez.
+`borc-ekle` ile kütüğe yazılır (dosya:satır, ölçüm), sahibe en fazla üç cümleyle bildirilir,
+"bakalım mı" diye sorulmaz, asıl işe dönülür. Yeni konuya geçmek proje sahibinin kararıdır.
+Tek istisna: yan bulgu asıl işi doğrudan bozuyorsa ya da veriye zarar veriyorsa.
+
+**Neden (bellek derleme, 2026-10-10 — #127):** üç projede dört kez aynı uyarı geldi.
+Portföy 2026-08-29 "yan yollara saptık" (asıl iş üç gün bekledi) · Abacus-Core 2026-09-01
+"konunun özünden sapıyorsun; sadece kütüğe yaz" · GHS-Panel 2026-09-25 "kodlama hatalarına
+girmeni istemiyorum, TB aç" · GHS-Panel 2026-09-26 "asla ana eksenden şaşma". Beceri bunu
+söylüyordu; kural hiçbir standartta yazılı değildi, dört proje ayrı ayrı öğrendi.
+
 ## Kayıt biçimi (açık borç)
 
 ```markdown

@@ -26,7 +26,7 @@ SNN-Standartlar'da iki oturum aynı çalışma klasöründe, birbirinden habersi
 5. **Ortak dosyaya dokunmadan önce okur.** `README.md`, `standartlar/`, `docs/teknik-borc.md`, proje rehberi (`CLAUDE.md`/`AI-RULES.md`) gibi dosyalarda: `git log --oneline -5 -- <dosya>` ile son durum okunur, üstüne yazılmaz.
 6. **Kütük numarasını `main`'den alır.** Yeni `TB-xxx` numarası, ana daldaki en büyük numaranın bir fazlasıdır (arşiv dahil). İki oturum aynı numarayı açarsa senkron görevlisi iki kaydı aynı issue'ya bağlar.
 7. **Tanımadığı, commit'lenmemiş dosyaya dokunmaz.** Çalışma alanında beklemediğin bir dosya varsa: büyük ihtimalle başka bir oturumun işidir. Commit'leme, silme, taşıma — proje sahibine sor.
-8. **İşini bitirince gönderir.** Yerelde bırakılan commit, diğer oturum için görünmezdir; dal gönderilir (push) ve PR açılır.
+8. **İşini bitirince gönderir.** Yerelde bırakılan commit, diğer oturum için görünmezdir; dal gönderilir (push) ve PR açılır. "Bitince" tur bitince demektir, her ara düzeltmede değil: açık PR dalına her gönderim CI'ı yeniden koşturur ve dakika yakar. Gönderimden önce yerel kapı çıkış kodu 0 olmalı (`quality/local-check.js`). Kota dolduğunda "hiç gönderme" rejimi kalıcı kural değildir; kota kapısı (`actions-kotasi`) eşikte uyarır, karar o gün sahibindir (#130, 2026-10-10).
 
 ## 2. Aynı depoda ikinci iş: ayrı çalışma alanı (worktree)
 
@@ -61,6 +61,13 @@ Bekçiler `~/.claude/settings.json` üzerinden **tüm projelerde** çalışır: 
 
 **Defter çatalı ayırt edemez.** Masaüstü uygulaması bir oturumu çatallayınca ya da yeniden açınca yeni oturum kimliği üretir; defter bunu ikinci usta sanır (2026-09-23 Portföy: 7 saniyede 5 kayıt). Bu yüzden "aynı dalda buluşma" sayısı kilit gerekçesi değildir. Kilit kararı `node quality/file-overlap.js` ile verilir: aynı dosyaya kısa arayla iki oturum yazdı mı, kopya mı, sıralı mı? Ölçüm (2026-10-09, 6 hafta): 109 çakışmanın 2'si gerçek, 103'ü kopya. Kilit kurulmadı (TB-008).
 
+### Bilinen davranış: bekçi metni okur, niyete bakmaz (#132, 2026-10-10)
+
+- Bekçi komutun **metnini** düz arar. Yasak ifade bir dosya içeriğinde, heredoc'ta ya da yorumda geçse de engellenir. Çözüm: içeriği Write/Edit ile dosyaya yaz, dosyayı çalıştır. Vakalar: Portföy 2026-09-23 (iki gereksiz engel), SNN-Standartlar 2026-09-19, bellek derleme görevi 2026-10-10.
+- "Ana dala commit" bekçisi dalı **oturumun çalışma klasöründen** okur; komut içindeki `cd`'yi görmez. Ayrı worktree'de `git -C <worktree> commit` kullan ya da oturumu `EnterWorktree` ile oraya taşı (Abacus-Core 2026-09-24).
+- Worktree kardeş klasöre kurulur (`../<repo>-<is>`); geçici klasör yolu uzun olduğu için `node_modules` silinemiyor.
+- Bekçiyi aşmak için başka komut aranmaz; engel meşruysa komutu sahip çalıştırır (madde 4).
+
 ## 4. Kaçış kapısı
 
 Engellenen komut gerçekten gerekliyse (ör. tek başına çalışılan bir depoda toplu temizlik), komutu **proje sahibi kendisi çalıştırır**. Ajan bekçiyi devre dışı bırakmaz, kuralı gevşetmez.
@@ -70,6 +77,23 @@ Engellenen komut gerçekten gerekliyse (ör. tek başına çalışılan bir depo
 - Aynı depoda çalışan oturumlar **farklı konu** alır; aynı dosyada buluşacaklarsa PR açıklamasına yazılır.
 - Bir oturumun beklediği iş (ör. "şu yeniden adlandırma birleşsin") varsa, tasarım belgesine yazılır ve birleşince proje sahibi diğerine haber verir.
 - Devir notu: uzun işlerde `docs/` altına tasarım/karar belgesi bırakılır; diğer oturum onu okuyarak devam eder.
+
+## 6. Oturum sınırı: yalnız kendi projen
+
+Aşağıdaki işaretli bölüm `setup/setup-machine.js` ile her makinede `~/.claude/CLAUDE.md` dosyasına kopyalanır (iletişim ve alt ajan bölümleriyle art arda).
+
+**Neden (bellek derleme, 2026-10-10 — #128):** üç projede aynı kesin talimat. Portföy 2026-09-15 "bilgi kirliliği" (GHS kütüğünde Günüm Var kaydı), Portföy 2026-09-23 "teklif dahi etme", Nakit-Akış 2026-09-23 "diğer projelere karışma, bir daha bunu önerme bile". SNN-Standartlar'ın rehberinde yazılıydı ama yalnız o projede geçerliydi.
+
+<!-- kullanici-talimati:basla -->
+# Oturum sınırı
+
+Bu kural SNN aile standardıdır (`SNN-Standartlar/standartlar/es-zamanli-calisma-standardi.md` §6).
+
+1. Oturum yalnız açıldığı projeden sorumludur.
+2. Açılıştaki "Diğer projelerde bekleyenler" satırları bilgi içindir; o projelere iş önerilmez, raporlanmaz, "bakalım mı" diye sorulmaz.
+3. Başka projeyi ilgilendiren bulgu tek cümleyle not edilir ("Bu X projesinin konusu olabilir"); iş üstlenilmez.
+4. Başka projenin kütüğüne ve dosyalarına yazılmaz; ölçüm için yalnız okunur.
+<!-- kullanici-talimati:bitir -->
 
 ## Kontrol listesi maddesi
 

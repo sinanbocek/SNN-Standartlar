@@ -181,7 +181,7 @@ function sourceBranch(dir) {
 // dosya proje sahibinindir; üzerine yazılmaz, birleştirme ona bırakılır.
 const INSTRUCTIONS_BEGIN = '<!-- kullanici-talimati:basla -->';
 const INSTRUCTIONS_END = '<!-- kullanici-talimati:bitir -->';
-const INSTRUCTION_SOURCES = ['iletisim-standardi.md', 'alt-ajan-standardi.md'];
+const INSTRUCTION_SOURCES = ['iletisim-standardi.md', 'alt-ajan-standardi.md', 'es-zamanli-calisma-standardi.md'];
 const MANAGED_MARK = '<!-- SNN-Standartlar yönetir: standartlar/*.md içindeki kullanici-talimati bölümleri · elle değiştirme, setup-machine.js yeniden yazar -->';
 // Eski işaret: tek kaynaklı sürümün yazdığı dosyalar da bizimdir, güncellenir (2026-10-09 öncesi kurulumlar).
 const LEGACY_MARKS = ['<!-- SNN-Standartlar yönetir: standartlar/iletisim-standardi.md · elle değiştirme, setup-machine.js yeniden yazar -->'];

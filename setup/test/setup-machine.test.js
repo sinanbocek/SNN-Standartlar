@@ -130,7 +130,7 @@ console.log('— kullanıcı talimatı (~/.claude/CLAUDE.md)');
   expect('iki kaynakta işaret tek satırda', both.split(m.MANAGED_MARK).length, 2);
   expect('işaretsiz kaynak atlanır, diğeri kalır', m.instructionsFrom(['işaretsiz', STD2]).includes('2. Model yazılır.'), true);
   expect('hepsi işaretsizse kaynak yok', m.instructionsFrom(['a', 'b']), null);
-  expect('kaynak sırası sabit', m.INSTRUCTION_SOURCES, ['iletisim-standardi.md', 'alt-ajan-standardi.md']);
+  expect('kaynak sırası sabit', m.INSTRUCTION_SOURCES, ['iletisim-standardi.md', 'alt-ajan-standardi.md', 'es-zamanli-calisma-standardi.md']);
 
   const plan = (current) => m.planInstructions(wanted, current).action;
   expect('dosya yoksa oluşturulur', plan({ state: 'yok' }), 'create');

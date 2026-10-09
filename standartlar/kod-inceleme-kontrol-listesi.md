@@ -25,6 +25,8 @@ Bir değişiklik birleştirilmeden önce sorulan sorular. Her madde **evet/hayı
 
 - [ ] Çözülmeyip ertelenen bir sorun fark edildiyse kütüğe kaydı açıldı mı (standart biçimde, Sade Anlatım + Teknik Detay)?
       → `standartlar/teknik-borc-standardi.md`
+- [ ] İş sırasında görülen yan bulgu düzeltilmeden kütüğe mi yazıldı, asıl işe dönüldü mü?
+      → `standartlar/teknik-borc-standardi.md` "Yan bulgu" (vaka: 3 projede 4 uyarı, 2026-08-29 → 2026-09-26, #127)
 - [ ] Kayıt hassas mı (anahtar, parola, yetki kuralı, kişisel veri)? Öyleyse `Hassas: Evet` ve `Genel Başlık` satırları var mı?
       → `standartlar/teknik-borc-standardi.md`
 
@@ -42,5 +44,6 @@ Bir değişiklik birleştirilmeden önce sorulan sorular. Her madde **evet/hayı
 - [ ] Yeni kuralın testi, kuralı bilerek bozunca gerçekten kırmızı veriyor mu (sabotaj denemesi)?
 - [ ] Yeni bir kapı eklendiyse: `quality/data/gates.json` kaydı var mı, vakası **tarihli** mi, o vakayı yakalayan test gerçekten kırmızıdan yeşile mi döndü?
 - [ ] Kapı **gerçek veride** çalıştırıldı mı, yanlış alarm sayısı ölçülüp yazıldı mı?
+- [ ] "Kapı yeşil" iddiası çıkış koduna mı dayanıyor? Çıktı `| tail`, `Out-Null`, `2>/dev/null` ile gizlenmiş mi? (vaka: Abacus-Core PR #42 2026-08-31, Portföy 2026-09-15, #133)
 - [ ] Okuma yapan kod "okunamadı"yı "yok"tan ayırıyor mu? Hata, 404 ya da boş yanıt "yok" diye yorumlanıyor mu? Okunamayan veriyle karar veriliyor mu? (Kural 3)
       → `quality/remote-read.js`
