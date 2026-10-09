@@ -16,19 +16,21 @@ Kapanan kayıtlar: `docs/teknik-borc-arsiv.md`
 ---
 
 ### TB-008 — Aynı dalda eş zamanlı oturumlar dosya işaretlemeden çalışıyor
-- **Tespit Tarihi:** 2026-09-29 (OLC-001 ölçümü vadesinde kapatılırken)
-- **Öncelik:** P2 (Planlı)
+- **Tespit Tarihi:** 2026-09-29 (OLC-001 ölçümü vadesinde kapatılırken) · **Yeniden ölçüm:** 2026-10-09
+- **Öncelik:** P3 (Fırsatta)
 
 #### 🟢 Sade Anlatım
 - **Sorun ne?** Aynı projede iki oturum aynı anda ve aynı dalda çalışıyor. Hangisinin hangi dosyayı düzenlediği hiçbir yerde işaretli değil; ikinci oturum birincinin commit'lenmemiş işini görmeden üstüne yazabilir.
-- **Benzetme:** İki usta aynı odada çalışıyor ama duvara "bu duvarı ben boyuyorum" yazan yok. İkisi aynı duvara fırça atabilir.
-- **Çözülmezse ne olur?** Commit'lenmemiş iş sessizce kaybolabilir. Git bunu yakalamaz, çünkü çakışma commit'ten ÖNCE, aynı çalışma klasöründe olur.
-- **Senden beklenen karar:** Yok. Ölçüm kararı verdi (aşağıda); iş planlı sırada yapılır.
+- **Benzetme:** İki usta aynı odada çalışıyor ama duvara "bu duvarı ben boyuyorum" yazan yok.
+- **Ne ölçüldü (2026-10-09)?** Altı haftalık gerçek kayıtta iki ustanın aynı duvara fırça attığı **2** an bulundu. Kilit kurulsaydı 109 kez "dur" diyecekti; 104'ü yanlış olurdu (aynı ustanın yeniden açılmış defteri "ikinci usta" sanılıyor).
+- **Çözülmezse ne olur?** Altı haftada iki kez aynı belgeye iki oturum yazdı; kayıp olup olmadığı ölçülmedi. Risk var ama seyrek.
+- **Senden beklenen karar:** Yok. Ölçüm kararı verdi: kilit şimdi kurulmaz; ölçüm aracı kaldı, risk büyürse yeniden ölçülür.
 
 #### 🔧 Teknik Detay
-- **Açıklama:** OLC-001 sorusu "aynı projede aynı anda, aynı dalda kaç kez çalışıldı?" idi (TB-002'den doğdu, arşivde). Yerel ölçüm 2026-09-29, `node quality/meeting-report.js --gun 7`: **115 buluşma, 98'i aynı dalda** — GHS-Panel 58/49, İhale 19/13, Portföy 14/14, SNN-Standartlar 7/7, Piyasa-Core 6/4, Gunum-Var 5/5. Karar kuralı: aynı dalda buluşma varsa `guard-files` bekçisine dosya iddiası eklenir.
-- **Etki:** Eş zamanlı oturum açılan tüm aile projeleri; en çok GHS-Panel.
-- **Çözüm yönü:** (1) Oturum Write/Edit yaptığı dosyayı deftere işler (`~/.claude/oturumlar`, `session-registry.js` yanında). (2) Aynı dosyaya başka canlı oturumun Write/Edit çağrısı engellenir, sahibi ve dalı söylenir. (3) Önce kuru kipte gerçek veride ölç: kaç çağrı engellenirdi, kaçı yanlış alarm olurdu (aynı oturumun kendi dosyası, süresi dolmuş iddia). Bekçi kodu değişikliği olduğu için `setup-machine` ile kurulur.
-- **Ölçüm kusuru (aynı kayıtta):** `pending-measurements` akışı OLC-001'i CI'da çalıştırdığında "buluşma yok" diyordu. Veri (`~/.claude/oturumlar`) yalnız bu makinede var; CI'da klasör yok ve bu "yok" olarak okunuyordu — okunamadı ≠ yok (`standartlar/olcum-standardi.md` Kural 3). Dosya iddiası yazılırken `meeting-report.js` klasör yoksa "okunamadı" demeli.
-- **Neden Şimdi Çözülmüyor:** Ölçüm bugün kapandı; o sırada Actions kota önlemleri (PR #111 ve ardılı) sürüyordu. Dosya iddiası bekçi değişikliği ve yanlış alarm ölçümü ister; aceleyle kurulan kilit yanlış güven verir.
-- **Bağlı kalemler:** TB-002 (arşiv).
+- **İlk gerekçe (2026-09-29):** `meeting-report.js --gun 7`: 115 buluşma, 98'i aynı dalda. Karar kuralı "aynı dalda buluşma varsa dosya iddiası eklenir" idi.
+- **Yeniden ölçüm (2026-10-09, bu makine, oturum kayıtları 2026-09-01'den; yalnız yol ve zaman):** `node quality/file-overlap.js` — 6.457 yazma çağrısı, 79 oturum. 2 saatlik dosya iddiası **109** çağrıyı engellerdi: **103 kopya** (masaüstü çatal/yeniden açma; iki kayıt dosyası 540 ve 2.603 ortak mesaj kimliği taşıyor — tek usta), **2 sıralı** (önceki oturum bitmişti), **2 farklı dal**, **2 gerçek** (GHS-Panel 2026-09-25, aynı karar belgesine 21 ve 35 dk arayla; iş kaybı ölçülmedi).
+- **İlk gerekçenin kusuru:** oturum defteri çatalları ayrı oturum sayıyor (2026-09-23 Portföy: 7 saniyede 5 kayıt). Son 7 günde 26 buluşmanın 7'si bir dakika içinde tekrar. "Aynı dalda buluşma" dosyaya birlikte dokunmayı ölçmüyor.
+- **Yapılan (2026-10-09):** (1) `meeting-report.js` klasör yoksa "okunamadı" der (eski sürüm CI'da "buluşma yok" diyordu; olcum-standardi.md Kural 3). (2) Aynı projede 60 sn içinde gelen kayıtlar tek buluşma sayılır; ham sayı raporda kalır. (3) `quality/file-overlap.js` eklendi: kilit kararını veren asıl ölçüm.
+- **Yapılmayan ve neden:** Dosya iddiası bekçisi kurulmadı. 2 gerçek vakaya 104 yanlış alarm; yanlış kapı kapısızlıktan tehlikelidir (olcum-standardi.md Kural 2). Kurulacaksa önce çatal tespiti (ortak mesaj kimliği) bekçiye taşınmalı.
+- **Yeniden açma koşulu:** `file-overlap.js` gerçek vaka sayısı bir ayda 5'i geçerse ya da bir vakada iş kaybı doğrulanırsa P2'ye çıkar.
+- **Bağlı kalemler:** TB-002 (arşiv), OLC-001 (arşiv).
