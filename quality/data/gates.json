@@ -154,6 +154,12 @@
       "test": "İhale: format kontrolü planda"
     },
     {
+      "id": "alt-ajan-cagrisi",
+      "module": "quality/agent-call.js",
+      "vaka": "2026-10-09: Pulmaca'nin 6 acik kaydi icin teshis ajanlari model tahminle, seviye hic verilmeden acildi (#121). Gercek veri (bu makine, 2026-09-01 sonrasi oturum kayitlari): 522 Agent cagrisinin 347'si modelsiz, 497'si seviyesiz; modelsiz cagri ust oturumun modeliyle (en pahalisi) calisir. Kural kullanici talimatina girdi (#122); bu bekci Kural 1-2'nin makineyle gorulebilen kismidir. UYARI kipi: once yanlis alarm olculur. Tablonun kendisi (is turu) makineyle zorlanamaz.",
+      "test": "2026-10-09 Pulmaca: modelsiz ve seviyesiz çağrı yakalanır"
+    },
+    {
       "id": "kota-satiri",
       "module": "quality/session-lines.js",
       "vaka": "2026-09-29: kota olcumu 2026-09-23'ten beri haftalik kosuyordu ama sonucu yalniz akis ozetine yaziyordu. Gizli depolar 19 Eylul'de 2.045 dk'ya ulasti (gidis ~3.229), 23-24 Eylul yine 686 dk yandi; kimse gormedi. Acilis satiri o gun uyari verirdi.",

@@ -92,7 +92,9 @@ Bu kurallar SNN aile standardıdır (`SNN-Standartlar/standartlar/alt-ajan-stand
 
 ## Nasıl ölçülür
 
-Kural 2 makineyle zorlanabilir: ajan aracı çağrısında model ve seviye alanı var mı, makine görür. Bekçi henüz yazılmadı; `olcum-standardi.md` Kural 2 sırasıyla (vaka, test, sabotaj, kayıt, gerçek veri) ayrı bir PR'da kurulur. O güne kadar bu bölüm yükümlülüktür, kapı değildir.
+Kural 1 ve 2 makineyle görülebilir: ajan aracı çağrısında model ve seviye alanı var mı, Fable ya da Haiku · yüksek seçilmiş mi, makine görür. Bekçi `hooks/guard-agent.js` (kural `quality/agent-call.js`, kayıt `quality/data/gates.json` → `alt-ajan-cagrisi`). **Uyarı kipindedir**, engellemez: eksikse çağrı sürer, uyarı ajanın bağlamına düşer. "fork" tipi muaftır; üst oturumun modelini kasıtla miras alır.
+
+Gerçek veri (bu makine, 2026-09-01 sonrası oturum kayıtları, 2026-10-09'da sayıldı): 522 ajan çağrısının 347'si modelsiz, 497'si seviyesizdi. Bekçi o gün olsaydı 497 çağrıda uyarırdı; bunların hiçbiri yanlış alarm değildir, çünkü kural o gün yoktu. Kural sonrası yanlış alarm sayısı bir hafta izlenir; sıfırsa engele çevrilmesi tartışılır.
 
 Tablonun kendisi makineyle zorlanamaz: bir işin "teşhis" mi "kod yazma" mı olduğunu makine bilemez. Etkisi şöyle ölçülür:
 

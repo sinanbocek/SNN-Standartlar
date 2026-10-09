@@ -13,6 +13,7 @@ Bu makine kaybolsaydı **7 kapı birden** susardı:
 | `guard-files` | `.env`, özel anahtar, servis hesabı yazımı ve 7 sır deseni serbest kalır |
 | `guard-bash` | 8 yıkıcı komut kalıbı ve birleştirme kapısı düşer |
 | `guard-code-language` | Kod dili uyarısı susar |
+| `guard-agent` | Alt ajan model/seviye uyarısı susar — 2026-10-09'da eklendi (#121), sayım öncesinde yoktu |
 | `session-start` | Açılış özeti ve uyum ölçümü yok — **ve canlı kopya güncellemesi buradan tetiklendiği için kurallar donar** |
 | `stop-gate` | Kırmızı tiple "bitti" denebilir |
 | `stop-debt-push` | Kütük değişikliği GitHub'a ulaşmadan oturum kapanabilir |

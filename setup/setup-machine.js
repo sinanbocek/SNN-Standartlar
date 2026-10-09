@@ -86,6 +86,7 @@ const REGISTRY = [
   { file: 'guard-files.js', event: 'PreToolUse' },
   { file: 'guard-code-language.js', event: 'PreToolUse' },
   { file: 'guard-bash.js', event: 'PreToolUse' },
+  { file: 'guard-agent.js', event: 'PreToolUse' },
   { file: 'stop-gate.js', event: 'Stop' },
   { file: 'stop-debt-push.js', event: 'Stop' },
   { file: 'stop-schema-doc.js', event: 'Stop' },
