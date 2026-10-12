@@ -135,7 +135,7 @@ for t in quality/test/*.test.js setup/test/*.test.js hooks/test/*.test.js debt-s
 
 | Klasör | İçerik |
 |---|---|
-| `standartlar/` | Aile kuralları (8 belge) — kuralın kendisi |
+| `standartlar/` | Aile kuralları — kuralın kendisi |
 | `quality/` | Tarayıcılar ve kapılar + `data/` (kelime listesi, istisnalar, kapı defteri) |
 | `hooks/` | Bekçiler; makineye `setup/setup-machine.js` ile kopyalanır |
 | `setup/` | Proje ve makine kurulumu |

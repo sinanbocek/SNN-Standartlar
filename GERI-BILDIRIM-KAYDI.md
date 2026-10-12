@@ -34,6 +34,12 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 ## Kararlar
 
 
+### 2026-10-12 · Bellek derleme görevinin açtığı iki talep (#140, #142)
+
+- **Kimden:** Haftalık bellek derleme görevi (ikinci çalışma, PR #141); karar proje sahibinin ("1 ve 2 evet").
+- **#140 Arayüzde amber/turuncu uyarı rengi yok — KABUL.** Yeni `arayuz-standardi.md`; işaretli bölümü ev kâğıdına dördüncü kaynak olarak kopyalanır + kontrol listesi maddesi. İki projede (GHS-Panel 2026-09-16, SNN-Siparis 2026-09-25). #131 de iki projedeydi ve BEKLET almıştı; fark: #131 teknik ders, bu sahibin kendi tercihi ve bedeli ölçülmüş (sahip ikinci projede yeniden söyledi, ekran geri çevrildi).
+- **#142 Envanter işlenmiş notları tekrar adayı sayıyor — KABUL.** `quality/memory-inventory.js` emekli ve yönlendirme notlarını ayrı sayar, kopyaları ayrı gösterir (#143). Gerçek veride 130 not / 14 küme → 84 not / 1 küme / 2 kopya grubu; düşen kümelerin hepsi işlenmiş not ya da kopya.
+
 ### 2026-10-10 · Bellek derleme görevinin açtığı sekiz talep (#127–#134)
 
 - **Kimden:** Haftalık bellek derleme görevi (ilk çalışma, 110 not, 14 küme); karar proje sahibinin ("önerdiğin gibi yap; #130'da kararı sen ver").
