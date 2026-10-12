@@ -44,6 +44,32 @@ expect('aynı projedeki benzer notlar küme kurmaz', m.clusters([run1, { ...run2
 expect('eşik 0.5 gerçek kümeyi kaçırır', m.clusters([run1, run2], 0.5), []);
 expect('varsayılan eşik 0.13', m.DEFAULT_THRESHOLD, 0.13);
 
+console.log('— işlenmiş notlar (#142, 2026-10-12 envanteri)');
+// Emekli not + güncel kopyası: 14 adayın 7'si yalnız bu eşleşmeden doğuyordu.
+const retiredNote = note('SNN-Games', '_emekli-pulmaca-ekran-sadeligi.md', 'Pulmaca ekranı sade kalır; süs eklenmez', 'Oyun ekranında yalnız bulmaca ve klavye durur; rozet, animasyon, renkli şerit eklenmez.');
+const liveNote = note('SNN-Games-Pulmaca', 'pulmaca-ekran-sadeligi.md', 'Pulmaca ekranı sade kalır; süs eklenmez', 'Oyun ekranında yalnız bulmaca ve klavye durur; rozet, animasyon, renkli şerit eklenmez.');
+// Yönlendirme notları: farklı dersler, ortak "Bkz." kalıbı → tek kümede yapışıyorlardı (#127, #128, #130).
+const redir = (project, file, ders, std) => note(project, file, `Bkz. ${std} — ${ders} (yönlendirme)`, `Bkz. \`SNN-Standartlar/standartlar/${std}\` — ${ders}. Ayrıntı standartta; bu not yönlendirmedir.`);
+const r1 = redir('GHS-Panel', 'github-actions-dakika-siniri.md', 'Actions dakika kotası', 'es-zamanli-calisma-standardi.md');
+const r2 = redir('SNN-Proje-ve-Nakit-Akis-Yonetimi', 'yalniz-bu-proje.md', 'oturum yalnız kendi projesinden sorumlu', 'es-zamanli-calisma-standardi.md');
+const r3 = redir('SNN-Abacus-Core', 'kapsam-dagilmasi.md', 'yan bulgu kovalanmaz', 'teknik-borc-standardi.md');
+expect('yönlendirme notları ham haliyle kümeleniyordu (vakanın kanıtı)', m.clusters([r1, r2, r3]).length > 0, true);
+const p = m.partition([retiredNote, liveNote, r1, r2, r3, other]);
+expect('emekli, yönlendirme ve işlenmemiş ayrılır', [p.retired.map((n) => n.file), p.redirects.length, p.active.map((n) => n.file)], [['_emekli-pulmaca-ekran-sadeligi.md'], 3, ['pulmaca-ekran-sadeligi.md', 'telefon-gorunumu-onizleme.md']]);
+expect('işlenmemiş notlarda emekli+kopya kümesi kalmaz', m.clusters(p.active), []);
+expect('"yönlendirme" gövdede geçmesi yetmez, açıklamada aranır', m.partition([{ ...other, body: 'bu bir yönlendirme değil' }]).active.length, 1);
+
+console.log('— kopyalar (#137 bölünmesi)');
+// SNN-Games ikiye bölündü; not iki yeni klasöre aynen kopyalandı. Bağımsız gözlem değil.
+const copyA = note('SNN-Games-Pulmaca', 'kalici-kural-tum-projeler.md', 'Kalıcı kural tüm projelere yazılır', 'Sahip bir kuralı kalıcı dediğinde yalnız bu projeye değil aile standardına gider.');
+const copyB = { ...copyA, project: 'SNN-Games-Umi' };
+const cg = m.copies([copyA, copyB, run1, run2]);
+expect('aynı ad + aynı içerik, farklı proje → kopya grubu', cg.map((c) => [c.file, c.projects]), [['kalici-kural-tum-projeler.md', ['SNN-Games-Pulmaca', 'SNN-Games-Umi']]]);
+expect('kopya çifti tekrar kümesi kurmaz', m.clusters([copyA, copyB]), []);
+expect('gerçek tekrar kümesi kopya kuralından etkilenmez', m.clusters([copyA, copyB, run1, run2]).map((g) => g.notes.length), [2]);
+expect('aynı ad ama farklı içerik kopya sayılmaz', m.copies([run1, { ...run2, file: run1.file }]), []);
+expect('kopya eşiği 0.95', m.COPY_THRESHOLD, 0.95);
+
 console.log('— yeni ve tarihi geçmiş');
 const oldProject = note('trade-kasa', 'trade-kasa-v21-plan.md', 'Sürüm durumu', 'v2.1 planı', { type: 'project', modified: daysAgo(60) });
 const freshNote = note('SNN-Games', 'yeni.md', 'Yeni ders', 'gövde', { modified: daysAgo(1) });
@@ -55,6 +81,8 @@ const r = m.report({ notes: [run1, run2, only1, only2, other, oldProject], group
 expect('rapor sayıları taşır', /Not: 6 · proje: 6/.test(r) && /tekrar kümesi: 2/.test(r), true);
 expect('rapor kümeleri listeler', /### Küme 1/.test(r) && /### Küme 2/.test(r), true);
 expect('rapor not gövdesini yazmaz', r.includes('ikinci sekme ilkini görmez'), false);
+const r2rep = m.report({ notes: [liveNote], groups: [], fresh: [], old: [], days: 7, now: NOW, retired: [retiredNote], redirects: [r1, r2], copyGroups: cg });
+expect('rapor işlenmişleri ayrı sayar', /Not: 1 ·/.test(r2rep) && /emekli: 1 · yönlendirme: 2 · kopya grubu: 1/.test(r2rep) && /## Kopyalar \(1\)/.test(r2rep), true);
 
 console.log('— okunamadı ≠ yok');
 expect('klasör yoksa okunamadı', m.scan(path.join(os.tmpdir(), 'snn-olmayan-' + Date.now())).state, 'okunamadi');
