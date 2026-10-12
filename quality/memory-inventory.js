@@ -57,7 +57,44 @@ function similarity(a, b) {
   return n / (a.size + b.size - n);
 }
 
+// SAF: işlenmiş notları ayırır. Derleme görevi notu emekliye ayırınca dosya adı `_emekli-` ile başlar;
+// yönlendirmeye indirince açıklamaya "(yönlendirme)" ekler (docs/bellek-derleme/README.md).
+// NEDEN (#142, 2026-10-12): ikisi de kümelemeye giriyordu; 14 adayın 11'inde emekli not vardı, yönlendirme
+// notları ortak "Bkz. …" kalıbıyla farklı dersleri tek kümede topluyordu. İşlenmiş not her hafta geri geliyordu.
+const isRetired = (n) => /^_emekli-/.test(n.file || '');
+const isRedirect = (n) => /\(yönlendirme\)/i.test(n.description || '');
+function partition(notes) {
+  const out = { active: [], retired: [], redirects: [] };
+  for (const n of notes) {
+    if (isRetired(n)) out.retired.push(n);
+    else if (isRedirect(n)) out.redirects.push(n);
+    else out.active.push(n);
+  }
+  return out;
+}
+
+// Kopya: proje bölününce notlar yeni klasörlere kopyalandı (SNN-Games → Pulmaca + Umi, #137). Aynı dosya adı,
+// neredeyse aynı gövde; bağımsız gözlem değil. Ölçüm (2026-10-12): bölünme kopyaları 0.99–1.00 benzerlikte.
+const COPY_THRESHOLD = 0.95;
+
+// SAF: farklı projelerde aynı adı ve neredeyse aynı içeriği taşıyan notlar → kopya grupları (dosya adına göre)
+function copies(notes) {
+  const toks = notes.map((n) => tokens(`${n.name} ${n.description} ${n.body || ''}`));
+  const byFile = new Map();
+  for (let i = 0; i < notes.length; i += 1) {
+    for (let j = i + 1; j < notes.length; j += 1) {
+      if (!isCopy(notes[i], notes[j], toks[i], toks[j])) continue;
+      const g = byFile.get(notes[i].file) || new Set();
+      g.add(notes[i]); g.add(notes[j]);
+      byFile.set(notes[i].file, g);
+    }
+  }
+  return [...byFile.entries()].map(([file, g]) => ({ file, notes: [...g], projects: [...new Set([...g].map((n) => n.project))] }));
+}
+const isCopy = (a, b, ta, tb) => a.project !== b.project && a.file === b.file && similarity(ta, tb) >= COPY_THRESHOLD;
+
 // SAF: notlar → projeler arası tekrar kümeleri. Aynı projedeki iki not küme kurmaz (o derleme değil, düzen işi).
+// Kopya çifti de küme kurmaz: tekrar değil, ayrı bölümde gösterilir.
 function clusters(notes, threshold = DEFAULT_THRESHOLD) {
   // Gövde de sayılır: yalnız açıklama ile 8 bilinen kümenin 4'ü bulunuyordu (2026-10-09 ölçümü).
   const toks = notes.map((n) => tokens(`${n.name} ${n.description} ${n.body || ''}`));
@@ -67,6 +104,7 @@ function clusters(notes, threshold = DEFAULT_THRESHOLD) {
   for (let i = 0; i < notes.length; i += 1) {
     for (let j = i + 1; j < notes.length; j += 1) {
       if (notes[i].project === notes[j].project) continue;
+      if (isCopy(notes[i], notes[j], toks[i], toks[j])) continue;
       const s = similarity(toks[i], toks[j]);
       if (s >= threshold) { pairs.push({ i, j, s }); parent[find(i)] = find(j); }
     }
@@ -90,13 +128,15 @@ const recent = (notes, now, days) => notes.filter((n) => now - n.modified < days
 const stale = (notes, now, days = 45) => notes.filter((n) => n.type === 'project' && now - n.modified > days * DAY_MS);
 
 // SAF: rapor metni
-function report({ notes, groups, fresh, old, days, now = Date.now() }) {
+// `notes` yalnız işlenmemiş notlardır; emekli ve yönlendirme ayrı sayılır (#142).
+function report({ notes, groups, fresh, old, days, now = Date.now(), retired = [], redirects = [], copyGroups = [] }) {
   const byProject = {};
   for (const n of notes) byProject[n.project] = (byProject[n.project] || 0) + 1;
   const lines = [
     `# Bellek envanteri — ${new Date(now).toISOString().slice(0, 10)}`,
     '',
     `Not: ${notes.length} · proje: ${Object.keys(byProject).length} · son ${days} günde yeni/değişen: ${fresh.length} · projeler arası tekrar kümesi: ${groups.length} · tarihi geçmiş olabilir: ${old.length}`,
+    `İşlenmiş (sayıya ve kümelemeye girmez): emekli: ${retired.length} · yönlendirme: ${redirects.length} · kopya grubu: ${copyGroups.length}`,
     '',
     '## Projeye göre',
     ...Object.entries(byProject).sort((a, b) => b[1] - a[1]).map(([p, c]) => `- ${p}: ${c}`),
@@ -108,6 +148,8 @@ function report({ notes, groups, fresh, old, days, now = Date.now() }) {
     lines.push('', `### Küme ${i + 1} — ${g.projects.length} proje, ${g.notes.length} not (benzerlik ${g.score.toFixed(2)})`);
     for (const n of g.notes) lines.push(`- **${n.project}** · \`${n.file}\` · ${n.modified.toISOString().slice(0, 10)} · ${n.description.slice(0, 110)}`);
   });
+  lines.push('', `## Kopyalar (${copyGroups.length})`, 'Aynı ad, neredeyse aynı içerik, farklı proje (ör. bölünen projenin kopyaları). Bağımsız gözlem değildir; tekrar sayısına katılmaz.');
+  for (const c of copyGroups) lines.push(`- \`${c.file}\` · ${c.projects.join(', ')}`);
   lines.push('', `## Son ${days} günde yeni ya da değişen (${fresh.length})`);
   for (const n of fresh.sort((a, b) => b.modified - a.modified)) lines.push(`- ${n.modified.toISOString().slice(0, 10)} · **${n.project}** · \`${n.file}\` · ${n.description.slice(0, 110)}`);
   lines.push('', `## Tarihi geçmiş olabilir — "project" tipli, 45+ gün (${old.length})`);
@@ -136,7 +178,7 @@ function scan(dir = PROJECTS_DIR) {
   return { state: 'var', notes };
 }
 
-module.exports = { frontmatter, tokens, similarity, clusters, recent, stale, report, scan, DEFAULT_THRESHOLD };
+module.exports = { frontmatter, tokens, similarity, partition, copies, clusters, recent, stale, report, scan, DEFAULT_THRESHOLD, COPY_THRESHOLD };
 
 if (require.main === module) {
   const argv = process.argv.slice(2);
@@ -146,9 +188,11 @@ if (require.main === module) {
   const { state, notes } = scan();
   if (state !== 'var') { console.log(`Bellek klasörü OKUNAMADI (${PROJECTS_DIR}). Bu "not yok" demek değildir.`); process.exit(0); }
   const now = Date.now();
-  const out = { notes, groups: clusters(notes, threshold), fresh: recent(notes, now, days), old: stale(notes, now), days, now };
+  const { active, retired, redirects } = partition(notes);
+  const out = { notes: active, groups: clusters(active, threshold), copyGroups: copies(active), fresh: recent(active, now, days), old: stale(active, now), retired, redirects, days, now };
   if (argv.includes('--json')) {
-    console.log(JSON.stringify({ ...out, notes: notes.map((n) => ({ ...n, dir: undefined })) }, null, 1));
+    const strip = (list) => list.map((n) => ({ ...n, dir: undefined }));
+    console.log(JSON.stringify({ ...out, notes: strip(active), retired: strip(retired), redirects: strip(redirects) }, null, 1));
   } else {
     console.log(report(out));
   }

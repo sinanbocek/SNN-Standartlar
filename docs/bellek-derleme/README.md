@@ -28,6 +28,8 @@ node quality/memory-inventory.js --son 7
 
 Çıktı: proje başına not sayısı, projeler arası tekrar **adayları**, son 7 günün yeni notları, tarihi geçmiş olabilecek "project" tipli notlar. Hiçbir notu değiştirmez.
 
+**İşlenmiş notlar ayrı sayılır (#142, 2026-10-12):** `_emekli-*` dosyaları ve açıklamasında "(yönlendirme)" geçen notlar not sayısına ve kümelemeye girmez; başlıkta "emekli: N · yönlendirme: N" diye ayrı görünür. Farklı projede aynı adı ve neredeyse aynı içeriği (benzerlik ≥ 0,95) taşıyan notlar "Kopyalar" bölümünde çıkar, tekrar sayısına katılmaz. Bu yüzden 2026-10-12'den önceki raporların "Not" ve "küme" sayıları sonrakilerle doğrudan karşılaştırılmaz: o gün eski sayım 130 not / 14 küme, yeni sayım 84 not / 1 küme / 2 kopya grubu verdi.
+
 **Sınırı bilinir:** kümeleme kelime torbasıyla yapılır (Jaccard). Eşik ölçümü (2026-10-09, 109 not, elle bilinen 8 küme): 0,13'te 6 aday çıktı; 3'ü gerçek küme, 3'ü gevşek akraba; bilinen 8 kümenin 3'ü yakalandı. Bu yüzden aday listesi **kaba elektir**: görev, adayları ve tüm not açıklamalarını (109 satır) kendisi okuyup kümeyi kendisi kurar. Betik sayım ve iz içindir, hüküm için değil.
 
 ## Her çalışmanın raporu
