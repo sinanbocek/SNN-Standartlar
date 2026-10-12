@@ -11,6 +11,11 @@ Bir değişiklik birleştirilmeden önce sorulan sorular. Her madde **evet/hayı
 - [ ] Para, telefon, TCKN, VKN, e-posta, plaka biçimleri ABACUS motorlarından mı geliyor? Ham `toLocaleString`, `Intl`, `toFixed`, `toUpperCase` var mı?
       → `standartlar/giris-alanlari-standardi.md`
 
+## Arayüz
+
+- [ ] Yeni uyarı, rozet ya da durum rengi eklendi mi? Amber/turuncu var mı? (Uyarı: mavi-gri, mavi, menekşe · hata: kırmızı)
+      → `standartlar/arayuz-standardi.md` (vaka: GHS-Panel 2026-09-16, SNN-Siparis 2026-09-25 — sahip iki projede ayrı ayrı geri çevirdi)
+
 ## Adlandırma
 
 - [ ] **Yeni tanımlayıcı (dosya, klasör, değişken, tip, tablo, sütun, API alanı) İngilizce mi? Proje kuralı aile standardıyla çelişiyor mu?**

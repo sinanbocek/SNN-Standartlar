@@ -176,12 +176,14 @@ function sourceBranch(dir) {
 // ~/.claude/CLAUDE.md dosyasını her oturumda okur. Kaynak, standartlardaki işaretli bölümlerdir:
 //   - iletisim-standardi.md (2026-09-24: proje sahibi 6 günde 5 kez "anlamadım" dedi)
 //   - alt-ajan-standardi.md (2026-10-09: alt ajan modeli tahminle seçildi, seviye verilmedi; #121)
+//   - es-zamanli-calisma-standardi.md §6 (2026-10-10: oturum yalnız kendi projesinden sorumlu; #128)
+//   - arayuz-standardi.md (2026-10-12: sahip amber rengini iki projede ayrı ayrı geri çevirdi; #140)
 // Bölümler INSTRUCTION_SOURCES sırasıyla art arda yazılır.
 // Becerilerdeki kuralın aynısı: BİZİM OLMAYAN dosyaya dokunulmaz. İlk satırdaki işaret yoksa
 // dosya proje sahibinindir; üzerine yazılmaz, birleştirme ona bırakılır.
 const INSTRUCTIONS_BEGIN = '<!-- kullanici-talimati:basla -->';
 const INSTRUCTIONS_END = '<!-- kullanici-talimati:bitir -->';
-const INSTRUCTION_SOURCES = ['iletisim-standardi.md', 'alt-ajan-standardi.md', 'es-zamanli-calisma-standardi.md'];
+const INSTRUCTION_SOURCES = ['iletisim-standardi.md', 'alt-ajan-standardi.md', 'es-zamanli-calisma-standardi.md', 'arayuz-standardi.md'];
 const MANAGED_MARK = '<!-- SNN-Standartlar yönetir: standartlar/*.md içindeki kullanici-talimati bölümleri · elle değiştirme, setup-machine.js yeniden yazar -->';
 // Eski işaret: tek kaynaklı sürümün yazdığı dosyalar da bizimdir, güncellenir (2026-10-09 öncesi kurulumlar).
 const LEGACY_MARKS = ['<!-- SNN-Standartlar yönetir: standartlar/iletisim-standardi.md · elle değiştirme, setup-machine.js yeniden yazar -->'];
