@@ -12,19 +12,19 @@ const expect = (name, actual, wanted) => {
 const base = (over = {}) => ({
   repo: { owner: 'sinanbocek', name: 'Yeni-Proje', full: 'sinanbocek/Yeni-Proje', isPublic: false },
   admin: true, debt: 'yok', archive: false,
-  workflows: { 'teknik-borc.yml': false, 'anahtar-tarama.yml': false },
+  workflows: { 'teknik-borc.yml': false, 'anahtar-tarama.yml': false }, gitattributes: false,
   board: false, inFamily: false, secret: false, deleteBranchOnMerge: false, vulnAlerts: false, securityFixes: false, ...over,
 });
 const ids = (steps, who, status) => steps.filter((s) => (!who || s.who === who) && (!status || s.status === status)).map((s) => s.id);
 
 console.log('— sıfırdan yeni proje');
 let s = K.plan(base());
-expect('betiğin yapacakları', ids(K.pending(s)), ['kutuk', 'arsiv', 'teknik-borc-akisi', 'anahtar-tarama-akisi', 'board', 'aile-listesi', 'dal-silme', 'guvenlik-uyarilari', 'guvenlik-duzeltme']);
+expect('betiğin yapacakları', ids(K.pending(s)), ['kutuk', 'arsiv', 'teknik-borc-akisi', 'anahtar-tarama-akisi', 'satir-sonu', 'board', 'aile-listesi', 'dal-silme', 'guvenlik-uyarilari', 'guvenlik-duzeltme']);
 expect('kullanıcıya kalan yalnız anahtar', ids(K.userTasks(s)), ['anahtar']);
 expect('anahtar adımı değeri istemez, bağlantı verir', s.find((x) => x.id === 'anahtar').why.includes('settings/secrets/actions') && s.find((x) => x.id === 'anahtar').why.includes('sohbete yazılmaz'), true);
 
 console.log('— tamamen kurulu proje');
-s = K.plan(base({ debt: 'standart', archive: true, workflows: { 'teknik-borc.yml': true, 'anahtar-tarama.yml': true }, board: true, inFamily: true, secret: true, deleteBranchOnMerge: true, vulnAlerts: true, securityFixes: true }));
+s = K.plan(base({ debt: 'standart', archive: true, workflows: { 'teknik-borc.yml': true, 'anahtar-tarama.yml': true }, gitattributes: true, board: true, inFamily: true, secret: true, deleteBranchOnMerge: true, vulnAlerts: true, securityFixes: true }));
 expect('yapılacak iş yok', [K.pending(s).length, K.userTasks(s).length], [0, 0]);
 
 console.log('— sınırlar');

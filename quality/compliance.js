@@ -155,6 +155,7 @@ function readState(root) {
     ledgerText,
     guideNames,
     guideText: guideTexts === null ? null : guideTexts.join('\n'),
+    gitattributesText: readAt(root, '.gitattributes', fromMain),
     exemptRaw: readFileOr(path.join(root, EXEMPT_FILE), null),
     findings: countFindings(root),
   };
@@ -336,6 +337,17 @@ const CHECKS = [
     detail: (s) => (s.guideNames.length ? 'CLAUDE.md / AI-RULES.md aile standardına atıf yapmıyor' : 'CLAUDE.md ya da AI-RULES.md yok'),
     fix: 'rehbere "Aile standartları: sinanbocek/SNN-Standartlar" atfını ekle',
   },
+  // Öneri (advisory): eksikse oturum açılışında uyarı olur, issue açılmaz. Zararı küçük, düzeltmesi
+  // tek dosya; aile genelinde aynı gün 9 issue açmak gürültüdür (#147, 2026-10-14).
+  {
+    id: 'satir-sonu',
+    advisory: true,
+    input: 'gitattributesText',
+    title: 'Satır sonu kuralı',
+    ok: (s) => /^\*\s+(?=[^\n]*\btext=auto\b)(?=[^\n]*\beol=lf\b)/m.test(String(s.gitattributesText).replace(/\r/g, '')),
+    detail: (s) => (s.gitattributesText ? '.gitattributes tüm dosyalar için `eol=lf` demiyor' : '.gitattributes yok'),
+    fix: 'ornek/.gitattributes dosyasını köke kopyala, sonra `git add --renormalize .`',
+  },
 ];
 
 // SAF: durum -> bulgular. Muaf olanlar listeden dusulur.
@@ -348,14 +360,16 @@ function evaluate(state, exempt = exemptions(state.exemptRaw), excluded = exclud
   }
   const gaps = [];
   const unknown = [];
+  const advice = [];
   for (const c of CHECKS) {
     if (exempt.ids.has(c.id)) continue;
     if (c.budget && isPublic) continue; // açık depoda dakika ücretsiz
     if (c.input && state[c.input] === null) { unknown.push(c.id); continue; }
     if (c.ok(state)) continue;
+    if (c.advisory) { advice.push(`${c.title}: ${c.detail(state)} → ${c.fix}`); continue; }
     gaps.push({ id: c.id, title: c.title, detail: c.detail(state), fix: c.fix });
   }
-  const warnings = [...exempt.warnings];
+  const warnings = [...exempt.warnings, ...advice];
   if (unknown.length) {
     const titles = CHECKS.filter((c) => unknown.includes(c.id)).map((c) => c.title);
     warnings.push(`ölçülemedi (okuma hatası; eksik sayılmadı): ${titles.join(', ')}`);

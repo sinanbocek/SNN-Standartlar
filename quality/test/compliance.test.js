@@ -22,12 +22,26 @@ const TAM = {
   guideText: 'Aile standartları: sinanbocek/SNN-Standartlar deposuna bakılır.',
   exemptRaw: null,
   findings: 382, // işi olan ve kaydını açmış bir proje
+  gitattributesText: '* text=auto eol=lf\n*.png binary\n',
 };
 const ids = (state, ex) => c.evaluate(state, ex).gaps.map((g) => g.id);
 
 console.log('— tam uyum');
 expect('eksik yok', ids(TAM), []);
-expect('ölçüt sayısı', c.CHECKS.length, 11);
+expect('ölçüt sayısı', c.CHECKS.length, 12);
+
+console.log('— satır sonu (#147, 2026-10-14) — öneri: uyarı olur, issue açmaz');
+// VAKA: SNN-ihale-ozeti'de .gitattributes yoktu; depoda 145 CRLF, 2 karışık dosya vardı.
+// package.json'a 2 betik eklenince fark 41 satırın tamamını silinmiş gösterdi.
+const lfWarn = (text) => c.evaluate({ ...TAM, gitattributesText: text }).warnings.filter((w) => /satır sonu/i.test(w)).length;
+expect('dosya yok → uyarı', lfWarn(''), 1);
+expect('dosya yok → eksik (gap) sayılmaz, issue açılmaz', ids({ ...TAM, gitattributesText: '' }), []);
+expect('"* text=auto eol=lf" → temiz', lfWarn('* text=auto eol=lf\n'), 0);
+// VAKA: GHS-Panel'de yalnız "*.sql text eol=lf" var; diğer dosyalar korumasız.
+expect('yalnız tek uzantı için eol=lf → uyarı', lfWarn('*.sql text eol=lf\n'), 1);
+expect('yorumdaki kural sayılmaz', lfWarn('# * text=auto eol=lf\n'), 1);
+expect('okunamadı → uyarı değil, ölçülemedi', c.evaluate({ ...TAM, gitattributesText: null }).unknown, ['satir-sonu']);
+expect('şablon geçer', lfWarn(require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'ornek', '.gitattributes'), 'utf8')), 0);
 
 console.log('— akış bütçesi (2026-09-29 kota vakası)');
 // Yeni biçim: aile kontrolü CI işinin içinde adım; ayrı anahtar-tarama/kod-dili akışı yok.
