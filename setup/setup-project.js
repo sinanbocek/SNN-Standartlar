@@ -87,7 +87,7 @@ function familyState(full) {
 // farklı depolar, farklı inceleme. Döner: PR adresi ya da null (zaten listede).
 function applyFamilyEntry(o, dir) {
   const current = ghJson(['api', `repos/${STANDARDS_REPO}/contents/${FAMILY_FILE}`]);
-  const next = K.familyWithEntry(Buffer.from(current.content, 'base64').toString('utf8'), o.repo.full, dir);
+  const next = K.familyWithEntry(Buffer.from(current.content, 'base64').toString('utf8'), o.repo.full, dir, o.repo.isPublic);
   if (!next) return null;
   const branch = `chore/aile-listesi-${o.repo.name.toLowerCase()}`;
   const base = ghJson(['api', `repos/${STANDARDS_REPO}/git/ref/heads/main`]).object.sha;

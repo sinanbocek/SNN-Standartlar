@@ -130,10 +130,12 @@ function projectsArraySpan(raw) {
 // SAF: listeye yeni kayıt ekler, sırayı korur, yinelemez. Döner: yeni metin ya da null.
 // Yalnız yeni kayıt satırı eklenir; dosyanın geri kalanı bayt bayt korunur. Tüm dosyayı
 // yeniden yazmak her tek satırlık kaydı dört satıra açıyordu (#109, 2026-09-25).
-function familyWithEntry(raw, repo, dir) {
+// isPublic true ise kayda "public": true yazılır; gizli depoda alan hiç eklenmez (#153, 2026-10-14).
+function familyWithEntry(raw, repo, dir, isPublic = false) {
   const parsed = JSON.parse(raw);
   if ((parsed.projects || []).some((p) => p && String(p.repo).toLowerCase() === repo.toLowerCase())) return null;
-  const expected = { ...parsed, projects: [...(parsed.projects || []), { repo, dir }] };
+  const entryObj = isPublic ? { repo, dir, public: true } : { repo, dir };
+  const expected = { ...parsed, projects: [...(parsed.projects || []), entryObj] };
   const span = projectsArraySpan(raw);
   if (!span) return `${JSON.stringify(expected, null, 2)}\n`;
 
@@ -146,10 +148,10 @@ function familyWithEntry(raw, repo, dir) {
     const eol = raw.includes('\r\n') ? '\r\n' : '\n';
     const lineStart = raw.lastIndexOf('\n', lastEnd - 1) + 1;
     const indent = /^[ \t]*/.exec(raw.slice(lineStart))[0];
-    const line = `{ "repo": ${JSON.stringify(repo)}, "dir": ${JSON.stringify(dir)} }`;
+    const line = `{ "repo": ${JSON.stringify(repo)}, "dir": ${JSON.stringify(dir)}${isPublic ? ', "public": true' : ''} }`;
     next = `${raw.slice(0, lastEnd)},${eol}${indent}${line}${raw.slice(lastEnd)}`;
   } else {
-    const entry = JSON.stringify({ repo, dir });
+    const entry = JSON.stringify(entryObj);
     next = `${raw.slice(0, lastEnd)}${isEmpty ? '' : ','}${entry}${raw.slice(lastEnd)}`;
   }
   // Metin düzeyinde ekleme bozuk JSON üretmemeli; üretirse yazılmaz, hata verilir.
