@@ -189,7 +189,7 @@ Tamamı A sınıfı; yalnız Türkçe metin uyarlaması gerekir:
 |---|---|---|
 | **0** | Bu plan | ✅ Sahibi §8'i onayladı (2026-10-14) |
 | **1** | SNN-UI deposu, `snn-foundation.css`, ilk raf (19 bileşen, Türkçe metin), `AI/katalog.md`, shadcn kurulum denemesi, aileye bağlama | ✅ 2026-10-14: `sinanbocek/SNN-UI` PR #1–#3, SNN-Standartlar #153. Boş Vite projesine `@snn-ui/button` tek komutla kuruldu; amber testi yeşil, 4 sabotajın 4'ü kırmızı |
-| **2** | Mevcut `standartlar/arayuz-standardi.md` belgesine §5 kuralları eklenir; "önce katalog" kuralı işaretli bölüme girer | Ek birleşti; `setup-machine.js` ev kâğıdına kopyaladı |
+| **2** | Mevcut `standartlar/arayuz-standardi.md` belgesine §5 kuralları eklenir; "önce katalog" kuralı işaretli bölüme girer | ✅ 2026-10-14: §2 "Önce katalog" ve işaretli bölüme 3–5. kurallar eklendi. Arc Pro yasağı da girdi (lisans Pro'nun shadcn kataloğunda yayınını yasaklıyor). Ev kâğıdına kopya: `node setup/setup-machine.js --uygula` |
 | **3** | İkinci raf: B sınıfı bileşenler ABACUS ile | Para kutusu `85.340,50` yapıştırınca aynı değeri kaydediyor (`giris-alanlari-standardi.md` testi) |
 | **4** | `proje-kur` becerisine "yeni projede SNN-UI kur" adımı | Yeni proje kurulumunda katalog hazır geliyor |
 | **5** | Gerçek vaka birikince "AI kokusu" kapısı | `olcum-standardi.md` adımları |
