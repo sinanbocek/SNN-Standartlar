@@ -59,6 +59,7 @@ Oysa aile standardı zaten yazılıydı: `SNN-Abacus-Core/AI-RULES.md` ve `ABACU
 | Dış kaynağın alan adı Türkçe | Dış veri **olduğu gibi** okunur (ör. TCMB XML `Tarih_Date`); sınırda İngilizce ada çevrilir. Dış ada dokunulmaz, istisna listesine yazılır. |
 | Yasal/resmî bir ad birebir gerekiyor | Belgede Türkçe açıklanır, kodda İngilizce ada eşlenir. |
 | Mevcut veritabanında Türkçe sütun var | Aşağıdaki geçiş kuralı uygulanır; uydurma çeviri için tablo yeniden adlandırılmaz. |
+| Başka projeden (ya da `reference/` klasöründen) kod taşınıyor | Adlar **taşıma anında** çevrilir. Taşınan kod yeni koddur; kaynak projede eski olması onu geçiş kuralından yararlandırmaz. Vaka (2026-10-14, #146): SNN-ihale-ozeti'ye 2026-10-11'de kardeş proje kodu Türkçe adlarıyla taşındı; borç kaydı iki günde 178 bulgudan 730'a çıktı. |
 
 ### Geçiş kuralı (mevcut projeler)
 
@@ -89,6 +90,7 @@ Her projenin `AI-RULES.md` / `CLAUDE.md` dosyası bu kurala **atıf yapar**, kur
 |---|---|---|
 | **Tarayıcı** | `quality/code-language-scan.js` | Kaynak dosyalardaki tanımlayıcıları ve `.sql` dosyalarındaki tablo/sütun adlarını tarar. Türkçe harf (`ç ğ ı ö ş ü`) içeren ya da kelime listesinde geçen adları raporlar. Yorumlar, dizgeler ve belgeler **taranmaz**. |
 | **GitHub akışı** | `.github/workflows/kod-dili.yml` (görevli) + `ornek/kod-dili.yml` (projeye kopyalanan tek dosya) | Her PR'da ve main gönderiminde **eklenen satırları** tarar; yeni Türkçe ad ya da var olan Türkçe adın yeni tanımı varsa kırılır. Var olan adın kullanımı uyarıdır. |
+| **Yerel kapı (push öncesi)** | `quality/local-check.js` | `git push` ve `gh pr create` öncesinde, projenin kendi komutlarından sonra `--diff origin/main` taramasını koşar. Kırmızıysa damga yazılmaz, gönderim durur. PR açmadan yerelde birleştiren projeleri de kapsar (#146, 2026-10-14). `package.json` olmayan projede kapı uygulanmaz. |
 | **Uyarı kipi (yazma anı)** | `quality/code-language-warn.js` + `guard-code-language` bekçisi | Ajan bir kaynak dosyaya Türkçe tanımlayıcı **yazarken** not düşer. **Engellemez.** Yalnız yeni yazılan metni denetler; dosyanın geri kalanını değil. Tüm projelerde çalışır, kurulum gerekmez. |
 
 ### Kullanım

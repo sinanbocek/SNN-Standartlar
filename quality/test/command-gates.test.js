@@ -26,6 +26,22 @@ expect('verify betiği varsa yalnız o', names(lc.planCommands({ scripts: { ...g
 expect('npm varsayılan test betiği sayılmaz', names(lc.planCommands({ scripts: { test: 'echo "Error: no test specified" && exit 1' } }, false)), []);
 expect('package.json yok → kapı uygulanmaz', lc.planCommands(null, false), []);
 
+console.log('— kod dili taraması (#146)');
+// VAKA (2026-10-14, #146): SNN-ihale-ozeti dalları yerelde main'e birleştiriyor (1 PR). Tarama
+// yalnız PR'da koştuğu için kural yazıldıktan sonra 162 Türkçe tanımlayıcı main'e girdi.
+// Projenin verify betiği tarama içermiyordu; kapı yalnız verify'ı koşuyordu.
+const tenderSummaryScripts = { verify: 'npm run typecheck && npm test', typecheck: 'tsc --noEmit', test: 'vitest run' };
+expect('verify olsa da tarama planda (origin/main var)',
+  names(lc.planCommands({ scripts: tenderSummaryScripts }, true, { hasMain: true })), ['verify', 'kod-dili']);
+expect('verify yokken de tarama en sonda',
+  names(lc.planCommands({ scripts: ihaleScripts }, true, { hasMain: true })), ['format:check', 'lint', 'typecheck', 'test', 'kod-dili']);
+expect('tarama yalnız eklenen satırlara bakar (eski borç push\'u durdurmaz)',
+  lc.planCommands({ scripts: tenderSummaryScripts }, true, { hasMain: true }).pop().cmd.includes('--diff origin/main'), true);
+expect('origin/main yoksa tarama planlanmaz (karşılaştıracak taban yok)',
+  names(lc.planCommands({ scripts: tenderSummaryScripts }, true, { hasMain: false })), ['verify']);
+expect('koşacak başka komut yoksa tarama tek başına kapıyı açmaz',
+  lc.planCommands(null, false, { hasMain: true }), []);
+
 console.log('— karar');
 const base = { applies: true, head: 'b'.repeat(40), stampHead: null, sinceStamp: null, vsMain: ['src/a.ts'] };
 expect('damga yok, kod değişmiş → ret', lc.decide(base) !== null, true);

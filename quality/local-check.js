@@ -14,6 +14,7 @@
 // Komutlar package.json'dan çıkar:
 //   - `verify` betiği varsa YALNIZ o koşar (proje kendi tam listesini tanımlar; CI ile aynı olmalı)
 //   - yoksa: format:check · lint · typecheck/type-check (yoksa tsconfig varsa tsc --noEmit) · test
+//   - her iki durumda en sona kod dili taraması (yalnız origin/main'e göre eklenen satırlar, #146)
 //   CI'da projeye özgü adım varsa (Gunum-Var'da Deno kontrolü: 18 Eylül kırmızısı) proje `verify`
 //   betiği tanımlamalıdır; varsayılan liste onu bilemez.
 // package.json yoksa ya da koşacak komut yoksa kapı uygulanmaz.
@@ -26,9 +27,22 @@ const STAMP = 'snn-yerel-kontrol.json';
 const DOCS_ONLY = /^docs\/|\.md$/i;
 const NPM_DEFAULT_TEST = /no test specified/;
 const SCRIPT_PATH = path.join(require('os').homedir(), '.claude', 'standartlar-canli', 'quality', 'local-check.js');
+const SCAN_PATH = path.join(__dirname, 'code-language-scan.js');
 
 // SAF: package.json + tsconfig varlığı → koşulacak komutlar [{ name, cmd }]
-function planCommands(pkg, hasTsconfig) {
+//   hasMain: origin/main okunabiliyor mu (kod dili taraması onunla karşılaştırır)
+function planCommands(pkg, hasTsconfig, { hasMain = false } = {}) {
+  const out = projectCommands(pkg, hasTsconfig);
+  // Kod dili taraması her zaman eklenir, verify olsa da (#146, 2026-10-14): tarama yalnız PR'da
+  // koşuyordu; dalı yerelde main'e birleştiren SNN-ihale-ozeti'de kural yazıldıktan sonra 162
+  // Türkçe tanımlayıcı main'e girdi. `--diff` yalnız eklenen satırlara bakar; eski borç durdurmaz.
+  // Tek başına kapıyı açmaz: koşacak proje komutu yoksa kapı yine uygulanmaz.
+  if (out.length && hasMain) out.push({ name: 'kod-dili', cmd: `node "${SCAN_PATH}" --diff origin/main .` });
+  return out;
+}
+
+// SAF: projenin kendi komutları (package.json betikleri).
+function projectCommands(pkg, hasTsconfig) {
   if (!pkg) return [];
   const s = pkg.scripts || {};
   if (s.verify) return [{ name: 'verify', cmd: 'npm run verify' }];
@@ -82,6 +96,8 @@ function stampFile(root) {
   return p ? path.resolve(root, p) : null;
 }
 
+const hasMain = (root) => git(root, ['rev-parse', '--verify', '--quiet', 'origin/main']) !== null;
+
 function readStamp(root) {
   try { return JSON.parse(fs.readFileSync(stampFile(root), 'utf8')); } catch { return null; }
 }
@@ -90,7 +106,7 @@ function readStamp(root) {
 function readState(root) {
   const top = git(root, ['rev-parse', '--show-toplevel']);
   if (!top) return { applies: false };
-  const cmds = planCommands(readPkg(top), fs.existsSync(path.join(top, 'tsconfig.json')));
+  const cmds = planCommands(readPkg(top), fs.existsSync(path.join(top, 'tsconfig.json')), { hasMain: hasMain(top) });
   const head = git(top, ['rev-parse', 'HEAD']);
   const stamp = readStamp(top);
   const stampHead = stamp && stamp.head ? stamp.head : null;
@@ -109,7 +125,7 @@ const gate = (root) => decide(readState(root));
 function run(root) {
   const top = git(root, ['rev-parse', '--show-toplevel']);
   if (!top) { console.log('✗ Git deposu değil.'); return 2; }
-  const cmds = planCommands(readPkg(top), fs.existsSync(path.join(top, 'tsconfig.json')));
+  const cmds = planCommands(readPkg(top), fs.existsSync(path.join(top, 'tsconfig.json')), { hasMain: hasMain(top) });
   if (!cmds.length) { console.log('Bu projede koşacak yerel kontrol yok (package.json / betik yok) — kapı uygulanmaz.'); return 2; }
   const dirty = git(top, ['status', '--porcelain', '--untracked-files=no']);
   if (dirty) console.log('⚠ Commit\'lenmemiş değişiklik var; damga yalnız COMMIT\'e yazılır. Önce commit, sonra kontrol.');
