@@ -74,9 +74,9 @@ Bu kural SNN aile standardıdır (`SNN-Standartlar/standartlar/arayuz-standardi.
 
 1. Amber (sarı-turuncu) uyarı rengi kullanılmaz. Uyarı ve bilgi için mavi-gri, mavi ya da menekşe; gerçek hata için kırmızı.
 2. Projenin kendi renk kararı varsa o projenin kuralı önce gelir.
-3. Arayüz parçası yazmadan önce SNN-UI kataloğuna bak (`npx shadcn@latest add @snn-ui/<ad>`; liste: SNN-UI `AI/katalog.md`). Varsa oradan kur, yoksa yaz ve SNN-UI'ye aday bildir.
-4. Yeni projede SNN-UI baştan kurulur. Devam eden projede yalnız yeni parça katalogdan gelir; çalışan ekrana sırf geçiş için dokunulmaz.
-5. Arc'ın MCP sunucusu kullanılmaz. Arc Pro kaynağı ve önizlemesinin indirdiği kod okunmaz, kopyalanmaz. Pro'daki bir bileşen istenirse işlevi kendi cümlemizle tarif edilir, kod sıfırdan yazılır (`arayuz-standardi.md` §2.1).
+3. Arayüz parçası yazmadan önce SNN-UI kataloğuna bak (`@snn-ui/<ad>`, liste: SNN-UI `AI/katalog.md`). Yoksa yaz, SNN-UI'ye aday bildir.
+4. Yeni projede SNN-UI baştan kurulur. Devam eden projede yalnız yeni parça katalogdan gelir; çalışan ekrana dokunulmaz.
+5. Arc MCP kullanılmaz. Arc Pro kodu okunmaz, kopyalanmaz; istenen Pro bileşenin işlevi tarif edilip sıfırdan yazılır (§2.1).
 <!-- kullanici-talimati:bitir -->
 
 ## Kontrol listesi maddesi
