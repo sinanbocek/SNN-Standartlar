@@ -19,7 +19,7 @@
     { "repo": "sinanbocek/SNN-Games-Umi", "dir": "SNN-Games-Umi" },
     { "repo": "sinanbocek/SNN-Games-Pulmaca", "dir": "SNN-Games-Pulmaca" },
     { "repo": "sinanbocek/SNN-ihale-ozeti", "dir": "SNN-ihale-ozet" },
-    { "repo": "sinanbocek/SNN-UI", "dir": "SNN-UI" }
+    { "repo": "sinanbocek/SNN-UI", "dir": "SNN-UI", "public": true }
   ],
   "excluded": [
     {
