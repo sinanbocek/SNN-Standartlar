@@ -1,6 +1,6 @@
 # Arayüz standardı ve SNN-UI aile kataloğu — plan
 
-**Durum:** taslak plan, proje sahibinin kararını bekliyor (§8). Tarih: 2026-10-14.
+**Durum:** onaylandı. Proje sahibi §8'deki beş kararın beşini de kabul etti (2026-10-14). Sıradaki iş: aşama 1 (§9).
 
 **Amaç:** AI'ın ürettiği belli olan arayüzleri bitirmek. Yeni projeler ilk günden aynı, ölçülmüş bir bileşen kataloğundan başlasın.
 
@@ -154,15 +154,15 @@ Tamamı A sınıfı; yalnız Türkçe metin uyarlaması gerekir:
 
 ---
 
-## 8. Proje sahibinin kararları
+## 8. Proje sahibinin kararları (2026-10-14: hepsi evet)
 
-1. **SNN-UI ayrı ve herkese açık bir depo olsun mu?** *(öneri: evet)* — Sonuç: shadcn ile oturumsuz kurulur; GHS-Panel'e de ulaşır.
-2. **Arc MCP sunucusu kullanılmasın mı?** *(öneri: kullanılmasın)* — Sonuç: AI yalnız uyarlanmış kataloğu görür; Arc hesabı açmaya gerek kalmaz.
-3. **Ana renk proje başına mı seçilsin?** *(öneri: evet)* — Sonuç: boşluk, köşe, hareket ortak kalır; her proje kendi vurgu rengini (`--accent`) seçer.
-4. **İlk raf §6.4'teki 20 bileşen olsun mu?** *(öneri: evet)* — Sonuç: formlar ve pencereler ilk günden hazır olur; B sınıfı ikinci aşamaya kalır.
-5. **İlk kullanıcı ilk yeni proje olsun mu?** *(öneri: evet)* — Sonuç: deneme mevcut ekranlara dokunmadan yapılır.
-
-Kısa cevap yeter: "hepsi evet" ya da "1 evet, 2 hayır".
+| # | Karar | Sonuç |
+|---|---|---|
+| 1 | SNN-UI ayrı ve **herkese açık** bir depo olur | shadcn ile oturumsuz kurulur; GHS-Panel'e de ulaşır |
+| 2 | Projelerde **Arc MCP sunucusu kullanılmaz** | AI yalnız uyarlanmış kataloğu görür; Arc hesabı açılmaz |
+| 3 | Ana renk **proje başına** seçilir | Boşluk, köşe, hareket ortak kalır; her proje kendi vurgu rengini (`--accent`) seçer |
+| 4 | İlk raf **§6.4'teki 20 bileşen** olur | Formlar ve pencereler ilk günden hazır; B sınıfı aşama 3'e kalır |
+| 5 | İlk kullanıcı **ilk yeni proje** olur | Deneme mevcut ekranlara dokunmadan yapılır |
 
 ---
 
@@ -170,7 +170,7 @@ Kısa cevap yeter: "hepsi evet" ya da "1 evet, 2 hayır".
 
 | Aşama | İş | Bitti sayılır |
 |---|---|---|
-| **0** | Bu plan (bu PR) | Sahibi §8'i yanıtladı |
+| **0** | Bu plan | ✅ Sahibi §8'i onayladı (2026-10-14) |
 | **1** | SNN-UI deposu, `snn-foundation.css`, ilk raf (20 bileşen, Türkçe metin), `AI/katalog.md`, shadcn kurulum denemesi | Boş bir Vite projesine `@snn/button` tek komutla kuruluyor |
 | **2** | `standartlar/arayuz-standardi.md` | Belge birleşti; CLAUDE.md'den bağlantı verildi |
 | **3** | İkinci raf: B sınıfı bileşenler ABACUS ile | Para kutusu `85.340,50` yapıştırınca aynı değeri kaydediyor (`giris-alanlari-standardi.md` testi) |
