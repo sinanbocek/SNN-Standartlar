@@ -61,7 +61,7 @@ node -e "console.log(require(require('os').homedir()+'/.claude/hooks/lib/shared.
 
 **Kabuk, ters bölü ve ters tırnağı yutar.** `node -e "..."` içinde `\\b`, `\\.`, `` ` `` kullanma; dosya bozulur. **Write/Edit araçlarını kullan.** Bugün bu yüzden üç dosya bozuldu.
 
-**Dosyalar CRLF.** Çok satırlı çapa eşleşmez. Satır numarasıyla değiştir ya da satır sonunu koru.
+**Dosyalar CRLF.** Çok satırlı çapa eşleşmez. Satır numarasıyla değiştir ya da satır sonunu koru. 2026-10-14'ten beri kökte `.gitattributes` var (`eol=lf`, #147); depodaki hâl zaten LF idi. Eski klonlarda çalışma kopyası dokunulan dosyaya kadar CRLF kalabilir.
 
 **PR'ları üst üste bindirme.** Yeni dalı `origin/main`'den aç. Üstünde açık PR duran bir dal silinince o PR kapanır ve tabanı değiştirilemez (#18, 2026-09-18).
 

@@ -1,0 +1,34 @@
+# Aile satır sonu şablonu (SNN-Standartlar/ornek/.gitattributes). Projenin köküne kopyalanır.
+#
+# NEDEN (#147, 2026-10-14): makinede core.autocrlf=true; Windows araçları (PowerShell, Python
+# write_text, bazı editörler) CRLF, Node/bash araçları LF yazıyor. Dosya baştan yazılınca fark
+# bütün satırları değişmiş gösteriyor. SNN-ihale-ozeti'de package.json'a 2 betik eklenince fark
+# 41 satırın tamamını silinmiş gösterdi. Aynı ders SNN-Abacus-Core'da ayrıca öğrenilmişti.
+#
+# Bu satır, makine ayarından bağımsız olarak depoda da çalışma kopyasında da LF tutar.
+* text=auto eol=lf
+
+# Windows betikleri CRLF ister.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# İkili dosyalar: dönüştürülmez, fark gösterilmez.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.xlsx binary
+*.docx binary
+
+# Baytları birebir korunması gereken klasör (indirilmiş paket, test girdisi) varsa:
+# fixtures/** -text
+
+# Göç (bir kez): git add --renormalize .   sonra   git diff --cached --ignore-cr-at-eol --stat
+# boş olmalı (yalnız satır sonu değişti demektir). -text klasörlerde depodaki hâl esastır.

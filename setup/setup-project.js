@@ -61,6 +61,7 @@ function measure(dir) {
       'anahtar-tarama.yml': /\/SNN-Standartlar$/i.test(full) ? true
         : (callerWorkflow(full, '.github/workflows/aile-kontrol.yml', def) || callerWorkflow(full, '.github/workflows/anahtar-tarama.yml', def)),
     },
+    gitattributes: exists(full, '.gitattributes', def),
     board,
     inFamily: familyState(full),
     secret: secretList.ok ? JSON.parse(secretList.out).secrets.some((s) => s.name === 'PROJECT_TOKEN') : null,
@@ -147,6 +148,7 @@ function applyFiles(o, steps) {
   if (want('arsiv')) files.push(['docs/teknik-borc-arsiv.md', K.archiveFileTemplate(), 'docs(borc): standart teknik borc arsivi']);
   if (want('teknik-borc-akisi')) files.push(['.github/workflows/teknik-borc.yml', fs.readFileSync(path.join(ROOT, 'ornek', 'teknik-borc.yml'), 'utf8'), 'ci(borc): kutuk -> issue ve board senkron gorevlisi']);
   if (want('anahtar-tarama-akisi')) files.push(['.github/workflows/aile-kontrol.yml', fs.readFileSync(path.join(ROOT, 'ornek', 'aile-kontrol.yml'), 'utf8'), 'ci(guvenlik): PR\'da aile kontrolu (anahtar + kod dili)']);
+  if (want('satir-sonu')) files.push(['.gitattributes', fs.readFileSync(path.join(ROOT, 'ornek', '.gitattributes'), 'utf8'), 'chore(git): satir sonu kurali (LF)']);
   if (!files.length) return null;
   const repo = o.repo.full;
   const sha = ghJson(['api', `repos/${repo}/git/ref/heads/${o.repo.defaultBranch}`]).object.sha;
@@ -160,6 +162,7 @@ function applyFiles(o, steps) {
     '- **Kütük** (`docs/teknik-borc.md`): açık teknik borçların tek kaynağı; kayıt biçimi `~/.claude/standartlar-canli/standartlar/teknik-borc-standardi.md`.',
     '- **Senkron görevlisi**: kütük main\'e ulaşınca, her gün ve elle tetiklenince issue + board günceller (kütüğe yazmaz).',
     '- **Aile kontrolü**: her PR\'da eklenen satırlarda gizli anahtar ve Türkçe tanımlayıcı arar. Proje CI kurduğunda bu dosya silinir, ortak adım CI işine eklenir (`ornek/ci-duzeni.yml`).',
+    ...(files.some(([f]) => f === '.gitattributes') ? ['- **Satır sonu kuralı** (`.gitattributes`): depo ve çalışma kopyası LF. Birleşince yerelde bir kez `git add --renormalize .` çalıştır; `git diff --cached --ignore-cr-at-eol --stat` boş olmalı.'] : []),
     '',
     'Otomatik birleştirme yok.',
     '',

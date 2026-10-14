@@ -63,6 +63,10 @@ function plan(o) {
   }
   add('teknik-borc-akisi', 'agent', o.workflows['teknik-borc.yml'] ? 'present' : 'toAdd', 'Kütük → GitHub issue ve board senkron görevlisi (.github/workflows/teknik-borc.yml).');
   add('anahtar-tarama-akisi', 'agent', o.workflows['anahtar-tarama.yml'] ? 'present' : 'toAdd', 'Her PR\'da eklenen satırlarda gizli anahtar ve kod dili taraması (.github/workflows/aile-kontrol.yml).');
+  // Satır sonu kuralı (#147, 2026-10-14): yoksa Windows ve Node araçları aynı dosyayı farklı satır
+  // sonuyla yazar, fark bütün dosyayı değişmiş gösterir. Var olan dosyanın içeriği burada
+  // denetlenmez; zayıfsa uyum ölçeri oturum açılışında uyarır (quality/compliance.js → satir-sonu).
+  add('satir-sonu', 'agent', o.gitattributes ? 'present' : 'toAdd', 'Satır sonu kuralı: depo ve çalışma kopyası LF (.gitattributes, ornek/.gitattributes).');
 
   // GitHub ayarları
   add('board', 'agent', o.board ? 'present' : 'toAdd', `"${BOARD_TITLE(o.repo.name)}" board'u (Açık / Devam / Kapandı), depoya bağlı.`);

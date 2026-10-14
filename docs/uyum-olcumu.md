@@ -49,6 +49,7 @@ Oturum açılışında, o projenin kendi eksiği:
 | `kutuk-adresi` | Kütük başlığındaki `~/.claude/...` adresi kurulan bir yeri gösteriyor (adres yoksa eksik sayılmaz; eşleme `quality/skill-paths.js` ile aynı). 2026-09-23: 10 tüketici kütüğünün 10'u kurulmayan `~/.claude/standartlar/…` adresini taşıyordu |
 | `anahtar-tarama` | `.github/workflows/anahtar-tarama.yml` |
 | `rehber-atfi` | `CLAUDE.md`/`AI-RULES.md` içinde `SNN-Standartlar` ya da "aile standardı" atfı |
+| `satir-sonu` (öneri) | `.gitattributes` içinde `* text=auto eol=lf` satırı. **Öneri** ölçütüdür: eksikse oturum açılışında uyarı olur, eksik sayılmaz, issue açılmaz (#147, 2026-10-14). Şablon: `ornek/.gitattributes` |
 
 **Okunamayan girdi eksik sayılmaz** (2026-09-24, `olcum-standardi.md` Kural 3). Her ölçüt dayandığı girdiyi bildirir: akış dosyaları, kütük ya da rehber. Girdi okunamazsa, örneğin git okuması hata verirse, o ölçüt "ölçülemedi" olur. Eksik de temiz de sayılmaz. Oturum açılışında uyarı olarak görünür; issue akışı o ölçütün issue'sunu ne açar ne kapatır. Eskiden okuma hatası "dosya yok" sayılıyordu: gerçek bir klonda denendiğinde ölçer 6 yanlış issue açıp gerçek bir issue'yu kapatacaktı.
 

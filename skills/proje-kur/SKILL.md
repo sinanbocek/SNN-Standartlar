@@ -1,6 +1,6 @@
 ---
 name: proje-kur
-description: Bir projeyi SNN standart sistemine bağlar (teknik borç kütüğü, GitHub issue/board senkronu, gizli anahtar taraması, dal silme ve Dependabot ayarları). Yeni proje açıldığında, oturum başı "standart sisteme bağlı değil" dediğinde ya da kullanıcı "projeyi kur", "sisteme bağla", "standartları uygula" dediğinde kullan.
+description: Bir projeyi SNN standart sistemine bağlar (teknik borç kütüğü, GitHub issue/board senkronu, gizli anahtar taraması, satır sonu kuralı, dal silme ve Dependabot ayarları). Yeni proje açıldığında, oturum başı "standart sisteme bağlı değil" dediğinde ya da kullanıcı "projeyi kur", "sisteme bağla", "standartları uygula" dediğinde kullan.
 ---
 
 # Projeyi standart sisteme bağla
@@ -30,6 +30,7 @@ node <ev>/.claude/standartlar-canli/setup/setup-project.js <proje kökü> --uygu
 ```
 - Dosyalar GitHub üzerinden `chore/snn-standart-kurulum` dalına yazılır ve tek PR açılır; yerel çalışma klasörüne dokunulmaz.
 - Çıktıdaki ✗ satırlarını gizleme; kullanıcıya olduğu gibi söyle ve sebebini ölç.
+- `.gitattributes` eklendiyse PR birleşince yerelde bir kez `git add --renormalize .` çalıştırılır; `git diff --cached --ignore-cr-at-eol --stat` boş olmalı. Değişen dosya varsa ayrı commit'e girer.
 
 ## 4. Kullanıcıya kalanları ver
 "Proje sahibine kalanlar" listesini bağlantılarıyla ver. En sık:
