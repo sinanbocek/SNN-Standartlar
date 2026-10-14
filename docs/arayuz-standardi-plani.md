@@ -70,9 +70,17 @@ Ayrıntı: `docs/arc-siniflandirma.md` (her bileşen tek satır).
 
 ---
 
-## 5. Standart belgesi: `standartlar/arayuz-standardi.md` (taslak içerik)
+## 5. Standart belgesi: `standartlar/arayuz-standardi.md` genişletilir
 
-Belge bu plan onaylanınca ayrı PR ile yazılır. Kuralları:
+> **Düzeltme (2026-10-14, PR #151 birleştikten sonra):** Bu bölüm önce "belge yazılır" diyordu. Belge **zaten var** (2026-10-12, #144): sahibin birden çok projede söylediği arayüz tercihlerini tutar; ilk kuralı "amber uyarı rengi kullanılmaz". Plan yazılırken geride kalmış yerel dal okunmuştu (CLAUDE.md §3, "yerel klasör gerçeği göstermez"). Aşağıdaki kurallar **mevcut belgeye eklenir**, yeni belge açılmaz.
+
+**Mevcut belgeyle ilişki:**
+
+- Mevcut belge "yalnız birden çok projede söylenen tercih girer" der. Katalog kuralları bu ölçüte uyar: sahip 2026-10-14'te tüm yeni projeler için karar verdi (§8).
+- Mevcut belgenin işaretli bölümü `~/.claude/CLAUDE.md` dosyasına kopyalanır (ev kâğıdı: her oturumda okunan kişisel kural dosyası). Kural 1 ("önce katalog") oraya da eklenir; böylece her projedeki AI ilk gün görür.
+- Mevcut "amber yok" kuralı Arc'la çakışır, bkz. §6.1.
+
+Eklenecek kurallar:
 
 1. **Önce katalog.** Yeni bir arayüz parçası yazılmadan önce SNN-UI kataloğuna bakılır. Yoksa Arc'a bakılır. İkisinde de yoksa yazılır ve kataloğa aday olarak bildirilir.
 2. **Yalnız değişken (token).** Renk, boşluk, köşe yuvarlaklığı, gölge ve hareket süresi elle yazılmaz; `snn-foundation.css` değişkenlerinden alınır. Ham renk kodu (`#7747ff`) bileşen dosyasında yasaktır.
@@ -102,6 +110,12 @@ sinanbocek/SNN-UI   (herkese açık — §8 karar 1)
   LICENSE + NOTICE                         MIT, "Arc'tan uyarlanmıştır" notu
   AI/katalog.md                            AI'ın okuduğu tek liste (§6.3)
 ```
+
+**`snn-foundation.css` Arc'tan şu farklarla ayrılır:**
+
+- **Uyarı rengi amber değildir.** Arc'ın `--warning` değişkeni amber tonundadır (`oklch(58% .18 75)`, koyu temada `oklch(83% .17 80)`). Mevcut standart amber'i yasaklar (GHS-Panel 2026-09-16, SNN-Siparis 2026-09-25). Aile dosyasında `--warning` mavi-gri, mavi ya da menekşe olur; kırmızı yalnız gerçek hatadır.
+- **Amber vurgu seçeneği kaldırılır.** Arc'ta `data-accent="amber"` seçeneği var; aile dosyasında bulunmaz.
+- Bu iki fark aşama 1'de testle korunur: dosyada amber tonu (oklch açısı yaklaşık 50–95) kalırsa test kırmızı olur.
 
 **Kurulum (yeni projede):** `components.json` içine tek satır eklenir, sonra bileşen adıyla kurulur:
 
@@ -172,7 +186,7 @@ Tamamı A sınıfı; yalnız Türkçe metin uyarlaması gerekir:
 |---|---|---|
 | **0** | Bu plan | ✅ Sahibi §8'i onayladı (2026-10-14) |
 | **1** | SNN-UI deposu, `snn-foundation.css`, ilk raf (20 bileşen, Türkçe metin), `AI/katalog.md`, shadcn kurulum denemesi | Boş bir Vite projesine `@snn/button` tek komutla kuruluyor |
-| **2** | `standartlar/arayuz-standardi.md` | Belge birleşti; CLAUDE.md'den bağlantı verildi |
+| **2** | Mevcut `standartlar/arayuz-standardi.md` belgesine §5 kuralları eklenir; "önce katalog" kuralı işaretli bölüme girer | Ek birleşti; `setup-machine.js` ev kâğıdına kopyaladı |
 | **3** | İkinci raf: B sınıfı bileşenler ABACUS ile | Para kutusu `85.340,50` yapıştırınca aynı değeri kaydediyor (`giris-alanlari-standardi.md` testi) |
 | **4** | `proje-kur` becerisine "yeni projede SNN-UI kur" adımı | Yeni proje kurulumunda katalog hazır geliyor |
 | **5** | Gerçek vaka birikince "AI kokusu" kapısı | `olcum-standardi.md` adımları |
