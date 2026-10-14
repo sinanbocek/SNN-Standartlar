@@ -8,8 +8,11 @@
 
 | Sınıf | Anlamı | Sayı |
 |---|---|---|
-| **A** | Yasak biçim çağrısı yok. Türkçe metinle olduğu gibi alınabilir. | 57 bileşen, 11 blok |
+| **A** | Yasak biçim çağrısı yok, B sınıfı parça da getirmiyor. Türkçe metinle olduğu gibi alınabilir. | 55 bileşen, 9 blok |
 | **B** | `Intl.*`, `toLocaleString`, `toFixed`, `toUpperCase` ya da `toLowerCase` kullanıyor. Aile kuralına (`giris-alanlari-standardi.md`) göre ABACUS'a bağlanmadan alınamaz. | 55 bileşen, 7 blok |
+| **B (bağımlılık)** | Kendi dosyaları temiz, ama kurulunca B sınıfı bir parçayı yanında getiriyor. B gibi davranılır. | 2 bileşen, 2 blok |
+
+> **Düzeltme (2026-10-14, SNN-UI aşama 1):** İlk sınıflandırma yalnız parçanın kendi dosyalarına bakmıştı. Arc'ın kurulum kaydı (`registry.json`, `registryDependencies`) parçanın yanında başka parçalar da getirir. SNN-UI oturumu `metric-card`'ın `animated-counter`'ı (B) getirdiğini buldu. Bütün A parçaları bağımlılık zinciriyle yeniden ölçüldü; dört parça B (bağımlılık) oldu: `metric-card`, `notification-center` (→ `avatar`), `newsletter-signup` (→ `animated-counter`), `page-header` (→ `animated-counter`, `avatar`, `avatar-group`).
 
 **Sütunlar:**
 
@@ -78,11 +81,11 @@
 | bileşen | json-viewer | B | 6 (toLowerCase) | 11 | lucide-react |
 | bileşen | line-chart | B | 7 (Intl,toFixed,toLowerCase) | — | — |
 | bileşen | mention-input | B | 6 (toLowerCase,toUpperCase) | — | lucide-react |
-| bileşen | metric-card | A | — | — | — |
+| bileşen | metric-card | B (bağımlılık: animated-counter) | — | — | — |
 | bileşen | money-input | B | 11 (Intl,toUpperCase,toLowerCase) | 2 | lucide-react |
 | bileşen | morph-select | B | 7 (toLowerCase) | 2 | lucide-react |
 | bileşen | multi-select | A | — | 2 | lucide-react |
-| bileşen | notification-center | A | — | 3 | radix:popover lucide-react |
+| bileşen | notification-center | B (bağımlılık: avatar) | — | 3 | radix:popover lucide-react |
 | bileşen | number-field | B | 6 (Intl,toFixed) | — | lucide-react |
 | bileşen | otp-input | A | — | — | — |
 | bileşen | pagination | A | — | 3 | lucide-react |
@@ -141,8 +144,8 @@
 | blok | hero-section | B | 3 (Intl,toFixed,toLocaleString) | 13 | lucide-react |
 | blok | login-centered | B | 3 (toFixed,toLowerCase) | 4 | lucide-react |
 | blok | logo-marquee | A | — | 2 | lucide-react |
-| blok | newsletter-signup | A | — | 1 | radix:switch lucide-react |
-| blok | page-header | A | — | 9 | radix:dropdown-menu radix:tabs lucide-react |
+| blok | newsletter-signup | B (bağımlılık: animated-counter) | — | 1 | radix:switch lucide-react |
+| blok | page-header | B (bağımlılık: animated-counter, avatar, avatar-group) | — | 9 | radix:dropdown-menu radix:tabs lucide-react |
 | blok | plan-comparison | A | — | 3 | radix:switch lucide-react |
 | blok | sign-in | B | 4 (toLowerCase,toUpperCase) | 6 | lucide-react |
 | blok | signup-form | A | — | 8 | radix:checkbox |

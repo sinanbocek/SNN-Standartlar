@@ -61,8 +61,9 @@ Ayrıntı: `docs/arc-siniflandirma.md` (her bileşen tek satır).
 
 | Sınıf | Anlamı | Bileşen | Blok |
 |---|---|---|---|
-| **A** | Yasak biçim çağrısı yok; Türkçe metinle olduğu gibi alınır | 57 | 11 |
+| **A** | Yasak biçim çağrısı yok, B parçası da getirmiyor; Türkçe metinle olduğu gibi alınır | 55 | 9 |
 | **B** | `Intl.*`, `toLocaleString`, `toFixed`, `toUpperCase`, `toLowerCase` kullanıyor; ABACUS'a bağlanarak uyarlanır | 55 | 7 |
+| **B (bağımlılık)** | Kendisi temiz ama kurulunca B parçası getiriyor (düzeltme 2026-10-14, ekte) | 2 | 2 |
 
 **B sınıfı neden olduğu gibi alınamaz:** `giris-alanlari-standardi.md` bu çağrıları yasaklar; tarayıcıya göre farklı sonuç verirler. Örnek: Arc'ın para kutusu (`money-input`) varsayılan olarak `en-US` ve USD ile çalışır. Kutuda `1,234.56` görünür; ailede doğrusu `1.234,56`. Telefon kutusu (`phone-input`) varsayılan olarak ABD'yi seçer.
 
@@ -120,10 +121,10 @@ sinanbocek/SNN-UI   (herkese açık — §8 karar 1)
 **Kurulum (yeni projede):** `components.json` içine tek satır eklenir, sonra bileşen adıyla kurulur:
 
 ```json
-{ "registries": { "@snn": "https://raw.githubusercontent.com/sinanbocek/SNN-UI/main/public/r/{name}.json" } }
+{ "registries": { "@snn-ui": "https://raw.githubusercontent.com/sinanbocek/SNN-UI/main/public/r/{name}.json" } }
 ```
 
-> **Doğrulanmadı:** shadcn'in kurulum dosyalarını bu adresten okuyabildiği 1. aşamada denenecek. Okuyamazsa GitHub Pages kullanılır.
+> **Doğrulandı (2026-10-14, SNN-UI aşama 1):** boş bir Vite + React 19 projesinde `npx shadcn@latest add @snn-ui/button` bu adresten tek komutla kuruldu, `tsc -b && vite build` geçti. GitHub Pages gerekmedi. Katalog adı `@snn` değil `@snn-ui` oldu (sahibin kararı).
 
 **Neden herkese açık:** shadcn kurulumu oturum açmadan dosya indirir. GHS-Panel başka bir hesapta (`globalhedef`). Bu depo da aynı sebeple açık (CLAUDE.md §1).
 
@@ -141,9 +142,11 @@ SNN-UI bileşenleri `ornek/*.yml` şablonları gibi davranır: **projeye kopyala
 
 Tamamı A sınıfı; yalnız Türkçe metin uyarlaması gerekir:
 
-`button`, `button-group`, `input`, `textarea`, `select`, `checkbox`, `switch`, `radio-group`, `dialog`, `dropdown-menu`, `popover`, `tooltip`, `tabs`, `card`, `toast`, `empty-state`, `skeleton`, `pagination`, `search-field`, `metric-card`
+`button`, `button-group`, `input`, `textarea`, `select`, `checkbox`, `switch`, `radio-group`, `dialog`, `dropdown-menu`, `popover`, `tooltip`, `tabs`, `card`, `toast`, `empty-state`, `skeleton`, `pagination`, `search-field`
 
-İkinci raf (B sınıfı, ABACUS uyarlaması): `money-input`, `number-field`, `phone-input` (varsayılan TR), `date-picker`, `sortable-data-table`, grafikler.
+**19 bileşen.** Plan önce 20 diyordu; `metric-card` çıkarıldı, çünkü kurulunca B sınıfı `animated-counter`'ı getiriyor (ek: `docs/arc-siniflandirma.md`, düzeltme notu). İkinci rafa geçti.
+
+İkinci raf (B sınıfı, ABACUS uyarlaması): `money-input`, `number-field`, `phone-input` (varsayılan TR), `date-picker`, `sortable-data-table`, `animated-counter` + `metric-card`, grafikler.
 
 > **Ölçülmedi:** ABACUS'un tarih biçimlendirme yeteneği. Eksikse `abacus-talep` ile çekirdeğe talep açılır; projede kopya yazılmaz.
 
@@ -175,7 +178,7 @@ Tamamı A sınıfı; yalnız Türkçe metin uyarlaması gerekir:
 | 1 | SNN-UI ayrı ve **herkese açık** bir depo olur | shadcn ile oturumsuz kurulur; GHS-Panel'e de ulaşır |
 | 2 | Projelerde **Arc MCP sunucusu kullanılmaz** | AI yalnız uyarlanmış kataloğu görür; Arc hesabı açılmaz |
 | 3 | Ana renk **proje başına** seçilir | Boşluk, köşe, hareket ortak kalır; her proje kendi vurgu rengini (`--accent`) seçer |
-| 4 | İlk raf **§6.4'teki 20 bileşen** olur | Formlar ve pencereler ilk günden hazır; B sınıfı aşama 3'e kalır |
+| 4 | İlk raf **§6.4'teki bileşenler** olur (20 olarak onaylandı; `metric-card` B çıktığı için 19) | Formlar ve pencereler ilk günden hazır; B sınıfı aşama 3'e kalır |
 | 5 | İlk kullanıcı **ilk yeni proje** olur | Deneme mevcut ekranlara dokunmadan yapılır |
 
 ---
@@ -185,7 +188,7 @@ Tamamı A sınıfı; yalnız Türkçe metin uyarlaması gerekir:
 | Aşama | İş | Bitti sayılır |
 |---|---|---|
 | **0** | Bu plan | ✅ Sahibi §8'i onayladı (2026-10-14) |
-| **1** | SNN-UI deposu, `snn-foundation.css`, ilk raf (20 bileşen, Türkçe metin), `AI/katalog.md`, shadcn kurulum denemesi | Boş bir Vite projesine `@snn/button` tek komutla kuruluyor |
+| **1** | SNN-UI deposu, `snn-foundation.css`, ilk raf (19 bileşen, Türkçe metin), `AI/katalog.md`, shadcn kurulum denemesi, aileye bağlama | ✅ 2026-10-14: `sinanbocek/SNN-UI` PR #1–#3, SNN-Standartlar #153. Boş Vite projesine `@snn-ui/button` tek komutla kuruldu; amber testi yeşil, 4 sabotajın 4'ü kırmızı |
 | **2** | Mevcut `standartlar/arayuz-standardi.md` belgesine §5 kuralları eklenir; "önce katalog" kuralı işaretli bölüme girer | Ek birleşti; `setup-machine.js` ev kâğıdına kopyaladı |
 | **3** | İkinci raf: B sınıfı bileşenler ABACUS ile | Para kutusu `85.340,50` yapıştırınca aynı değeri kaydediyor (`giris-alanlari-standardi.md` testi) |
 | **4** | `proje-kur` becerisine "yeni projede SNN-UI kur" adımı | Yeni proje kurulumunda katalog hazır geliyor |
