@@ -88,7 +88,10 @@ Bu kurallar SNN aile standardıdır (`SNN-Standartlar/standartlar/alt-ajan-stand
 8. Güvenlik incelemesi alt ajana verilmez; güvenlik filtresi işi reddedebilir.
 9. Toplam bağlamı 100 bin parçayı geçecek iş Haiku'ya verilmez; fiyat 5 katına çıkar. Alt ajan her araç çağrısında bağlamını yeniden gönderir, okudukça büyür.
 10. Aynı anda en fazla 6–8 ajan çalışır (varsayım, ölçülmedi). Raporda her ajanın modeli ve seviyesi yazılır.
+11. Kod yazan ajanın talimatına şu satır yazılır: "Tanımlayıcılar İngilizce; yorum ve kullanıcı metni Türkçe (kod-dili-standardi.md)." Yazma anı bekçisi yalnız uyarır; ajan uyarıyı durmak için okumaz.
 <!-- kullanici-talimati:bitir -->
+
+**Kural 11'in vakası (2026-10-14, #146):** SNN-ihale-ozeti'de kod dili kuralı 2026-10-12'de yazıldı. Sonraki iki günde eklenen satırlarda 162 Türkçe tanımlayıcı vardı. Kodun çoğunu alt ajanlar yazdı (32 çalışma kopyası). Yazma anı bekçisi her seferinde uyardı; hiçbir ajanı durdurmadı.
 
 ## Nasıl ölçülür
 
