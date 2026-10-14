@@ -51,6 +51,20 @@ Katalog güncellense de projedeki bileşen kendiliğinden değişmez; proje iste
 - Para, sayı ve tarih gösteren Arc bileşeni ABACUS'a bağlanmadan alınmaz (`giris-alanlari-standardi.md`; sınıflandırma: `docs/arc-siniflandirma.md`).
 - **Arc Pro kaynağı SNN-UI'ye girmez**, satın alınsa bile. Arc lisansı Pro bileşenin shadcn kataloğunda yayınlanmasını açıkça yasaklar (uiarc.dev/license, 2026-10-14 okundu). Pro bileşenin canlı önizlemesinden kod okumak da kod kopyalamaktır.
 
+### 2.1 Pro bileşenlerden esinlenme
+
+Arc Pro satın alınmaz (sahip, 2026-10-14: bütçe yok; site kapanırsa erişim de biter). Pro'daki güzel bileşenlerin **işlevi** bizim kodumuzla yeniden yazılır ve SNN-UI'ye konur. Sınır şudur: **fikir serbest, kod yasak.**
+
+| Serbest | Yasak |
+|---|---|
+| uiarc.dev'deki canlı önizlemeye **bakmak**: nasıl davranıyor, nasıl hissettiriyor | Pro kaynağını ya da önizlemenin tarayıcıya indirdiği kodu (JS, CSS) okumak, kopyalamak |
+| İşlevi **kendi cümlemizle** tarif etmek: "katlanabilen, simgeli, iç içe başlıklı kenar menüsü" | Arc'ın açıklama metinlerini, örnek verilerini, görsellerini, adlarını aynen almak |
+| SNN-UI'deki A rafı parçalarından ve kendi değişkenlerimizden kurmak | Pro bileşenin görünümünü piksel piksel taklit etmek |
+
+**Yazım sırası:** (1) İşlev tarifi, bileşeni yazacak oturumdan **önce** ayrı yazılır ve SNN-UI'de `docs/tarifler/<ad>.md` olarak durur. (2) Yazan oturum Pro sayfasını açmaz; yalnız tarifi okur. (3) `KAYNAK.md`'ye "Arc Pro'dan esinlenildi, kod okunmadı" ve tarifin yolu yazılır.
+
+**Neden bu sıra:** Yazan, önizlemenin kodunu gördüyse "esinlenme" kanıtlanamaz. Tarif ile yazımı ayırmak, kodun bizim olduğunu belgeler.
+
 **Neden:** AI her oturumda bileşeni sıfırdan uydurunca ekranlar "AI yapımı" görünüyor ve iki proje iki ayrı uygulama gibi duruyor (sahip, 2026-10-14). Plan ve ölçüm: `docs/arayuz-standardi-plani.md`.
 
 <!-- kullanici-talimati:basla -->
@@ -60,9 +74,9 @@ Bu kural SNN aile standardıdır (`SNN-Standartlar/standartlar/arayuz-standardi.
 
 1. Amber (sarı-turuncu) uyarı rengi kullanılmaz. Uyarı ve bilgi için mavi-gri, mavi ya da menekşe; gerçek hata için kırmızı.
 2. Projenin kendi renk kararı varsa o projenin kuralı önce gelir.
-3. Arayüz parçası yazmadan önce SNN-UI kataloğuna bak (`npx shadcn@latest add @snn-ui/<ad>`; liste: SNN-UI `AI/katalog.md`). Varsa oradan kur, yoksa yaz ve SNN-UI'ye aday bildir.
-4. Yeni projede SNN-UI baştan kurulur. Devam eden projede yalnız yeni parça katalogdan gelir; çalışan ekrana sırf geçiş için dokunulmaz.
-5. Arc'ın MCP sunucusu kullanılmaz. Arc Pro kaynağı SNN-UI'ye ve herkese açık depoya konmaz.
+3. Arayüz parçası yazmadan önce SNN-UI kataloğuna bak (`@snn-ui/<ad>`, liste: SNN-UI `AI/katalog.md`). Yoksa yaz, SNN-UI'ye aday bildir.
+4. Yeni projede SNN-UI baştan kurulur. Devam eden projede yalnız yeni parça katalogdan gelir; çalışan ekrana dokunulmaz.
+5. Arc MCP kullanılmaz. Arc Pro kodu okunmaz, kopyalanmaz; istenen Pro bileşenin işlevi tarif edilip sıfırdan yazılır (§2.1).
 <!-- kullanici-talimati:bitir -->
 
 ## Kontrol listesi maddesi

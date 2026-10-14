@@ -193,5 +193,8 @@ Tamamı A sınıfı; yalnız Türkçe metin uyarlaması gerekir:
 | **3** | İkinci raf: B sınıfı bileşenler ABACUS ile | Para kutusu `85.340,50` yapıştırınca aynı değeri kaydediyor (`giris-alanlari-standardi.md` testi) |
 | **4** | `proje-kur` becerisine "yeni projede SNN-UI kur" adımı | Yeni proje kurulumunda katalog hazır geliyor |
 | **5** | Gerçek vaka birikince "AI kokusu" kapısı | `olcum-standardi.md` adımları |
+| **6** | Esinlenme rafı: sahibin seçtiği Pro bileşenlerin işlevi tarif edilir, kod sıfırdan yazılır (`arayuz-standardi.md` §2.1) | Her bileşen için ayrı tarif + ayrı yazım oturumu; `KAYNAK.md`'de "kod okunmadı" kaydı |
+
+**Aşama 6 adayları (2026-10-14, uiarc.dev `/r/catalog.json` ölçümü):** katalog 254 parça, 121'i Pro. Pro'lar yalnız adlarıyla okundu; kaynak açılmadı. Aile projelerine (panel, finans, ihale) yakın olanlar: `sidebar-rail`, `workspace-sidebar`, `data-grid`, `kanban-board`, `multi-step-form`, `settings-page`, `week-calendar`, `kpi-drilldown`, `funnel-chart`, `budget-variance`, `invoice-studio`, `roles-permissions`. Seçim sahibindir.
 
 Aşama 1 ve 3, SNN-UI deposunda yapılır; bu depoda yalnız standart belgesi ve kurulum adımı değişir.
