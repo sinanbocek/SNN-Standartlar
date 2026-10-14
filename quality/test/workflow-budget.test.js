@@ -101,6 +101,50 @@ expect('yorumdaki npm test ağır iş sayılmaz',
 expect('yalnız workflow_call olan köprü ayrı akış sayılmaz',
   b.analyzeWorkflows([{ name: 'k.yml', text: 'on:\n  workflow_call:\njobs:\n  x:\n    uses: sinanbocek/SNN-Standartlar/.github/workflows/secret-scan.yml@main\n' }]).separateScans, []);
 
+// VAKA (2026-10-14, #145): SNN-ihale-ozet'in deploy.yml'i (kısaltılmış, adımlar birebir).
+// Cloudflare'e yayın akışı; projede PR'da test koşan akış yok, test bulutta yalnız burada koşuyor.
+// Ölçer "ikinci koşum" dedi ve "push'u kaldır" önerdi — uygulansa main canlıya çıkmazdı.
+const IHALE_DEPLOY = `name: deploy
+on:
+  push:
+    branches: [main]
+    paths:
+      - src/**
+  workflow_dispatch:
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npm install --no-audit --no-fund
+        working-directory: worker
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - run: npx tsc --noEmit
+      - run: npm run build
+        working-directory: web
+      - run: worker/node_modules/.bin/wrangler deploy
+`;
+const FAMILY_CHECK_PR = 'on:\n  pull_request:\njobs:\n  k:\n    steps:\n      - uses: sinanbocek/SNN-Standartlar/.github/actions/aile-kontrol@main\n';
+const PR_CI = 'on:\n  pull_request:\nconcurrency:\n  cancel-in-progress: true\njobs:\n  x:\n    steps:\n      - run: npm ci\n      - run: npm test\n';
+const DEPLOY_NO_TEST = IHALE_DEPLOY.replace(/      - run: npx playwright[^\n]*\n      - run: npm test\n      - run: npx tsc --noEmit\n/, '');
+
+console.log('— vaka: SNN-ihale-ozet yayın akışı (#145)');
+expect('PR\'da test yoksa yayındaki test tek koşumdur, ikinci sayılmaz',
+  b.analyzeWorkflows([{ name: 'deploy.yml', text: IHALE_DEPLOY }, { name: 'aile-kontrol.yml', text: FAMILY_CHECK_PR }]).mainRuns, []);
+expect('testsiz yayın akışı (yalnız npm ci + build) ikinci koşum değildir',
+  b.analyzeWorkflows([{ name: 'deploy.yml', text: DEPLOY_NO_TEST }, { name: 'ci.yml', text: PR_CI }]).mainRuns, []);
+expect('PR\'da test koşarken yayın da test koşuyorsa yakalanır',
+  b.analyzeWorkflows([{ name: 'deploy.yml', text: IHALE_DEPLOY }, { name: 'ci.yml', text: PR_CI }]).mainRuns, ['deploy.yml']);
+expect('yalnız push ile koşan CI (PR CI yok) ikinci koşum değildir',
+  b.analyzeWorkflows([{ name: 'c.yml', text: 'on:\n  push:\n    branches: [main]\njobs:\n  x:\n    steps:\n      - run: npm test\n' }]).mainRuns, []);
+expect('"npx playwright install" test sayılmaz, "npx playwright test" sayılır',
+  [b.runsTests('steps:\n  - run: npx playwright install chromium\n'), b.runsTests('steps:\n  - run: npx playwright test\n')], [false, true]);
+expect('npm ci + build ağır iş olarak kalır (iptal ayarı ölçütü için)', b.isHeavy(DEPLOY_NO_TEST), true);
+
 console.log('— dependabot');
 expect('dosya yok', b.dependabotState(''), 'yok');
 // VAKA (2026-09-29): Proje-Nakit ve İhale haftalık; Proje-Nakit'te eylülde 13 güncelleme PR'ı.
