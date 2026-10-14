@@ -90,6 +90,18 @@ expect('tek satırlık biçim korunur, yalnız yeni satır eklenir',
   K.familyWithEntry(ONE_LINE.join('\n'), 'sinanbocek/Yeni', 'Yeni'), ONE_LINE_ADDED.join('\n'));
 expect('CRLF satır sonu korunur',
   K.familyWithEntry(ONE_LINE.join('\r\n'), 'sinanbocek/Yeni', 'Yeni'), ONE_LINE_ADDED.join('\r\n'));
+// 2026-10-14 (#153): SNN-UI herkese açık depo; kayıt "public": true olmadan geldi, elle düzeltildi.
+// Görünürlük ölçülüyordu ama kayda geçirilmiyordu. Gizli depoda alan hiç yazılmaz.
+expect('herkese açık depo: kayıtta public true',
+  JSON.parse(K.familyWithEntry(FAMILY_JSON, 'sinanbocek/Acik', 'Acik', true)).projects[1],
+  { repo: 'sinanbocek/Acik', dir: 'Acik', public: true });
+expect('herkese açık depo: tek satırlık biçimde alan yazılır',
+  K.familyWithEntry(ONE_LINE.join('\n'), 'sinanbocek/Acik', 'Acik', true).includes('{ "repo": "sinanbocek/Acik", "dir": "Acik", "public": true }'), true);
+expect('gizli depo: public alanı yok',
+  'public' in JSON.parse(K.familyWithEntry(FAMILY_JSON, 'sinanbocek/Gizli', 'Gizli', false)).projects[1], false);
+// Asıl vaka çağrı yerindeydi: görünürlük ölçülüyor, familyWithEntry'ye geçirilmiyordu.
+expect('kurulum betiği görünürlüğü kayda geçirir',
+  /familyWithEntry\(.*, o\.repo\.isPublic\);/.test(require('fs').readFileSync(require('path').join(__dirname, '../setup-project.js'), 'utf8')), true);
 expect('boş listeye ekler', JSON.parse(K.familyWithEntry('{ "projects": [] }\n', 'sinanbocek/Yeni', 'Yeni')).projects, [{ repo: 'sinanbocek/Yeni', dir: 'Yeni' }]);
 
 // Gerçek listeyle: satır sayısı bir artar, eski satırların hepsi aynen kalır.
