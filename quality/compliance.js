@@ -295,7 +295,8 @@ const CHECKS = [
     title: 'CI main\'de ikinci kez koşuyor',
     ok: (s) => budget(s).mainRuns.length === 0,
     detail: (s) => `${budget(s).mainRuns.join(', ')} main'e gönderimde de test koşuyor; PR'da test edilen kod baştan test ediliyor (eylül: ailede 1.214 dk)`,
-    fix: `\`on:\` bölümünden \`push\` tetiğini kaldır, yalnız \`pull_request\` kalsın · ${budgetFix}`,
+    // Yayın akışında push tetiği kalmalı; kaldırılırsa main canlıya çıkmaz (#145, 2026-10-14).
+    fix: `CI akışıysa \`on:\` bölümünden \`push\` tetiğini kaldır, yalnız \`pull_request\` kalsın; yayın (deploy) akışıysa push kalsın, test/tip/lint adımlarını çıkar — testler PR CI'ında koşuyor · ${budgetFix}`,
   },
   {
     id: 'aile-kontrol-adimi',

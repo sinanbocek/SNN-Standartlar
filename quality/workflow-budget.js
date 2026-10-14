@@ -38,6 +38,13 @@ function pushOnlyTags(text) {
 const HEAVY = /\b(npm|pnpm|yarn)\s+(ci|install|test|run\s+(test|build|lint|typecheck|type-check))\b|\bnpx\s+(vitest|jest|tsc|playwright)\b|\bdeno\s+test\b|\bpytest\b/;
 const isHeavy = (text) => HEAVY.test(code(text));
 
+// SAF: akış test / tip denetimi / lint koşuyor mu? "İkinci koşum" yalnız bunlar için anlamlı.
+// `npm ci` ve `npm run build` sayılmaz: yayın akışı derlemek için bunlara muhtaçtır (#145, 2026-10-14:
+// ihale-ozet'in deploy.yml'i yalnız bu yüzden "main'de CI" sayıldı). `npx playwright install` de
+// test değildir; yalnız `npx playwright test` sayılır.
+const TESTS = /\b(npm|pnpm|yarn)\s+(test|run\s+(test|lint|typecheck|type-check))\b|\bnpx\s+(vitest|jest|tsc)\b|\bnpx\s+playwright\s+test\b|\bdeno\s+(test|check|lint)\b|\bpytest\b/;
+const runsTests = (text) => TESTS.test(code(text));
+
 // SAF: ayrı akış olarak çağrılan ortak tarama (eski biçim).
 const SEPARATE_SCAN = /SNN-Standartlar\/\.github\/workflows\/(anahtar-tarama|kod-dili|secret-scan|code-language)\.yml@/;
 
@@ -47,11 +54,14 @@ const cancels = (text) => /cancel-in-progress:\s*(true|\$\{\{)/.test(code(text))
 // SAF: dosyalar → bulgular. files = [{ name, text }]
 function analyzeWorkflows(files) {
   const out = { mainRuns: [], separateScans: [], noCancel: [] };
+  // "İkinci koşum" ancak PR'da ilk koşum varsa olur. PR'da test koşan akış yoksa main'deki test
+  // tek koşumdur (#145: ihale-ozet'te test bulutta yalnız yayın akışında koşuyordu).
+  const prTests = (files || []).some(({ text }) => triggeredBy(text, 'pull_request') && runsTests(text));
   for (const { name, text } of files || []) {
     const pr = triggeredBy(text, 'pull_request');
     const push = triggeredBy(text, 'push') && !pushOnlyTags(text);
     const heavy = isHeavy(text);
-    if (heavy && push) out.mainRuns.push(name);
+    if (prTests && push && runsTests(text)) out.mainRuns.push(name);
     if ((pr || push) && SEPARATE_SCAN.test(code(text))) out.separateScans.push(name);
     if (heavy && pr && !cancels(text)) out.noCancel.push(name);
   }
@@ -68,4 +78,4 @@ function dependabotState(text) {
   return 'ok';
 }
 
-module.exports = { header, isHeavy, pushOnlyTags, triggeredBy, cancels, analyzeWorkflows, dependabotState, SEPARATE_SCAN };
+module.exports = { header, isHeavy, runsTests, pushOnlyTags, triggeredBy, cancels, analyzeWorkflows, dependabotState, SEPARATE_SCAN };
