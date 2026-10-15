@@ -14,3 +14,20 @@ Kapanan kayıtlar: `docs/teknik-borc-arsiv.md`
 | Kütük | Bu dosya: açık teknik borçların tek listesi |
 
 ---
+
+### TB-009 — "Kod yazarken" kuralının etkisi ölçülmedi
+- **Tespit Tarihi:** 2026-10-15 (#160, en küçük tam değişiklik standardı yazılırken)
+- **Öncelik:** P3 (Fırsatta)
+
+#### 🟢 Sade Anlatım
+- **Sorun ne?** Yeni "Kod yazarken" kuralı ölçülmeden yürürlüğe girdi. Kuralın kodu küçültüp küçültmediğini, testi artırıp artırmadığını bilmiyoruz.
+- **Benzetme:** Yeni bir diyete başlayıp hiç tartıya çıkmamak gibi; işe yarıyor mu, zarar mı veriyor, görülmez.
+- **Çözülmezse ne olur?** Kural işe yaramıyorsa her oturumda boşuna okunur; zarar veriyorsa (eksik iş, atlanan doğrulama) fark edilmez.
+- **Senden beklenen karar:** Yok. Sahip 2026-10-15'te ölçümü sonraya bıraktı.
+
+#### 🔧 Teknik Detay
+- **Açıklama:** `standartlar/en-kucuk-tam-degisiklik-standardi.md` ev kâğıdına girdi. Tek sayı Ponytail yazarının kendi ölçümü (kod %47, maliyet %74, riskli mantığa test %68 → %98); bağımsız doğrulanmadı.
+- **Etki:** Kod yazılan bütün aile projeleri.
+- **Çözüm yönü:** Kural yürürlüğe girdikten iki hafta sonra (2026-10-29 civarı) kural öncesi ve sonrası iki haftalık PR'lar karşılaştırılır: eklenen satır, yeni paket sayısı, yeni mantıkla birlikte değişen test dosyası oranı, `KISAYOL` yorumu ve TB bağı. Yöntem `olcum-standardi.md`'ye göre; ölçülemeyen "okunamadı" diye yazılır.
+- **Neden Şimdi Çözülmüyor:** Sahip kararı (#160): kural ölçüsüz, istisna olarak kabul edildi. "Sonrası" verisi henüz yok.
+- **Bağlı kalemler:** Yok.
