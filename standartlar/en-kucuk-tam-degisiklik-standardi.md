@@ -32,7 +32,7 @@ Bu kurallar SNN aile standardıdır (`SNN-Standartlar/standartlar/en-kucuk-tam-d
 1. **Önce oku.** Değişikliğin dokunduğu kodu, çağıranları, testleri ve ayarları bul. Hata düzeltirken fonksiyonun bütün çağıranlarını ara; kökü ortak kodda bir kez düzelt.
 2. **Merdiven.** Tutan ilk basamakta dur:
    1. Gerçekten gerekli mi? İstenmeyen özelliği, ayarı, "ileride lazım olur" kodunu yapma; tek satırla adını an.
-   2. Kod tabanında zaten var mı? Arayüzde SNN-UI kataloğu, ortak işlerde SNN-Abacus-Core.
+   2. Kod tabanında zaten var mı? Arayüzde SNN-UI kataloğu, ortak işlerde SNN-Abacus-Core, piyasa verisinde (döviz, maden, BIST, TÜFE) SNN-Piyasa-Core.
    3. Dilin kendi kütüphanesi ya da platform yapıyor mu?
    4. Kurulu bir paket yapıyor mu? Birkaç satır için yeni paket ekleme.
    5. Bir bakışta okunan tek satır olur mu?
