@@ -13,6 +13,7 @@ SNN projelerinin ortak çalışma standartları ve **teknik borç kütüphanecis
 | `standartlar/teknik-borc-standardi.md` | Borç kaydının biçimi (Sade Anlatım + Teknik Detay, P1/P2/P3, hassas kayıt) |
 | `standartlar/giris-alanlari-standardi.md` | Sayı ve kod girişleri: yanlış karakter yazılamaz, biçim yazarken kurulur |
 | `standartlar/arayuz-standardi.md` | Sahibin birden çok projede söylediği arayüz tercihleri (amber uyarı rengi yok); `~/.claude/CLAUDE.md` dosyasına kopyalanır |
+| `standartlar/en-kucuk-tam-degisiklik-standardi.md` | Kod yazarken işi eksiksiz bitiren en küçük değişiklik (Ponytail'den uyarlama); `~/.claude/CLAUDE.md` dosyasına kopyalanır |
 | `standartlar/kod-inceleme-kontrol-listesi.md` | Birleştirmeden önce sorulan sorular |
 | `standartlar/kod-dili-standardi.md` | Tanımlayıcılar İngilizce, belgeler ve yorumlar Türkçe |
 | `standartlar/es-zamanli-calisma-standardi.md` | Aynı depoda aynı anda çalışan oturumlar: dal, sahne, dal silme, worktree |

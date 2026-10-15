@@ -130,7 +130,7 @@ console.log('— kullanıcı talimatı (~/.claude/CLAUDE.md)');
   expect('iki kaynakta işaret tek satırda', both.split(m.MANAGED_MARK).length, 2);
   expect('işaretsiz kaynak atlanır, diğeri kalır', m.instructionsFrom(['işaretsiz', STD2]).includes('2. Model yazılır.'), true);
   expect('hepsi işaretsizse kaynak yok', m.instructionsFrom(['a', 'b']), null);
-  expect('kaynak sırası sabit', m.INSTRUCTION_SOURCES, ['iletisim-standardi.md', 'alt-ajan-standardi.md', 'es-zamanli-calisma-standardi.md', 'arayuz-standardi.md']);
+  expect('kaynak sırası sabit', m.INSTRUCTION_SOURCES, ['iletisim-standardi.md', 'alt-ajan-standardi.md', 'es-zamanli-calisma-standardi.md', 'arayuz-standardi.md', 'en-kucuk-tam-degisiklik-standardi.md']);
 
   const plan = (current) => m.planInstructions(wanted, current).action;
   expect('dosya yoksa oluşturulur', plan({ state: 'yok' }), 'create');
@@ -179,8 +179,11 @@ console.log('— kullanıcı talimatı (~/.claude/CLAUDE.md)');
     expect(`gerçek standartta işaretli bölüm var: ${m.INSTRUCTION_SOURCES[i]}`, section !== null, true);
     expect(`bölüm 400 kelimeden kısa: ${m.INSTRUCTION_SOURCES[i]}`, section !== null && section.split(/\s+/).length < 400, true);
   });
+  // Toplam sınır 800 idi (2026-10-09, iki kaynak; ölçüme dayanmıyordu). Dört kaynak ~790 kelimeyle
+  // sınırı doldurdu; beşinci kaynak (#160, 228 kelime) toplamı 1020'ye çıkardı. Sahip 2026-10-15'te
+  // sınırı 1200'e çıkardı. Bölüm başına 400 sınırı aynen kalır.
   const real = m.instructionsFrom(realTexts);
-  expect('toplam talimat 800 kelimeden kısa', real.split(/\s+/).length < 800, true);
+  expect('toplam talimat 1200 kelimeden kısa', real.split(/\s+/).length < 1200, true);
 }
 
 console.log('— kayıt listesi tutarlı');

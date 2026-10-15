@@ -34,6 +34,15 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 ## Kararlar
 
 
+### 2026-10-15 · En küçük tam değişiklik kuralı (#160) — **KABUL (sahip kararıyla istisna)**
+
+- **Kimden:** Proje sahibi; dış depo incelemesinden doğdu (Ponytail, `github.com/DietrichGebert/ponytail`, MIT, v5.2.0).
+- **Karar:** Yeni `standartlar/en-kucuk-tam-degisiklik-standardi.md`; işaretli bölümü ev kâğıdına beşinci kaynak olarak kopyalanır ("Kod yazarken").
+- **Dört şarttan istisna:** gerçek olay ve ölçülmüş çıktı yok. Sahip bilerek kabul etti: "bu benim kararım, ölçüye gerek yok." İstisna **emsal değildir**; başka talepler dört şartla değerlendirilmeye devam eder.
+- **Vaka olmadığı için:** kural yalnız talimattır. Kontrol listesine madde eklenmedi (liste yalnız vakada yanmış konuları alır). Makineye bağlanabilecek üç madde standartta yazılı; ilk gerçek vakada kapıya çevrilir.
+- **Alınmayanlar:** İngilizce `shortcut:` yorumu, ayrı borç defteri, alt ajan kancası, kipler, kendiliğinden güncellenen eklenti. Gerekçeler standartta.
+- **Ölçüm:** yapılmadı; plan `docs/teknik-borc.md` → TB-009.
+
 ### 2026-10-12 · Bellek derleme görevinin açtığı iki talep (#140, #142)
 
 - **Kimden:** Haftalık bellek derleme görevi (ikinci çalışma, PR #141); karar proje sahibinin ("1 ve 2 evet").
