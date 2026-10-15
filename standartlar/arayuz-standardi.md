@@ -65,6 +65,17 @@ Arc Pro satın alınmaz (sahip, 2026-10-14: bütçe yok; site kapanırsa erişim
 
 **Neden bu sıra:** Yazan, önizlemenin kodunu gördüyse "esinlenme" kanıtlanamaz. Tarif ile yazımı ayırmak, kodun bizim olduğunu belgeler.
 
+### 2.2 Görsel denetim: test yeşil olması yetmez
+
+Yeni ya da değişen her SNN-UI bileşeni birleşmeden önce **gözle** denetlenir:
+
+1. Galeride 1400 px ve 390 px genişlikte ekran görüntüsü alınır (SNN-UI: `npm run shots -- <ad>`).
+2. Katalogdaki iyi örneklerle karşılaştırılır (`usage-pricing`, `bar-chart`): boşluk düzeni, başlık hiyerarşisi, hover ve basma durumları, hareketin akıcılığı, yazı tipi.
+3. Resim yuvası olan bileşenin galeri örneğinde gerçek fotoğraf bulunur; boş yer tutucu kutu kabul edilmez. Fotoğraflar ücretsiz lisanslı kaynaktan (Unsplash, Pexels) gelir, kaynağı yazılır; Arc'ın görselleri kullanılmaz.
+4. PR gövdesine bileşen başına bir cümlelik görsel değerlendirme yazılır. Koordinatör birleştirmeden önce ekran görüntülerine bakar.
+
+**Vaka (2026-10-15):** Dalga 3'ün 17 bloğu testleri ve yasak çağrı taramasını geçerek birleşti. Sahip galeride 11'ini kalitesiz buldu: resim kutuları boş, düzen ve akış zayıf, yazı tipi bozuk. Ölçüm: galeride yüklenen yazı tipi sayısı 0 (Inter ve Geist hiç gelmiyordu, her şey Arial). Kimse ekran görüntüsüne bakmamıştı; denetim yalnız testlerdi.
+
 **Neden:** AI her oturumda bileşeni sıfırdan uydurunca ekranlar "AI yapımı" görünüyor ve iki proje iki ayrı uygulama gibi duruyor (sahip, 2026-10-14). Plan ve ölçüm: `docs/arayuz-standardi-plani.md`.
 
 <!-- kullanici-talimati:basla -->
