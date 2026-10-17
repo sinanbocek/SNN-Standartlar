@@ -30,4 +30,5 @@ Kapanan kayıtlar: `docs/teknik-borc-arsiv.md`
 - **Etki:** Kod yazılan bütün aile projeleri.
 - **Çözüm yönü:** Kural yürürlüğe girdikten iki hafta sonra (2026-10-29 civarı) kural öncesi ve sonrası iki haftalık PR'lar karşılaştırılır: eklenen satır, yeni paket sayısı, yeni mantıkla birlikte değişen test dosyası oranı, `KISAYOL` yorumu ve TB bağı. Yöntem `olcum-standardi.md`'ye göre; ölçülemeyen "okunamadı" diye yazılır.
 - **Neden Şimdi Çözülmüyor:** Sahip kararı (#160): kural ölçüsüz, istisna olarak kabul edildi. "Sonrası" verisi henüz yok.
+- **Ara sayım (2026-10-17, #162):** 16 aile deposunda birleşmiş PR: öncesi (10-01..10-14) 97, 9 projede; sonrası (10-15..10-17) 50, 41'i iki projede (SNN-UI 21, Nakit-Akış 20). Dönem kısa ve proje karışımı farklı; şimdi karşılaştırmak proje farkını ölçer. Karar (sahip): 2026-10-29'da ölçülür, yalnız iki dönemde de PR'ı olan projeler karşılaştırılır. Hatırlatma görevi kuruldu.
 - **Bağlı kalemler:** Yok.
