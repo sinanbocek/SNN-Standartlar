@@ -34,6 +34,15 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 ## Kararlar
 
 
+### 2026-10-17 · CI yeşilse Claude PR'ı kendisi birleştirir (#164) — **KABUL**
+
+- **Kimden:** SNN-Piyasa-Core; kuralı proje sahibi bütün oturumlar için istedi.
+- **Dört şart:** gerçek olay (Piyasa-Core PR #71 birleştirmesi otomatik mod denetimine takıldı), ölçülmüş çıktı (`gh pr checks` ve engel mesajı), denenmiş alternatif (izni Claude'un eklemesi engellendi; proje rehberi tek projeyi kapsar), etki: kaç projede durduğu ölçülmedi.
+- **Karar:** `es-zamanli-calisma-standardi.md` işaretli bloğuna "PR birleştirme" bölümü, §7 gerekçe. Ev kâğıdına mevcut kaynakla gider; yeni kaynak eklenmedi.
+- **Talepten fark:** "oturumun kendi projesi" sınırı (oturum sınırı kuralı), auto-merge yasağı ve sahibe haber eklendi. SNN-Standartlar'ın 2026-10-14 tarihli proje belleğindeki koşullar buraya taşındı.
+- **Sahibe kalan adım:** `~/.claude/settings.json` → `permissions.allow` → `"Bash(gh pr merge:*)"`. İznin otomatik mod denetimini aştığı ölçülmedi.
+
+
 ### 2026-10-15 · En küçük tam değişiklik kuralı (#160) — **KABUL (sahip kararıyla istisna)**
 
 - **Kimden:** Proje sahibi; dış depo incelemesinden doğdu (Ponytail, `github.com/DietrichGebert/ponytail`, MIT, v5.2.0).
