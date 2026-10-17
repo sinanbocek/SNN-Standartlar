@@ -93,7 +93,29 @@ Bu kural SNN aile standardıdır (`SNN-Standartlar/standartlar/es-zamanli-calism
 2. Açılıştaki "Diğer projelerde bekleyenler" satırları bilgi içindir; o projelere iş önerilmez, raporlanmaz, "bakalım mı" diye sorulmaz.
 3. Başka projeyi ilgilendiren bulgu tek cümleyle not edilir ("Bu X projesinin konusu olabilir"); iş üstlenilmez.
 4. Başka projenin kütüğüne ve dosyalarına yazılmaz; ölçüm için yalnız okunur.
+
+# PR birleştirme
+
+Bu kural SNN aile standardıdır (`SNN-Standartlar/standartlar/es-zamanli-calisma-standardi.md` §7). Proje sahibi 2026-10-17'de verdi (#164).
+
+1. CI denetimlerinin hepsi yeşilse Claude oturumun kendi projesindeki PR'ı birleştirir; ayrıca onay beklemez.
+2. Birleştirmez: denetim kırmızı, beklemede ya da hiç çalışmamış; PR taslak; çakışma var; değişiklik istenmiş ya da çözülmemiş inceleme yorumu var; sahip "bekle" demiş.
+3. `--delete-branch` öncesi o dalı taban alan açık PR olmadığı denetlenir.
+4. Yöntem deponun alışkanlığıdır; son birleştirmelere bakılır (sıkıştırma ya da birleştirme commit'i).
+5. Otomatik birleştirme (auto-merge) sahip istemedikçe açılmaz.
+6. Birleştirince sahibe tek mesajla haber verilir: hangi PR, denetim sonucu, kalan adım.
+7. Komut engellenirse izni Claude eklemez. Sahip `~/.claude/settings.json` → `permissions.allow` içine `"Bash(gh pr merge:*)"` ekler.
 <!-- kullanici-talimati:bitir -->
+
+## 7. PR birleştirme yetkisi
+
+Kuralın kendisi yukarıdaki işaretli bloğun içindedir: kopyalayıcı (`setup-machine.js`) dosya başına tek blok okur.
+
+**Neden (#164, 2026-10-17):** SNN-Piyasa-Core PR #71'in CI'ı yeşildi; sahip "canlıya al" demişti. `gh pr merge 71 --squash` otomatik mod denetimine "Merge Without Review" gerekçesiyle takıldı, canlıya alma durdu. Sahip aynı gün kuralı bütün oturumlar için istedi. SNN-Standartlar'da aynı yetki 2026-10-14'ten beri yalnız proje belleğinde duruyordu.
+
+**İzin ve kural ayrı şeylerdir.** İzin satırı komutu her durumda serbest bırakır; "CI yeşilse" koşulunu denetleyemez. Koşulu bu kural taşır. İzni Claude kendisi ekleyemez: kendi yetkisini genişletmek otomatik mod denetimine "Instruction Poisoning" olarak takılır ve bu sınır doğrudur.
+
+**Ölçülmedi:** izin satırının otomatik mod denetimini gerçekten aştığı henüz denenmedi. İlk birleştirmede görülür; aşmazsa sahip komutu kendisi çalıştırır (§4).
 
 ## Kontrol listesi maddesi
 
