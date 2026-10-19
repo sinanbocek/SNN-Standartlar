@@ -72,6 +72,11 @@ function numbersBlock(rows, quota, extra = {}) {
   if (extra.requests !== undefined) out.push(line('Açık talep', extra.requests ? `${extra.requests}` : 'yok'));
   if (extra.pending) out.push(line('Bekleyen ölçüm', extra.pending));
 
+  // YENİ DEPO: hesapta olup aile listesinde yazılı olmayan. Ölçülür ama listeye de yazılmalı:
+  // uyum ölçeri ve toplu ölçüm hâlâ listeyi okur. null = hesap okunamadı (yok demek değil).
+  if (extra.discovered === null) out.push(line('Yeni depo', 'hesap okunamadı — listedekiler ölçüldü'));
+  else if (extra.discovered && extra.discovered.length) out.push(line('Yeni depo', `${extra.discovered.join(' · ')} — ölçüldü; aile listesine eklenmeli`));
+
   // ÖLÇEMEDİĞİM: her satırda tekrar eden "okunamadı" yerine TEK yerde, bir kez.
   const unreadable = rows.filter((r) => r.unreadable).map((r) => r.name);
   if (unreadable.length) {
@@ -85,6 +90,39 @@ function numbersBlock(rows, quota, extra = {}) {
 function countDebts(text, parseDebts) {
   const items = parseDebts(String(text || ''));
   return { open: items.length, p1: items.filter((i) => i.priority === 'P1').length };
+}
+
+// SAF: aile listesi + hesaptaki depolar → ölçülecek liste.
+//
+// NEDEN (2026-10-19, proje sahibi): "bugün ilk çalışan süreçte eksik repolar vardı ... hesabıma
+// yeni repolar eklendikçe tarama otomatik olarak hepsini kontrol edecek". Liste elle tutuluyordu;
+// hesaba açılan depo listeye yazılana kadar raporda görünmüyordu.
+//
+// Listede olanlar aynen kalır (klasör adı depo adından farklı olabilir: GHS-Panel). Gerekçeli
+// dışlananlar (excluded), çatallar (başkasının kodu) ve arşivlenmiş depolar eklenmez.
+// accountRepos null ise (hesap okunamadı) liste aynen döner; discovered da null olur.
+function mergeFamily(list, accountRepos) {
+  const projects = [...(list.projects || [])];
+  if (!Array.isArray(accountRepos)) return { projects, discovered: null };
+  const key = (r) => String(r || '').toLowerCase();
+  const known = new Set([...projects, ...(list.excluded || [])].map((x) => key(x.repo)));
+  const discovered = [];
+  for (const r of accountRepos) {
+    if (!r || r.isFork || r.isArchived || known.has(key(r.nameWithOwner))) continue;
+    const dir = String(r.nameWithOwner).split('/')[1];
+    projects.push({ repo: r.nameWithOwner, dir, discovered: true });
+    known.add(key(r.nameWithOwner));
+    discovered.push(dir);
+  }
+  return { projects, discovered };
+}
+
+// IO: listedeki hesapların (accounts) bütün depoları. Biri okunamazsa null — "yeni depo yok"
+// diye okunmasın (olcum-standardi.md, Kural 3: okunamadı ≠ yok).
+function accountRepos(accounts) {
+  try {
+    return (accounts || []).flatMap((owner) => ghJson(['repo', 'list', owner, '--limit', '500', '--json', 'nameWithOwner,isFork,isArchived']));
+  } catch { return null; }
 }
 
 const daysSince = (iso) => Math.floor((Date.now() - Date.parse(iso)) / 86400000);
@@ -102,9 +140,8 @@ function ciState(runs) {
   return { state: failing.length ? 'red' : 'green', failing: failing.join(', ') || null };
 }
 
-function measure() {
+function measure(list) {
   const { parseDebts } = require('../debt-sync/lib/debt');
-  const list = JSON.parse(fs.readFileSync(PROJECTS, 'utf8')).projects;
   const rows = [];
   for (const { repo, dir } of list) {
     const name = dir;
@@ -140,10 +177,12 @@ function measure() {
   return rows;
 }
 
-module.exports = { numbersBlock, countDebts, line, shortName, ciState, STALE_DAYS };
+module.exports = { numbersBlock, countDebts, line, shortName, ciState, mergeFamily, STALE_DAYS };
 
 if (require.main === module) {
-  const rows = measure();
+  const family = JSON.parse(fs.readFileSync(PROJECTS, 'utf8'));
+  const { projects, discovered } = mergeFamily(family, accountRepos(family.accounts));
+  const rows = measure(projects);
 
   // Kota TEK KAYNAKTAN gelir: kapının kullandığı ölçümün aynısı. İki ayrı hesap, iki farklı sayı
   // demektir — eski haftalık raporun "kütük başlığı dosyayla uyuşmuyor" sorunu tam buydu.
@@ -164,5 +203,5 @@ if (require.main === module) {
     pending = raw.length ? raw.map((p) => `${p.id} (vade ${p.due})`).join(' · ') : 'yok';
   } catch { /* atlanır */ }
 
-  console.log(numbersBlock(rows, quota, { requests, pending }));
+  console.log(numbersBlock(rows, quota, { requests, pending, discovered }));
 }

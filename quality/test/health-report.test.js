@@ -99,5 +99,32 @@ const parseDebts = (text) => [
 expect('kayıtlar sayılır', t.countDebts('TB-001 ...', parseDebts), { open: 2, p1: 1 });
 expect('boş metin sıfır', t.countDebts('', parseDebts), { open: 0, p1: 0 });
 
+console.log('— hesaptaki yeni depo kendiliğinden ölçülür');
+// VAKA (2026-10-19, proje sahibi): "bugün ilk çalışan süreçte eksik repolar vardı". Liste elle
+// tutuluyordu; hesaba açılan depo listeye yazılana kadar raporda görünmüyordu. Karar: hesaptaki
+// her depo kendiliğinden ölçülür, listeye yazılmamış olanlar ayrıca söylenir.
+const list = {
+  projects: [{ repo: 'sinanbocek/A', dir: 'A-klasor' }, { repo: 'globalhedef/G', dir: 'GHS' }],
+  excluded: [{ repo: 'sinanbocek/Disli' }],
+};
+const account = [
+  { nameWithOwner: 'sinanbocek/a', isFork: false, isArchived: false },
+  { nameWithOwner: 'sinanbocek/Yeni', isFork: false, isArchived: false },
+  { nameWithOwner: 'sinanbocek/Disli', isFork: false, isArchived: false },
+  { nameWithOwner: 'sinanbocek/Catal', isFork: true, isArchived: false },
+  { nameWithOwner: 'sinanbocek/Eski', isFork: false, isArchived: true },
+];
+const merged = t.mergeFamily(list, account);
+expect('listede olanlar aynen kalır', merged.projects.slice(0, 2).map((x) => x.dir), ['A-klasor', 'GHS']);
+expect('büyük-küçük harf farkı ikinci kayıt açmaz', merged.projects.length, 3);
+expect('yeni depo eklenir', merged.projects[2], { repo: 'sinanbocek/Yeni', dir: 'Yeni', discovered: true });
+expect('yeni depo ayrıca söylenir', merged.discovered, ['Yeni']);
+expect('gerekçeli dışlanan, çatal ve arşiv eklenmez', merged.projects.some((x) => /Disli|Catal|Eski/.test(x.repo)), false);
+expect('hesap okunamazsa liste aynen kalır', t.mergeFamily(list, null).projects.length, 2);
+
+expect('yeni depo satırı yazılır', t.numbersBlock([p('A')], null, { discovered: ['Yeni'] }).includes('Yeni depo        Yeni — ölçüldü; aile listesine eklenmeli'), true);
+expect('yeni depo yoksa satır yok', t.numbersBlock([p('A')], null, { discovered: [] }).includes('Yeni depo'), false);
+expect('hesap okunamazsa söylenir', t.numbersBlock([p('A')], null, { discovered: null }).includes('Yeni depo        hesap okunamadı'), true);
+
 console.log(fail ? `\n${fail} test başarısız` : '\nTüm testler geçti');
 process.exit(fail ? 1 : 0);
