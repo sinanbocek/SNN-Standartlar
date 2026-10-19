@@ -3,6 +3,8 @@
   "_why": "Liste acik tutulur cunku (1) yerel klasor adi ile depo adi ayni degil, (2) tum depolar ayni hesapta degil, (3) yerelde duran her klasor aile projesi degil.",
   "_measured": "2026-09-19: yerel klasorlerin uzak adresleri okunarak dogrulandi.",
   "_public": "public: true = herkese acik depo; Actions dakikasi ucretsizdir, akis butcesi olcutleri uygulanmaz. Gorunurluk 2026-09-29 gh api ile olculdu.",
+  "_accounts": "accounts: saglik raporu bu hesaplarin TUM depolarini olcer; listede olmayan yeni depo kendiliginden eklenir ve 'Yeni depo' satirinda soylenir (2026-10-19, proje sahibi karari). Catal, arsiv ve excluded eklenmez.",
+  "accounts": ["sinanbocek"],
   "projects": [
     { "repo": "sinanbocek/Gunum-Var", "dir": "Gunum-Var" },
     { "repo": "sinanbocek/Naturapan-Web-Sitesi", "dir": "Naturapan-Web-Sitesi" },
