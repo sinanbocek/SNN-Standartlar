@@ -3,5 +3,13 @@
   "_why": "2026-09-19: TB-002 'bir hafta defter verisi beklensin' diyordu. Defter gecmis tutmuyordu; beklenen veri HIC gelmeyecekti. Proje sahibi 'TB-002 neyi bekliyor?' diye sorunca ortaya cikti ve sunu soyledi: 'bu ve benzeri islemler tamamen makine zorlamasiyla kontrol edilerek otomatik tetiklenen bir makine kurali olmali; aksi asla kabul edilemez.'",
   "_rule": "Her kaydin CALISTIRILABILIR bir komutu ve bir vadesi olmak zorundadir. Komut dosyasi yoksa ya da vade gecersizse kapi KIRMIZI verir. Vade gelince akis komutu CALISTIRIR ve karar verilene kadar kirmizi kalir.",
   "_allowlist": "Komut yalnizca bu deponun kendi olcerlerini cagirabilir: 'node quality/<dosya>.js ...'",
-  "pending": []
+  "pending": [
+    {
+      "id": "OLC-002",
+      "question": "Instagram ve Facebook olculeri hala gecerli mi? Meta sayfalari ve canli Reels ekrani 2026-11-03 sayilariyla ayni mi?",
+      "command": "node quality/social-media-sizes.js",
+      "due": "2027-05-03",
+      "decision": "Meta sayfalarini yeniden oku, canli ekran goruntusuyle olc. quality/data/social-media-sizes.json ve standart tablosunu tarihleriyle guncelle, sonra due alanini alti ay ileri al. Uretim yapan proje yoksa sahibe sor: kayit kapansin mi?"
+    }
+  ]
 }
