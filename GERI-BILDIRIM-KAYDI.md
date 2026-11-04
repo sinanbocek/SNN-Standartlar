@@ -34,6 +34,15 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 ## Kararlar
 
 
+### 2026-11-05 · Sosyal medya içerik ölçüleri aile standardı olsun (#175) — **KABUL (düzeltmeyle)**
+
+- **Kimden:** SNN-Games-Pulmaca. Kapsamı proje sahibi seçti: standart + ortak araç.
+- **Dört şart:** gerçek olay (2026-11-03 denetimi: Reels'te logo ve adres okunmuyor, şehir videolarında çipler arayüzün altında), ölçülmüş çıktı (Meta sayıları, canlı iPhone ölçümü), denenmiş alternatif (proje rehberi yalnız o projede görünür), etki: talep tek üretici diyordu; ölçümde ikinci üretici çıktı, `Sosyal-Medya/gunum-var/instagram` aynı biçimleri kullanıyor.
+- **Karar:** `standartlar/sosyal-medya-olcu-standardi.md`, `quality/safe_zone.py`, `quality/data/social-media-sizes.json`. Yenileme `OLC-002` kaydıyla makineye bağlandı. Ev kâğıdına tek paragraf işaret gider.
+- **Talepten fark:** (1) 122 piksel `turetilmis` etiketiyle girdi; Instagram sayısı değil. (2) Reklam sayısı ile canlı ölçüm ayrıldı, %20/%35 çelişkisi yazıldı. (3) Araç taşınırken sayılar koddan veri dosyasına alındı, ızgara kırpması ve 1440×2560 eklendi, test yazıldı. (4) `.py` dosyalarını kod dili tarayıcısı taramaz; araçtaki adlar elle İngilizce yazıldı.
+- **Tüketiciye kalan:** Pulmaca oturumu kendi `guvenli-bolge.py` kopyasını kaldırır, rehberindeki yolları ve sayı kaynağını günceller. Bu depodan dokunulmaz.
+- **Sahibe kalan adım:** ev kâğıdı için `node setup/setup-machine.js --uygula`.
+
 ### 2026-10-17 · CI yeşilse Claude PR'ı kendisi birleştirir (#164) — **KABUL**
 
 - **Kimden:** SNN-Piyasa-Core; kuralı proje sahibi bütün oturumlar için istedi.

@@ -14,12 +14,14 @@ SNN projelerinin ortak çalışma standartları ve **teknik borç kütüphanecis
 | `standartlar/giris-alanlari-standardi.md` | Sayı ve kod girişleri: yanlış karakter yazılamaz, biçim yazarken kurulur |
 | `standartlar/arayuz-standardi.md` | Sahibin birden çok projede söylediği arayüz tercihleri (amber uyarı rengi yok); `~/.claude/CLAUDE.md` dosyasına kopyalanır |
 | `standartlar/en-kucuk-tam-degisiklik-standardi.md` | Kod yazarken işi eksiksiz bitiren en küçük değişiklik (Ponytail'den uyarlama); `~/.claude/CLAUDE.md` dosyasına kopyalanır |
+| `standartlar/sosyal-medya-olcu-standardi.md` | Instagram ve Facebook ölçüleri, güvenli bölgeler, göstermeden önce arayüz bindirmesiyle denetim; `~/.claude/CLAUDE.md` dosyasına kopyalanır |
 | `standartlar/kod-inceleme-kontrol-listesi.md` | Birleştirmeden önce sorulan sorular |
 | `standartlar/kod-dili-standardi.md` | Tanımlayıcılar İngilizce, belgeler ve yorumlar Türkçe |
 | `standartlar/es-zamanli-calisma-standardi.md` | Aynı depoda aynı anda çalışan oturumlar: dal, sahne, dal silme, worktree |
 | `standartlar/alt-ajan-standardi.md` | Alt ajan açarken model ve düşünme seviyesi seçimi; `~/.claude/CLAUDE.md` dosyasına kopyalanır |
 | `quality/session-registry.js` · `quality/wide-effect-git.js` | Oturum defteri ve geniş etkili git komutu denetimi (bekçiler çağırır) |
 | `quality/code-language-scan.js` | Türkçe tanımlayıcı tarayıcısı (+ `ornek/kod-dili.yml` ile projeye bağlanır) |
+| `quality/safe_zone.py` · `quality/social-media-sizes.js` | Görsele ve videoya arayüz bindirmesi; ölçü dosyasının denetimi (`quality/data/social-media-sizes.json`) |
 | `docs/kod-dili-gecis.md` | Bağlama süreci, projelerin ölçülmüş yükü, kütük kaydı şablonu ve istek metni |
 | `debt-sync/` | Kütüğü okuyup issue ve board'u güncelleyen betik + testleri |
 | `.github/workflows/borc-senkron.yml` | GitHub'da çalışan ortak görevli (projeler bunu çağırır) |
