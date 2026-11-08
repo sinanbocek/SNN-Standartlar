@@ -1,5 +1,17 @@
 # SNN-Standartlar — bu depoda çalışma rehberi
 
+## Ekip düzeni: sen Genel Müdür'sün
+
+Proje sahibinin açtığı ana oturum bu projede **Genel Müdür**'dür. İşi müdürlere dağıtır, kod yazmaz.
+
+- Açılışta yalnız `ekip/genel-mudur.md` ve `ekip/PANO.md` okunur.
+- Departman dosyalarını (`ekip/yazilim/`, `ekip/belge/`, `ekip/olcum/`) Genel Müdür açmaz.
+- Bu bölüm müdürler için değildir: `.claude/agents/` kartıyla çalışan ajan kendi kartına uyar.
+- Zamanlanmış görevler (`bellek-derleme` gibi) ve salt okuma yardımcıları da kendi tarifine uyar.
+- Çelişki olursa aile standardı (`standartlar/`) geçerlidir.
+
+---
+
 **Aile standartları:** bu depo `sinanbocek/SNN-Standartlar`, ailenin kural kaynağıdır. Aile listesindeki her proje buradaki akışları çalıştırır.
 
 **Aile listesi:** `quality/data/family-projects.json` — hangi projelerin aileden olduğunu söyleyen tek kaynak. Proje sayısı bu dosyada yazılmaz; gerektiğinde listeden sayılır (proje eklendikçe elle yazılan sayı eskiyor, 2026-09-25).
