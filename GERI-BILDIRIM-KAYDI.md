@@ -51,6 +51,7 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 - **Karar:** yeni `standartlar/ekip-duzeni-standardi.md`, çerçeve olarak: dört maddelik ortak iskelet, zorunlu departman listesi ya da dosya adı yok. Ayrı dosya, çünkü konu eş zamanlı çalışmadan farklı. İşaretli blok yok, ev kâğıdına gitmez, makineye iş düşmez. `alt-ajan-standardi.md` işaretli bloğun dışında tek cümleyle bağlandı.
 - **Talepten fark:** talepteki "açılışta yalnız `genel-mudur.md` ve `PANO.md` okunur" maddesi iskelete girmedi. Sahip kararındaki dört maddede yok ve dosya adı dayatır. Standartta "projeye bırakılan" olarak anılır.
 - **Sahibe kalan adım:** yok.
+- **Sahip kararı, beceri (2026-11-09):** düzen `/proje-kur` içine gömülmedi; `skills/proje-kur/SKILL.md` kurulum sonunda tek soru sorar, evet denirse standarda göre ayrı PR'la kurar. Aynı değişiklikte beceriye otomatik birleştirme adımı eklendi ve eski birleştirme satırı (onay şartı koyan) §7'ye bağlandı.
 
 ### 2026-11-05 · Sosyal medya içerik ölçüleri aile standardı olsun (#175) — **KABUL (düzeltmeyle)**
 

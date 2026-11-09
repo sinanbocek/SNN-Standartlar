@@ -22,6 +22,7 @@ Talepler `node quality/open-requests.js` çıktısından alındı (2026-11-08).
 
 ## Biten (son 10)
 
+- 2026-11-09 · `proje-kur` becerisine otomatik birleştirme adımı ve "Genel Müdür düzeni kurulsun mu?" sorusu eklendi, eski birleştirme satırı §7'ye bağlandı. Commit ve PR Genel Müdür'de; makine için canlı kopya tazelenip `node setup/setup-machine.js --uygula`. Kaynak: `GERI-BILDIRIM-KAYDI.md`.
 - 2026-11-09 · Otomatik birleştirme aile yayılımı §7'ye işlendi: depo ayarı uyarıları, 16 projelik sonuç tablosu (9 açık, 7 kapalı), ölçülmeyen kalem. Commit ve PR Genel Müdür'de. Kaynak: `GERI-BILDIRIM-KAYDI.md`.
 - 2026-11-09 · Otomatik birleştirme ortak süreç: PR birleştirme işaretli bloğu (madde 5 ve 6) ve §7 gerekçe, depo ayarı, ölçüm. Commit ve PR Genel Müdür'de; makine için `node setup/setup-machine.js --uygula`. Kaynak: `GERI-BILDIRIM-KAYDI.md`.
 - 2026-11-09 · Genel Müdür düzeni çerçeve standardı (#181) ve ortak müdür adları tablosu (sahip eki), PR #183 dalında; commit ve PR Genel Müdür'de. Kaynak: `GERI-BILDIRIM-KAYDI.md`.
