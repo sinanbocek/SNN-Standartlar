@@ -31,11 +31,9 @@ CI'ları yeşil, çakışma yok (2026-11-08).
 
 ### Elle
 
-PR birleştirme kuralı makinelere kopyalanır. Bu değişiklik birleşip canlı kopya tazelenince bir kez çalıştırılır:
-
-`node setup/setup-machine.js --uygula`
+Yok.
 
 ## Son bitenler
 
 - 2026-11-09 · Ekip düzeni standardı ve ortak müdür adları (#183, #181 kapandı).
-- 2026-11-09 · Bu depoda otomatik birleştirme ve zorunlu denetim açıldı.
+- 2026-11-09 · Otomatik birleştirme ortak süreç oldu (#184). 16 projenin 9'unda açık; 7'sinde neden kapalı olduğu `es-zamanli-calisma-standardi.md` §7'de.
