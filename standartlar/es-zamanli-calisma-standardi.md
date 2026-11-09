@@ -102,8 +102,8 @@ Bu kural SNN aile standardıdır (`SNN-Standartlar/standartlar/es-zamanli-calism
 2. Birleştirmez: denetim kırmızı, beklemede ya da hiç çalışmamış; PR taslak; çakışma var; değişiklik istenmiş ya da çözülmemiş inceleme yorumu var; sahip "bekle" demiş.
 3. `--delete-branch` öncesi o dalı taban alan açık PR olmadığı denetlenir.
 4. Yöntem deponun alışkanlığıdır; son birleştirmelere bakılır (sıkıştırma ya da birleştirme commit'i).
-5. Depoda zorunlu denetim ve otomatik birleştirme (auto-merge) açıksa Claude PR'ı açınca otomatik birleştirmeyi kendisi açar: `gh pr merge <no> --auto` ve madde 4'teki yöntem bayrağı. GitHub denetimler yeşil olunca birleştirir. Madde 2'deki engellerden biri varsa açılmaz. Depoda zorunlu denetim yoksa `--auto` kullanılmaz; CI yeşil olunca elle birleştirilir. Gizli depoda "dal güncel olsun" ayarı da açık olmalıdır.
-6. Elle birleştirince sahibe tek mesajla haber verilir: hangi PR, denetim sonucu, kalan adım. Otomatik birleştirmede PR açılınca "CI yeşil olunca kendiliğinden birleşecek" denir; birleştikten sonra kalan adım varsa (canlı kopya tazeleme gibi) o da bu mesajda yazılır.
+5. Zorunlu denetimli depoda Claude PR'ı açınca `gh pr merge <no> --auto` ile otomatik birleştirmeyi açar; madde 2 ve 4 geçerlidir. Zorunlu denetim yoksa elle birleştirilir (§7).
+6. Sahibe tek mesajla haber verilir: hangi PR, denetim sonucu ya da otomatik birleşeceği, kalan adım.
 7. Komut engellenirse izni Claude eklemez. Sahip `~/.claude/settings.json` → `permissions.allow` içine `"Bash(gh pr merge:*)"` ekler.
 <!-- kullanici-talimati:bitir -->
 
@@ -120,6 +120,8 @@ Kuralın kendisi yukarıdaki işaretli bloğun içindedir: kopyalayıcı (`setup
 ### Otomatik birleştirme (2026-11-09)
 
 **Neden (2026-11-09):** SNN-Standartlar PR #183'te CI yeşil olduğu hâlde oturum beklemek zorunda kaldı ve sahibin ayrıca "birleştir" demesi gerekti. Sahip aynı gün otomatik birleştirmeyi ortak süreç yaptı.
+
+**Nasıl işler:** `--auto` açıldıktan sonra denetimler yeşil olunca GitHub kendisi birleştirir. Otomatik birleşmede sahibe PR açılınca "CI yeşil olunca kendiliğinden birleşecek" diye haber verilir; birleşme sonrası kalan adım (canlı kopya tazeleme gibi) aynı mesajda yazılır.
 
 **Neden zorunlu denetim şart:** GitHub'da zorunlu denetim yoksa `--auto` denetim beklemeden birleştirebilir.
 
