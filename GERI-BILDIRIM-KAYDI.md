@@ -34,6 +34,14 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 ## Kararlar
 
 
+### 2026-11-09 · Genel Müdür düzeni çerçeve standardı (#181) — **KABUL**
+
+- **Kimden:** talep #181 (vakası iki projede: SNN-Games-Pulmaca, Gunum-Var); karar proje sahibinin.
+- **Dört şart:** gerçek olay (SNN-Games-Pulmaca 2026-11-05 ve Gunum-Var 2026-11-08 aynı düzeni kurdu, Gunum-Var Pulmaca'yı örnek aldı; proje notları `pulmaca-ekip-duzeni.md` 2026-11-05, `ekip-duzeni-kuruldu.md` 2026-11-08), ölçülmüş çıktı (Genel Müdür'ün 2026-11-09 GitHub salt okuma ölçümü: üç projenin `ekip/` klasör listesi), denenmiş alternatif (proje notu tek projeyi kapsıyor; Gunum-Var düzeni Pulmaca'dan elle kopyaladı), etki: üç projede kurulu.
+- **Karar:** yeni `standartlar/ekip-duzeni-standardi.md`, çerçeve olarak: dört maddelik ortak iskelet, zorunlu departman listesi ya da dosya adı yok. Ayrı dosya, çünkü konu eş zamanlı çalışmadan farklı. İşaretli blok yok, ev kâğıdına gitmez, makineye iş düşmez. `alt-ajan-standardi.md` işaretli bloğun dışında tek cümleyle bağlandı.
+- **Talepten fark:** talepteki "açılışta yalnız `genel-mudur.md` ve `PANO.md` okunur" maddesi iskelete girmedi. Sahip kararındaki dört maddede yok ve dosya adı dayatır. Standartta "projeye bırakılan" olarak anılır.
+- **Sahibe kalan adım:** yok.
+
 ### 2026-11-05 · Sosyal medya içerik ölçüleri aile standardı olsun (#175) — **KABUL (düzeltmeyle)**
 
 - **Kimden:** SNN-Games-Pulmaca. Kapsamı proje sahibi seçti: standart + ortak araç.
