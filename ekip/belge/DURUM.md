@@ -1,6 +1,6 @@
 # Belge — durum
 
-Son güncelleme: 2026-11-08
+Son güncelleme: 2026-11-09
 
 ## Açık
 
@@ -18,9 +18,11 @@ Talepler `node quality/open-requests.js` çıktısından alındı (2026-11-08).
 
 - Talep #131: ikinci yabancı anahtar PostgREST gömmesini kırar. "Beklet" kararı sürüyor; iki projede görülüyor. Kaynak: `docs/bellek-derleme/2026-10-26.md`.
 - Talep #167'ye Gunum-Var'ın yeni bilgisi eklensin mi: MCP ile okuma da engelli. Kaynak: aynı rapor; "karar sahibin" diye yazılmış.
+- Ortak müdür adları tablosunda bir görev çakışması (ayrım kararlaştırılmadı): Pazarlama ile Yayın (Gunum-Var'da ikisinde de mağaza metni ve landing sitesi). Kaynak: `standartlar/ekip-duzeni-standardi.md`, "Karışabilecek çiftler".
 
 ## Biten (son 10)
 
+- 2026-11-09 · Genel Müdür düzeni çerçeve standardı (#181) ve ortak müdür adları tablosu (sahip eki), PR #183 dalında; commit ve PR Genel Müdür'de. Kaynak: `GERI-BILDIRIM-KAYDI.md`.
 - 2026-11-05 · Sosyal medya ölçü standardı (#175). Kaynak: `GERI-BILDIRIM-KAYDI.md`.
 - 2026-10-17 · PR birleştirme kuralı (#164). Kaynak: aynı kayıt.
 - 2026-10-15 · En küçük tam değişiklik standardı (#160). Kaynak: aynı kayıt.
