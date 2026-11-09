@@ -22,6 +22,7 @@ Talepler `node quality/open-requests.js` çıktısından alındı (2026-11-08).
 
 ## Biten (son 10)
 
+- 2026-11-09 · Otomatik birleştirme ortak süreç: PR birleştirme işaretli bloğu (madde 5 ve 6) ve §7 gerekçe, depo ayarı, ölçüm. Commit ve PR Genel Müdür'de; makine için `node setup/setup-machine.js --uygula`. Kaynak: `GERI-BILDIRIM-KAYDI.md`.
 - 2026-11-09 · Genel Müdür düzeni çerçeve standardı (#181) ve ortak müdür adları tablosu (sahip eki), PR #183 dalında; commit ve PR Genel Müdür'de. Kaynak: `GERI-BILDIRIM-KAYDI.md`.
 - 2026-11-05 · Sosyal medya ölçü standardı (#175). Kaynak: `GERI-BILDIRIM-KAYDI.md`.
 - 2026-10-17 · PR birleştirme kuralı (#164). Kaynak: aynı kayıt.

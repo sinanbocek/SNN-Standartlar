@@ -96,14 +96,14 @@ Bu kural SNN aile standardıdır (`SNN-Standartlar/standartlar/es-zamanli-calism
 
 # PR birleştirme
 
-Bu kural SNN aile standardıdır (`SNN-Standartlar/standartlar/es-zamanli-calisma-standardi.md` §7). Proje sahibi 2026-10-17'de verdi (#164).
+Bu kural SNN aile standardıdır (`SNN-Standartlar/standartlar/es-zamanli-calisma-standardi.md` §7). Proje sahibi 2026-10-17'de verdi (#164); otomatik birleştirme 2026-11-09.
 
 1. CI denetimlerinin hepsi yeşilse Claude oturumun kendi projesindeki PR'ı birleştirir; ayrıca onay beklemez.
 2. Birleştirmez: denetim kırmızı, beklemede ya da hiç çalışmamış; PR taslak; çakışma var; değişiklik istenmiş ya da çözülmemiş inceleme yorumu var; sahip "bekle" demiş.
 3. `--delete-branch` öncesi o dalı taban alan açık PR olmadığı denetlenir.
 4. Yöntem deponun alışkanlığıdır; son birleştirmelere bakılır (sıkıştırma ya da birleştirme commit'i).
-5. Otomatik birleştirme (auto-merge) sahip istemedikçe açılmaz.
-6. Birleştirince sahibe tek mesajla haber verilir: hangi PR, denetim sonucu, kalan adım.
+5. Depoda zorunlu denetim ve otomatik birleştirme (auto-merge) açıksa Claude PR'ı açınca otomatik birleştirmeyi kendisi açar: `gh pr merge <no> --auto` ve madde 4'teki yöntem bayrağı. GitHub denetimler yeşil olunca birleştirir. Madde 2'deki engellerden biri varsa açılmaz. Depoda zorunlu denetim yoksa `--auto` kullanılmaz; CI yeşil olunca elle birleştirilir. Gizli depoda "dal güncel olsun" ayarı da açık olmalıdır.
+6. Elle birleştirince sahibe tek mesajla haber verilir: hangi PR, denetim sonucu, kalan adım. Otomatik birleştirmede PR açılınca "CI yeşil olunca kendiliğinden birleşecek" denir; birleştikten sonra kalan adım varsa (canlı kopya tazeleme gibi) o da bu mesajda yazılır.
 7. Komut engellenirse izni Claude eklemez. Sahip `~/.claude/settings.json` → `permissions.allow` içine `"Bash(gh pr merge:*)"` ekler.
 <!-- kullanici-talimati:bitir -->
 
@@ -116,6 +116,26 @@ Kuralın kendisi yukarıdaki işaretli bloğun içindedir: kopyalayıcı (`setup
 **İzin ve kural ayrı şeylerdir.** İzin satırı komutu her durumda serbest bırakır; "CI yeşilse" koşulunu denetleyemez. Koşulu bu kural taşır. İzni Claude kendisi ekleyemez: kendi yetkisini genişletmek otomatik mod denetimine "Instruction Poisoning" olarak takılır ve bu sınır doğrudur.
 
 **Ölçülmedi:** izin satırının otomatik mod denetimini gerçekten aştığı henüz denenmedi. İlk birleştirmede görülür; aşmazsa sahip komutu kendisi çalıştırır (§4).
+
+### Otomatik birleştirme (2026-11-09)
+
+**Neden (2026-11-09):** SNN-Standartlar PR #183'te CI yeşil olduğu hâlde oturum beklemek zorunda kaldı ve sahibin ayrıca "birleştir" demesi gerekti. Sahip aynı gün otomatik birleştirmeyi ortak süreç yaptı.
+
+**Neden zorunlu denetim şart:** GitHub'da zorunlu denetim yoksa `--auto` denetim beklemeden birleştirebilir.
+
+**Neden gizli depoda "dal güncel olsun":** gizli depolarda CI main'de koşmaz. PR main'in son hâli üstünde test edilmiş olmalı (`quality/merge-gate.js` `behindReason`).
+
+**Depo ayarı (bir kez), üç adım:**
+
+1. `allow_auto_merge` açılır.
+2. Varsayılan dala zorunlu denetim yazılır. Denetim adları projenin kendi CI iş adlarıdır. Her PR'da çalışan işler seçilir; `paths:` süzgeçli iş seçilirse PR sonsuza dek bekler.
+3. Gizli depoda `strict` açılır; açık depoda kapalı kalır.
+
+Yönetici muafiyeti (`enforce_admins`) kapalı bırakılabilir; bu sahibe kaçış yolu bırakır. Bir depoda ayarı o projenin oturumu yapar (§6) ya da sahip açıkça ister.
+
+**Ölçüm (2026-11-09, GitHub salt okuma, 16 aile projesi, `quality/data/family-projects.json`):** ayar öncesi otomatik birleştirme yalnız SNN-Games-Pulmaca'da açıktı (zorunlu denetim `ci`, strict kapalı). SNN-Standartlar aynı gün açıldı: zorunlu denetimler `test`, `python-araci`, `aile-kontrol`; strict kapalı (açık depo); yönetici muafiyeti var. Geri kalan 14 projede kapalı. Bunlardan globalhedef ve global-hedef-web-platform için yönetici iznimiz yok. Pulmaca gizli olduğu hâlde strict kapalı; bu yüzden kapı orada `--auto`yu reddeder, ayar düzelene kadar elle birleştirilir.
+
+**Ölçülmedi:** diğer gizli depolarda zorunlu denetim ayarının yazılabildiği denenmedi. 2026-09-15'te Portföy'de 403 ölçülmüştü; 2026-11-09 okumasında 403 değil 404 ("koruma yok") döndü; Pulmaca gizli olduğu hâlde koruma taşıyor. Yazma denenmeden kesin söylenemez.
 
 ## Kontrol listesi maddesi
 

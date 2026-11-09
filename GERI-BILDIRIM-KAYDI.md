@@ -34,6 +34,14 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 ## Kararlar
 
 
+### 2026-11-09 · CI yeşilse otomatik birleştirme ortak süreç — **KABUL (sahip kararı)**
+
+- **Kimden:** proje sahibi: "ci yeşil ise otomatik birleşebilir. bunu artık ortak bir süreç haline getirelim. github da bir ayar yapılması gerekiyorsa yapılsın".
+- **Dört şart:** gerçek olay (SNN-Standartlar PR #183: CI yeşildi, oturum bekledi, sahibin ayrıca "birleştir" demesi gerekti), ölçülmüş çıktı (2026-11-09 GitHub salt okuma, 16 aile projesinin birleştirme ayarı), denenmiş alternatif (elle birleştirme: oturum CI'ı beklemek ya da sahibin haber vermesi gerekiyor; `--auto` kapı tarafından reddediliyordu), etki: 2 depoda açık, 14 depoda kapalı.
+- **Karar:** `es-zamanli-calisma-standardi.md` işaretli bloğunda madde 5 ve 6 değişti. Depoda zorunlu denetim ve otomatik birleştirme açıksa Claude PR'ı açınca `gh pr merge <no> --auto` ve yöntem bayrağını kendisi çalıştırır; madde 2'deki engellerde açılmaz. Sahibe PR açılınca "CI yeşil olunca kendiliğinden birleşecek" denir. §7'ye gerekçe, depo ayarı (üç adım) ve ölçüm eklendi.
+- **Talepten fark:** zorunlu denetimsiz depoda `--auto` yasak (denetim beklemeden birleşebilir); gizli depoda `strict` ("dal güncel olsun") şart. Elle birleştirmedeki tek mesaj kuralı aynen kaldı.
+- **Sahibe kalan adım:** `node setup/setup-machine.js --uygula` (işaretli blok değişti).
+
 ### 2026-11-09 · Genel Müdür düzeni çerçeve standardı (#181) — **KABUL**
 
 - **Kimden:** talep #181 (vakası iki projede: SNN-Games-Pulmaca, Gunum-Var); karar proje sahibinin.
