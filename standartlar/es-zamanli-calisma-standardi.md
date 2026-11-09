@@ -130,14 +130,36 @@ Kuralın kendisi yukarıdaki işaretli bloğun içindedir: kopyalayıcı (`setup
 **Depo ayarı (bir kez), üç adım:**
 
 1. `allow_auto_merge` açılır.
-2. Varsayılan dala zorunlu denetim yazılır. Denetim adları projenin kendi CI iş adlarıdır. Her PR'da çalışan işler seçilir; `paths:` süzgeçli iş seçilirse PR sonsuza dek bekler.
+2. Varsayılan dala zorunlu denetim yazılır. Denetim adları projenin kendi CI iş adlarıdır. Her PR'da çalışan işler seçilir; `paths:` süzgeçli iş seçilirse PR sonsuza dek bekler. Otomatik birleştirme yalnız zorunlu denetimleri bekler. Zorunlu olmayan bir iş sürerken ya da kırmızıyken de birleştirir. Bu yüzden zorunlu liste projenin gerçek CI'ını kapsamalıdır. Adı ortak depodan gelen işler (`tara / ...` gibi) zorunlu yazılmaz; ad değişirse PR'lar sonsuza dek bekler. Vaka: Naturapan'da aynı iş `tara / tara` iken `tara / bridge / scan` oldu. Her PR'da çalışan kendi CI işi olmayan depoda ayar açılmaz; elle birleştirme sürer.
 3. Gizli depoda `strict` açılır; açık depoda kapalı kalır.
 
-Yönetici muafiyeti (`enforce_admins`) kapalı bırakılabilir; bu sahibe kaçış yolu bırakır. Bir depoda ayarı o projenin oturumu yapar (§6) ya da sahip açıkça ister.
+Yönetici muafiyeti (`enforce_admins`) kapalı bırakılabilir; bu sahibe kaçış yolu bırakır. Bir depoda ayarı o projenin oturumu yapar (§6) ya da sahip açıkça ister. Sahip 2026-11-09'da ayarı bu oturumdan aile depolarına yaydırdı; bu, §6 oturum sınırına sahibin verdiği tek istisnadır ve yalnız GitHub ayarını kapsar, dosyaları kapsamaz.
 
-**Ölçüm (2026-11-09, GitHub salt okuma, 16 aile projesi, `quality/data/family-projects.json`):** ayar öncesi otomatik birleştirme yalnız SNN-Games-Pulmaca'da açıktı (zorunlu denetim `ci`, strict kapalı). SNN-Standartlar aynı gün açıldı: zorunlu denetimler `test`, `python-araci`, `aile-kontrol`; strict kapalı (açık depo); yönetici muafiyeti var. Geri kalan 14 projede kapalı. Bunlardan globalhedef ve global-hedef-web-platform için yönetici iznimiz yok. Pulmaca gizli olduğu hâlde strict kapalı; bu yüzden kapı orada `--auto`yu reddeder, ayar düzelene kadar elle birleştirilir.
+**Ölçüm (2026-11-09, ayar geri okundu, 16 aile projesi, `quality/data/family-projects.json`):**
 
-**Ölçülmedi:** diğer gizli depolarda zorunlu denetim ayarının yazılabildiği denenmedi. 2026-09-15'te Portföy'de 403 ölçülmüştü; 2026-11-09 okumasında 403 değil 404 ("koruma yok") döndü; Pulmaca gizli olduğu hâlde koruma taşıyor. Yazma denenmeden kesin söylenemez.
+| Sonuç | Proje | Zorunlu denetim |
+|---|---|---|
+| Açık (9) | SNN-Standartlar (açık depo) | `test`, `python-araci`, `aile-kontrol` |
+| | SNN-UI (açık depo) | `test`, `aile` |
+| | Gunum-Var | `Lint & Type Check` |
+| | SNN-Piyasa-Core | `ci` |
+| | SNN-Portfoy-Yonetimi | `build-and-lint` |
+| | SNN-Proje-ve-Nakit-Akis-Yonetimi | `lint-tip-derleme` |
+| | SNN-Games-Umi | `aile` |
+| | SNN-ihale-ozeti | `aile` |
+| | SNN-Games-Pulmaca | `ci` |
+
+Gizli yedi depoda strict açık. Pulmaca dışındaki sekizde yönetici muafiyeti var; Pulmaca'da yok (mevcut ayarı korundu).
+
+Açılmayan (7), nedeniyle:
+
+- SNN-Abacus-Core, SNN-Ihale-Maliyet-Teklif-Yonetimi, SNN-Yonetici-Ozeti, trade-kasa, SNN-Siparis: asıl CI işi `paths:` süzgeçli; belge PR'ında çalışmaz. Zorunlu yazılırsa PR bekler, yazılmazsa CI bitmeden birleşir. Süzgeç kaldırılırsa açılır; bu Actions kotasına yük bindirir, karar projenin.
+- Naturapan-Web-Sitesi: tek işi ortak depodan gelen tarama.
+- globalhedef/global-hedef-web-platform: yönetici iznimiz yok, ayarı hesabın sahibi yapar.
+
+**Ölçüldü:** 2026-09-15'teki Portföy 403 şüphesi çözüldü; altı gizli depoda koruma yazılabildi.
+
+**Ölçülmedi:** strict'in Actions kotasına etkisi. Gizli depolarda strict, dal gerideyse CI'ı yeniden çalıştırır ve otomatik birleştirme dal güncellenene kadar bekler.
 
 ## Kontrol listesi maddesi
 
