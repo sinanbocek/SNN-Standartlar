@@ -110,7 +110,7 @@ Her müdür üç başlıkla rapor verir: **Yaptım**, **Denetlemedim**, **Bekley
 
 1. PR açınca tur bitmez. CI sonucu ve birleşme beklenir. Masaüstü uygulamasının PR izleme aracı varsa o kullanılır; yoksa `gh pr checks <no> --watch -i 20`.
 2. CI kırmızıysa düzeltme müdüre verilir, Genel Müdür yeniden gönderir.
-3. Birleştirme aile kuralına göre yapılır: CI yeşilse Genel Müdür birleştirir, otomatik birleştirme sahip istemedikçe açılmaz. Yöntem son birleştirmelere bakılarak seçilir.
+3. Birleştirme aile kuralına göre yapılır: PR açılınca otomatik birleştirme açılır, CI yeşil olunca GitHub birleştirir (`es-zamanli-calisma-standardi.md` §7). Yöntem son birleştirmelere bakılarak seçilir.
 4. Birleşince kapanış yapılır: canlı kopya tazelenir (`CLAUDE.md` §2), yerini alan eski PR'lar kapatılır, sonuç ölçülür, pano güncellenir.
 5. Sahibe tek rapor gider: ne bitti, ne ölçüldü, kalan varsa neden. "Senin yapacağın" başlığına yalnız gerçekten sahibin işi yazılır.
 

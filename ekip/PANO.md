@@ -1,6 +1,6 @@
 # Pano
 
-Son güncelleme: 2026-11-08
+Son güncelleme: 2026-11-09
 
 **Kısa cevap:** Kırmızı PR yok. 1 talep 20 gündür yanıtsız ve `open-requests` akışını kırmızıda tutuyor. Vadesi geçmiş 2 ölçümün sonucu kayıtta yok.
 
@@ -31,4 +31,11 @@ CI'ları yeşil, çakışma yok (2026-11-08).
 
 ### Elle
 
-Yok.
+PR birleştirme kuralı makinelere kopyalanır. Bu değişiklik birleşip canlı kopya tazelenince bir kez çalıştırılır:
+
+`node setup/setup-machine.js --uygula`
+
+## Son bitenler
+
+- 2026-11-09 · Ekip düzeni standardı ve ortak müdür adları (#183, #181 kapandı).
+- 2026-11-09 · Bu depoda otomatik birleştirme ve zorunlu denetim açıldı.
