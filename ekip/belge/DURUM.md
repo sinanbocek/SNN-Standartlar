@@ -18,7 +18,7 @@ Talepler `node quality/open-requests.js` çıktısından alındı (2026-11-08).
 
 - Talep #131: ikinci yabancı anahtar PostgREST gömmesini kırar. "Beklet" kararı sürüyor; iki projede görülüyor. Kaynak: `docs/bellek-derleme/2026-10-26.md`.
 - Talep #167'ye Gunum-Var'ın yeni bilgisi eklensin mi: MCP ile okuma da engelli. Kaynak: aynı rapor; "karar sahibin" diye yazılmış.
-- Ortak müdür adları tablosunda iki görev çakışması (ayrım kararlaştırılmadı): Veri ile Veritabanı (Portföy'deki Veri kartı da göç ve erişim kuralı yazıyor); Pazarlama ile Yayın (Gunum-Var'da ikisinde de mağaza metni ve landing sitesi). Kaynak: `standartlar/ekip-duzeni-standardi.md`, "Karışabilecek çiftler".
+- Ortak müdür adları tablosunda bir görev çakışması (ayrım kararlaştırılmadı): Pazarlama ile Yayın (Gunum-Var'da ikisinde de mağaza metni ve landing sitesi). Kaynak: `standartlar/ekip-duzeni-standardi.md`, "Karışabilecek çiftler".
 
 ## Biten (son 10)
 

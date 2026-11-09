@@ -29,7 +29,7 @@ Kart varlığı iskeletin tamamının kurulduğunu kanıtlamaz; bu ölçülmedi.
 
 > "x projede Yazılım Müdürü varsa Y projesinde bu kişinin adı Software Manager olmasın ya da Yazılımcı olmasın... tüm ihtiyaç duyulabilecek ajan tipler için bir isim önerisi rehberi de olsun."
 
-Ölçüm bu isteğin gerekçesini şimdilik göstermiyor: yedi projede 13 ad kullanılıyor ve ad yönünden çakışma yok. Görev yönünden bir çakışma görüldü (aşağıda "Karışabilecek çiftler"). Kural, çakışma çıkmadan önce kurulur.
+Ölçüm bu isteğin gerekçesini şimdilik göstermiyor: yedi projede 13 ad kullanılıyor ve ad yönünden çakışma yok. Görev yönünden bir çakışma görüldü: Veri ve Veritabanı kartları aynı işi (göç, erişim kuralı) yapıyordu. Sahip 2026-11-09'da ikisini Veritabanı Müdürü adında birleştirdi; Veritabanı iki projede, Veri bir projede kullanılıyordu. Ad kuralı, ad çakışması çıkmadan önce kuruldu.
 
 ## Ortak iskelet
 
@@ -47,7 +47,7 @@ Bir görev her projede tek adla anılır. Proje hangi müdürü açacağını se
 - **Görünen ad:** `<Alan> Müdürü`, Türkçe. Örnek: "Yazılım Müdürü".
 - **Görev kartı:** `.claude/agents/<alan>-muduru.md`. Alan adı Türkçe harfsiz ve küçük harfle yazılır. Örnek: `yazilim-muduru.md`.
 - **Durum sütunu:** bugün kullanılıyorsa "kullanımda (N proje)", yoksa "öneri". Sayı, 2026-11-09 ölçümündeki 7 projeden alınmıştır.
-- **İşi sütunu:** tek cümle, görev sınırını gösterir. Kullanımdaki on üç ad için cümleler, projelerdeki kart tanımlarından (`description`) derlendi.
+- **İşi sütunu:** tek cümle, görev sınırını gösterir. Kullanımdaki on iki ad için cümleler, projelerdeki kart tanımlarından (`description`) derlendi.
 
 | Görünen ad | Kart adı | İşi | Durum | Bunun yerine kullanılmaz |
 |---|---|---|---|---|
@@ -57,13 +57,12 @@ Bir görev her projede tek adla anılır. Proje hangi müdürü açacağını se
 | Tasarım Müdürü | `tasarim-muduru` | Ekran taslağı, görsel, video kurgusu, logo ve simgeyi üretir; çalışan ekranın kodunu yazmaz. | kullanımda (1 proje) | Designer, Tasarımcı, UI/UX Müdürü, Grafik Müdürü |
 | Pazarlama Müdürü | `pazarlama-muduru` | Hedef kitle, mesaj, takvim ve kampanya önerisini hazırlar; reklam açmaz, bütçe harcamaz. | kullanımda (2 proje) | Marketing Manager, Pazarlamacı, Reklam Müdürü |
 | Rapor Müdürü | `rapor-muduru` | Gelir, indirme, arama ve sosyal medya sayılarını okur, karşılaştırır, kısa rapor ve öneri yazar. | kullanımda (1 proje) | Raporlama Müdürü, Report Manager, Analist |
-| Veritabanı Müdürü | `veritabani-muduru` | Şema değişikliği dosyalarını (göç), erişim kurallarını (RLS) ve SQL testlerini hazırlar; canlıya yazmaz. | kullanımda (2 proje) | DBA, Database Manager, SQL Müdürü |
+| Veritabanı Müdürü | `veritabani-muduru` | Şema değişikliği dosyalarını (göç), erişim kurallarını (RLS), SQL testlerini, zamanlanmış veri işlerini ve veri sunucu işlevlerini yazar. | kullanımda (2 proje) | DBA, Database Manager, SQL Müdürü, Veri Müdürü, Data Manager, Data Engineer, Veri Mühendisi |
 | Yayın Müdürü | `yayin-muduru` | Sürüm numarasını, değişiklik günlüğü girdisini ve yayın komutlarını hazırlar; komutu çalıştırmaz. | kullanımda (1 proje) | Release Manager, Sürüm Müdürü, Deploy Müdürü |
 | Talep Müdürü | `talep-muduru` | Başka projelerden gelen talep ve hata bildirimlerini değerlendirir, karar taslağı yazar. | kullanımda (2 proje) | Request Manager, Talep Yöneticisi |
 | İşletme Müdürü | `isletme-muduru` | Canlı servisin nöbetini tutar: duman testi, yedek, kesinti tatbikatı; dağıtmaz. | kullanımda (1 proje) | Operasyon Müdürü, Ops, SRE, Nöbet Müdürü |
 | Panel Müdürü | `panel-muduru` | Kontrol panelinin kodunu yazar ve düzeltir; ana kod katmanlarına dokunmaz. | kullanımda (1 proje) | Dashboard Müdürü, Kontrol Paneli Müdürü |
 | Otomasyon Müdürü | `otomasyon-muduru` | Otomatik giriş-çıkış motorlarını, tarama ve geriye dönük deneme (backtest) betiklerini yapar. | kullanımda (1 proje) | Automation Manager, Bot Müdürü |
-| Veri Müdürü | `veri-muduru` | Veritabanı değişikliklerini, zamanlanmış iş zincirini ve piyasa verisi sunucu işlevlerini yapar. | kullanımda (1 proje) | Data Manager, Data Engineer, Veri Mühendisi |
 | Kalite Müdürü | `kalite-muduru` | Test planı yazar ve değişikliği gözden geçirir; testi koşturmak ve kodu düzeltmek Yazılım'ındır. | öneri | QA, Test Müdürü, Tester |
 | Altyapı Müdürü | `altyapi-muduru` | Sunucu, bulut hesabı ve dağıtım ortamını kurar; sürüm Yayın'ın, canlı nöbet İşletme'nin işidir. | öneri | DevOps, Sistem Müdürü, Infrastructure Manager |
 | Ürün Müdürü | `urun-muduru` | Özellik önceliğini ve yol haritasını hazırlar; kod yazmaz. | öneri | Product Manager, Ürün Yöneticisi |
@@ -74,14 +73,13 @@ Bir görev her projede tek adla anılır. Proje hangi müdürü açacağını se
 | Uyum Müdürü | `uyum-muduru` | KVKK (Kişisel Verileri Koruma Kanunu), mağaza ve sözleşme kurallarına uygunluğu denetler ve not yazar. | öneri | Compliance Manager, Hukuk Müdürü |
 | Çeviri Müdürü | `ceviri-muduru` | Metni başka dile uyarlar (yerelleştirme); özgün metni değiştirmez. | öneri | Translator, Yerelleştirme Müdürü, Localization Manager |
 
-Tabloda 13 kullanımda, 9 öneri satırı vardır. Hiçbir proje ad değiştirmek zorunda kalmaz: bugün kullanılan 13 ad tabloya olduğu gibi girdi.
+Tabloda 12 kullanımda, 9 öneri satırı vardır (21 satır). Bugün kullanılan adlardan yalnız Veri tabloda yok: SNN-Portfoy-Yonetimi, Veri kartını `veritabani-muduru` adına kendi oturumunda geçirir. Bunun takvimi yoktur.
 
 ### Karışabilecek çiftler
 
 Aşağıdaki ayrımlar projelerdeki kart tanımlarına dayanır.
 
-- **Veri ve Veritabanı:** Veritabanı şemayı, göçü ve erişim kuralını; Veri akışı, zamanlanmış zinciri ve veri işlevlerini yürütür. Bugün Portföy'deki Veri kartı da göç ve erişim kuralı yazıyor; bu çakışma kararlaştırılmadı.
-- **Veri, Ölçüm ve Rapor:** Veri veriyi toplar ve saklar; Ölçüm sistemin ve kuralların etkisini sayar; Rapor iş sayılarını okuyup yorumlar.
+- **Veritabanı, Ölçüm ve Rapor:** Veritabanı veriyi toplar ve saklar; Ölçüm sistemin ve kuralların etkisini sayar; Rapor iş sayılarını okuyup yorumlar.
 - **Yayın ve Altyapı:** Yayın sürümü ve yayın komutunu hazırlar; Altyapı sunucuyu ve ortamı kurar.
 - **Pazarlama ve İçerik:** Pazarlama kitleye, mesaja ve takvime karar verir; İçerik onaylı mesajı metne döker.
 - **Otomasyon ve Yazılım:** Otomasyon otomatik işlem motorlarını ve tarama betiklerini, Yazılım ekran ve servis kodunu yazar.
@@ -111,4 +109,4 @@ Aşağıdakilerin hiçbiri bu standartla dayatılmaz. Her proje kendi ihtiyacın
 - **Pano yapısı.** Tek sayfa mı, her müdüre ayrı durum dosyası mı, hangi başlıklar: proje seçer. Önemli olan durumun tek yerde bulunmasıdır.
 - **Genel Müdür'ün açılışta okuduğu dosyalar.** Hangi dosyaların okunacağını proje kendi rehberine yazar.
 
-Bu standart kapı (otomatik denetim), zorunlu geçiş ya da takvim getirmez. Mevcut projelere iş düşürmez, makineye bir şey kopyalamaz. Düzenin kurulup kurulmayacağına ve ne zaman kurulacağına proje karar verir.
+Bu standart kapı (otomatik denetim), zorunlu geçiş ya da takvim getirmez. Mevcut projelere iş düşürmez, makineye bir şey kopyalamaz. Tek istisna: SNN-Portfoy-Yonetimi'nin Veri kartı `veritabani-muduru` adına geçer; bunu proje kendi oturumunda yapar. Düzenin kurulup kurulmayacağına ve ne zaman kurulacağına proje karar verir.
