@@ -49,6 +49,7 @@ Bugün depoda duran beceriler:
 | `proje-kur` | Yeni projeyi aile standardına bağlar |
 | `standart-talep` | Bu projeden ortak depoya **talep/yanlış alarm bildirimi** gönderir |
 | `oturum-teshis` | Bir oturumda ne ters gittiğini kayıttan satır kanıtıyla çıkarır (`docs/oturum-teshisi.md`) |
+| `git-temizlik` | Oturumun projesindeki açık issue, PR, Dependabot uyarısı ve silinmemiş dalları ölçer, müdürlere dağıtır, birleştirir, sahibe tek brif yazar (talep #191) |
 
 **Silme kuralı (en riskli davranış).** `~/.claude/skills` altında bize ait **olmayan** beceriler de
 bulunur (eklenti kısayolları gibi). Bu yüzden silme yalnız **bizim beceri klasörlerimizin içinde**
