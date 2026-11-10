@@ -96,14 +96,14 @@ Bu kural SNN aile standardıdır (`SNN-Standartlar/standartlar/es-zamanli-calism
 
 # PR birleştirme
 
-Bu kural SNN aile standardıdır (`SNN-Standartlar/standartlar/es-zamanli-calisma-standardi.md` §7). Proje sahibi 2026-10-17'de verdi (#164).
+Bu kural SNN aile standardıdır (`SNN-Standartlar/standartlar/es-zamanli-calisma-standardi.md` §7). Proje sahibi 2026-10-17'de verdi (#164); otomatik birleştirme 2026-11-09.
 
 1. CI denetimlerinin hepsi yeşilse Claude oturumun kendi projesindeki PR'ı birleştirir; ayrıca onay beklemez.
 2. Birleştirmez: denetim kırmızı, beklemede ya da hiç çalışmamış; PR taslak; çakışma var; değişiklik istenmiş ya da çözülmemiş inceleme yorumu var; sahip "bekle" demiş.
 3. `--delete-branch` öncesi o dalı taban alan açık PR olmadığı denetlenir.
 4. Yöntem deponun alışkanlığıdır; son birleştirmelere bakılır (sıkıştırma ya da birleştirme commit'i).
-5. Otomatik birleştirme (auto-merge) sahip istemedikçe açılmaz.
-6. Birleştirince sahibe tek mesajla haber verilir: hangi PR, denetim sonucu, kalan adım.
+5. Zorunlu denetimli depoda Claude PR'ı açınca `gh pr merge <no> --auto` ile otomatik birleştirmeyi açar; madde 2 ve 4 geçerlidir. Zorunlu denetim yoksa elle birleştirilir (§7).
+6. Sahibe tek mesajla haber verilir: hangi PR, denetim sonucu ya da otomatik birleşeceği, kalan adım.
 7. Komut engellenirse izni Claude eklemez. Sahip `~/.claude/settings.json` → `permissions.allow` içine `"Bash(gh pr merge:*)"` ekler.
 <!-- kullanici-talimati:bitir -->
 
@@ -116,6 +116,50 @@ Kuralın kendisi yukarıdaki işaretli bloğun içindedir: kopyalayıcı (`setup
 **İzin ve kural ayrı şeylerdir.** İzin satırı komutu her durumda serbest bırakır; "CI yeşilse" koşulunu denetleyemez. Koşulu bu kural taşır. İzni Claude kendisi ekleyemez: kendi yetkisini genişletmek otomatik mod denetimine "Instruction Poisoning" olarak takılır ve bu sınır doğrudur.
 
 **Ölçülmedi:** izin satırının otomatik mod denetimini gerçekten aştığı henüz denenmedi. İlk birleştirmede görülür; aşmazsa sahip komutu kendisi çalıştırır (§4).
+
+### Otomatik birleştirme (2026-11-09)
+
+**Neden (2026-11-09):** SNN-Standartlar PR #183'te CI yeşil olduğu hâlde oturum beklemek zorunda kaldı ve sahibin ayrıca "birleştir" demesi gerekti. Sahip aynı gün otomatik birleştirmeyi ortak süreç yaptı.
+
+**Nasıl işler:** `--auto` açıldıktan sonra denetimler yeşil olunca GitHub kendisi birleştirir. Otomatik birleşmede sahibe PR açılınca "CI yeşil olunca kendiliğinden birleşecek" diye haber verilir; birleşme sonrası kalan adım (canlı kopya tazeleme gibi) aynı mesajda yazılır.
+
+**Neden zorunlu denetim şart:** GitHub'da zorunlu denetim yoksa `--auto` denetim beklemeden birleştirebilir.
+
+**Neden gizli depoda "dal güncel olsun":** gizli depolarda CI main'de koşmaz. PR main'in son hâli üstünde test edilmiş olmalı (`quality/merge-gate.js` `behindReason`).
+
+**Depo ayarı (bir kez), üç adım:**
+
+1. `allow_auto_merge` açılır.
+2. Varsayılan dala zorunlu denetim yazılır. Denetim adları projenin kendi CI iş adlarıdır. Her PR'da çalışan işler seçilir; `paths:` süzgeçli iş seçilirse PR sonsuza dek bekler. Otomatik birleştirme yalnız zorunlu denetimleri bekler. Zorunlu olmayan bir iş sürerken ya da kırmızıyken de birleştirir. Bu yüzden zorunlu liste projenin gerçek CI'ını kapsamalıdır. Adı ortak depodan gelen işler (`tara / ...` gibi) zorunlu yazılmaz; ad değişirse PR'lar sonsuza dek bekler. Vaka: Naturapan'da aynı iş `tara / tara` iken `tara / bridge / scan` oldu. Her PR'da çalışan kendi CI işi olmayan depoda ayar açılmaz; elle birleştirme sürer.
+3. Gizli depoda `strict` açılır; açık depoda kapalı kalır.
+
+Yönetici muafiyeti (`enforce_admins`) kapalı bırakılabilir; bu sahibe kaçış yolu bırakır. Bir depoda ayarı o projenin oturumu yapar (§6) ya da sahip açıkça ister. Sahip 2026-11-09'da ayarı bu oturumdan aile depolarına yaydırdı; bu, §6 oturum sınırına sahibin verdiği tek istisnadır ve yalnız GitHub ayarını kapsar, dosyaları kapsamaz.
+
+**Ölçüm (2026-11-09, ayar geri okundu, 16 aile projesi, `quality/data/family-projects.json`):**
+
+| Sonuç | Proje | Zorunlu denetim |
+|---|---|---|
+| Açık (9) | SNN-Standartlar (açık depo) | `test`, `python-araci`, `aile-kontrol` |
+| | SNN-UI (açık depo) | `test`, `aile` |
+| | Gunum-Var | `Lint & Type Check` |
+| | SNN-Piyasa-Core | `ci` |
+| | SNN-Portfoy-Yonetimi | `build-and-lint` |
+| | SNN-Proje-ve-Nakit-Akis-Yonetimi | `lint-tip-derleme` |
+| | SNN-Games-Umi | `aile` |
+| | SNN-ihale-ozeti | `aile` |
+| | SNN-Games-Pulmaca | `ci` |
+
+Gizli yedi depoda strict açık. Pulmaca dışındaki sekizde yönetici muafiyeti var; Pulmaca'da yok (mevcut ayarı korundu).
+
+Açılmayan (7), nedeniyle:
+
+- SNN-Abacus-Core, SNN-Ihale-Maliyet-Teklif-Yonetimi, SNN-Yonetici-Ozeti, trade-kasa, SNN-Siparis: asıl CI işi `paths:` süzgeçli; belge PR'ında çalışmaz. Zorunlu yazılırsa PR bekler, yazılmazsa CI bitmeden birleşir. Süzgeç kaldırılırsa açılır; bu Actions kotasına yük bindirir, karar projenin.
+- Naturapan-Web-Sitesi: tek işi ortak depodan gelen tarama.
+- globalhedef/global-hedef-web-platform: yönetici iznimiz yok, ayarı hesabın sahibi yapar.
+
+**Ölçüldü:** 2026-09-15'teki Portföy 403 şüphesi çözüldü; altı gizli depoda koruma yazılabildi.
+
+**Ölçülmedi:** strict'in Actions kotasına etkisi. Gizli depolarda strict, dal gerideyse CI'ı yeniden çalıştırır ve otomatik birleştirme dal güncellenene kadar bekler.
 
 ## Kontrol listesi maddesi
 

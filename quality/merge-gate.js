@@ -22,14 +22,14 @@ function parseMerges(cmd) {
       if (/^\d+$/.test(a) && number === null) number = Number(a);
     }
     if (repo && /\$/.test(repo)) repo = null;
-    out.push({ number, repo, raw: m[0].trim() });
+    out.push({ number, repo, auto: args.includes('--auto'), raw: m[0].trim() });
   }
   // Doğrudan API ile birleştirme de aynı denetimden geçer (2026-09-15: başka oturum PR'ı
   // "gh api repos/o/r/pulls/74/merge -X PUT" ile kapıyı atlayarak birleştirdi)
   for (const m of cmd.matchAll(/\bgh\s+api\b[^\n;|&]*?\brepos\/([^/\s'"]+\/[^/\s'"]+)\/pulls\/([^/\s'"]+)\/merge\b[^\n;|&]*/g)) {
     const number = /^\d+$/.test(m[2]) ? Number(m[2]) : null;
     const repo = /\$/.test(m[1]) ? null : m[1];
-    out.push({ number, repo, raw: m[0].trim() });
+    out.push({ number, repo, auto: false, raw: m[0].trim() });
   }
   return out;
 }
@@ -49,17 +49,42 @@ function bypassReason(cmd) {
   return null;
 }
 
+// SAF: "--auto" kararı. "--auto" komutu birleştirmez; GitHub'a "kontroller yeşil olunca birleştir" der.
+// Tehlike: GitHub'da zorunlu kontrol yoksa "--auto" kontrol beklemeden hemen birleştirebilir.
+// Bu yüzden yalnız GitHub'ın kendisi kontrolleri beklediği depolarda izin verilir.
+// NEDEN (2026-11-09, SNN-Standartlar PR #183): sahip "CI yeşilse otomatik birleşsin" dedi;
+// kapı "--auto" komutunu kontroller sürerken reddedecekti, yani "--auto" hiç kullanılamıyordu.
+// protection = { contexts: string[], strict: bool } | null (zorunlu kontrol dal koruması yok).
+// Döner: null ("--auto" yok, eski akış sürer) | { allow: true } | { allow: false, reason }
+function autoMergeReason(merge, protection, isPublic) {
+  if (!merge.auto) return null;
+  const where = `${merge.repo || 'bu depo'} #${merge.number}`;
+  if (!protection || !protection.contexts || !protection.contexts.length) {
+    return { allow: false, reason: `${where}: bu depoda GitHub'ın zorunlu kontrolü yok; "--auto" kontrol beklemeden birleştirebilir. `
+      + `Kontroller yeşil olunca "gh pr checks ${merge.number} --watch" ile bekleyip "--auto" olmadan birleştir.` };
+  }
+  // Gizli depoda CI main'de koşmaz (bkz. behindReason): "dal güncel olsun" (strict) ayarı olmadan
+  // PR'ın main'in son hâli üstünde test edildiği güvencesi yoktur.
+  if (!isPublic && !protection.strict) {
+    return { allow: false, reason: `${where}: gizli depoda "--auto" için dal korumasında "dal güncel olsun" (strict) ayarı gerekir; `
+      + 'CI main\'de koşmadığı için aksi hâlde dal geride kalıp birleşebilir. "--auto" olmadan birleştir.' };
+  }
+  return { allow: true };
+}
+
 // SAF: kontrol listesine göre karar. checks = [{ name, bucket }] (bucket: pass|fail|pending|skipping|cancel), null = kontrol tanımlı değil
-function decide(merge, checks) {
+// autoAllowed: autoMergeReason "--auto" için izin verdiyse true; yalnız o zaman "--auto" komutu için sürüyor/başlamadı engellemez.
+function decide(merge, checks, autoAllowed = false) {
   if (!merge.number) {
     return { allow: false, reason: `Birleştirme komutunda PR numarası açık yazılmalı ("${merge.raw}"); kontroller ancak numarayla denetlenebilir.` };
   }
   const where = `${merge.repo || 'bu depo'} #${merge.number}`;
+  const waits = !!(merge.auto && autoAllowed);
   if (checks === null) return { allow: true, note: `${where}: tanımlı kontrol yok` };
   const bad = checks.filter((c) => c.bucket === 'fail' || c.bucket === 'cancel');
   const pending = checks.filter((c) => c.bucket === 'pending');
   if (bad.length) return { allow: false, reason: `${where} birleştirilemez: kırmızı kontrol var (${bad.map((c) => c.name).join(', ')}). Önce düzelt.` };
-  if (pending.length) return { allow: false, reason: `${where} birleştirilemez: kontroller sürüyor (${pending.map((c) => c.name).join(', ')}). "gh pr checks ${merge.number} --watch" ile bekle.` };
+  if (pending.length && !waits) return { allow: false, reason: `${where} birleştirilemez: kontroller sürüyor (${pending.map((c) => c.name).join(', ')}). "gh pr checks ${merge.number} --watch" ile bekle.` };
   return { allow: true };
 }
 
@@ -112,18 +137,60 @@ function readChecks(merge, cwd) {
   }
 }
 
+// SAF: dal korumasının API cevabından { contexts, strict } çıkarır. "contexts" eski, "checks[].context" yeni alandır; ikisi birleştirilir.
+function parseProtection(json) {
+  const names = [...(json.contexts || []), ...(json.checks || []).map((c) => c.context)].filter(Boolean);
+  return { contexts: [...new Set(names)], strict: json.strict === true };
+}
+
+// PR'ın hedef dalındaki zorunlu kontrol korumasını okur. Zorunlu kontrol yoksa protection null.
+// 404: yalnız GitHub "korumasız / zorunlu kontrol kapalı" diyorsa null. Düz "Not Found" depo adı yanlış
+// ya da yetki yok demek olabilir (olcum-standardi.md Kural 3: okunamadı ≠ yok) → fırlatır, kapı kapalı kalır.
+// KISAYOL (TB-010): yalnız klasik dal koruması okunur, ruleset (depo kuralı seti) okunmaz; 2026-11-09'da 15 okunabilir aile deposunda ruleset 0 idi, bir depoda ruleset ile zorunlu kontrol kurulursa "--auto" yanlışlıkla reddedilir (güvenli yön), ruleset kullanan ilk depoda okuyucu genişletilir.
+function readProtection(merge, cwd) {
+  const view = JSON.parse(execFileSync('gh', ['pr', 'view', String(merge.number), '--json', 'baseRefName,url']
+    .concat(merge.repo ? ['-R', merge.repo] : []), { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+  const repo = (view.url.match(/github\.com\/([^/]+\/[^/]+)\/pull\//) || [])[1];
+  if (!repo) throw new Error(`PR adresinden depo çözülemedi: ${view.url}`);
+  const isPublic = require('./compliance').publicRepos().includes(repo.toLowerCase());
+  return { protection: fetchProtection(repo, view.baseRefName, cwd), isPublic };
+}
+
+function fetchProtection(repo, base, cwd) {
+  try {
+    const out = execFileSync('gh', ['api', `repos/${repo}/branches/${base}/protection/required_status_checks`],
+      { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    return parseProtection(JSON.parse(out));
+  } catch (e) {
+    const msg = `${e.stderr || ''}${e.stdout || ''}`;
+    if (/Branch not protected|Required status checks not enabled/i.test(msg)) return null;
+    throw new Error(`dal koruması okunamadı: ${msg.trim() || e.message}`);
+  }
+}
+
 // Komuttaki tüm birleştirmeler için ilk ret gerekçesi ya da null
 function gate(cmd, cwd) {
   const bypass = bypassReason(cmd);
   if (bypass) return bypass;
   for (const merge of parseMerges(cmd)) {
+    let autoAllowed = false;
+    if (merge.auto && merge.number) {
+      try {
+        const { protection, isPublic } = readProtection(merge, cwd);
+        const a = autoMergeReason(merge, protection, isPublic);
+        if (!a.allow) return a.reason;
+        autoAllowed = true;
+      } catch (e) {
+        return `Birleştirme kapısı ${merge.repo || ''} #${merge.number} için "--auto" korumasını okuyamadı (${e.message}); emin olunamadığı için engellendi.`;
+      }
+    }
     let checks;
     try {
       checks = merge.number ? readChecks(merge, cwd) : [];
     } catch (e) {
       return `Birleştirme kapısı ${merge.repo || ''} #${merge.number} kontrollerini okuyamadı (${e.message}); emin olunamadığı için engellendi.`;
     }
-    const d = decide(merge, checks);
+    const d = decide(merge, checks, autoAllowed);
     if (!d.allow) return d.reason;
     let behind;
     try {
@@ -136,6 +203,6 @@ function gate(cmd, cwd) {
   return null;
 }
 
-module.exports = { parseMerges, bypassReason, decide, behindReason, gate };
+module.exports = { parseMerges, bypassReason, decide, behindReason, autoMergeReason, parseProtection, fetchProtection, gate };
 // Hook'un bu modülü çağırması gereken komutlar (ucuz ön süzgeç)
 module.exports.TRIGGER = /\bgh\s+pr\s+(merge|ready)\b|\/pulls\/[^/\s]+\/merge\b|mergePullRequest|enablePullRequestAutoMerge|markPullRequestReadyForReview/;

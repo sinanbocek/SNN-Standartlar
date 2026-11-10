@@ -1,0 +1,44 @@
+{
+  "_description": "Instagram ve Facebook icerik olculeri. Tek kaynak: quality/safe_zone.py buradan okur, standartlar/sosyal-medya-olcu-standardi.md tablosu buna testle baglidir.",
+  "_why": "2026-11-03: Pulmaca'da 3-10 Kasim icerigi arayuzsuz karelerle denetlenmisti; Reels'te logo ve adres okunmuyordu, sehir videolarinda kelime cipleri arayuzun altinda kaliyordu (#175).",
+  "_evidence": "meta = Meta'nin resmi sayfasi (reklam icin). canli-olcum = canli ekran goruntusunden olculdu. ikincil = baska siteden aktarim, daha zayif. turetilmis = baska bir kuraldan hesaplandi.",
+  "_public": "Depo herkese acik: yalniz sayilar ve kurallar girer, sahibin ekran goruntuleri tasinmaz.",
+  "renewMonths": 6,
+  "sources": {
+    "meta-reels": "https://www.facebook.com/business/ads-guide/update/image/instagram-reels",
+    "live-reels": "Instagram Reels ve Hikaye, tek iPhone, 738x1600 ekran, 1080x1920 olcegine cevrildi. Pulmaca: magaza/sosyal/olcu-denetim-raporu.html",
+    "secondary-grid": "Social Media Today ve Kapwing aktarimi. Pulmaca: magaza/sosyal/olcu-denetim-raporu.html"
+  },
+  "canvases": [
+    {
+      "id": "vertical",
+      "width": 1080,
+      "height": 1920,
+      "usedBy": "Reels ve Hikaye (9:16)",
+      "zones": [
+        { "id": "meta-ad-top", "kind": "reserved", "box": [0, 0, 1080, 269], "evidence": "meta", "source": "meta-reels", "date": "2026-11-03" },
+        { "id": "meta-ad-bottom", "kind": "reserved", "box": [0, 1248, 1080, 1920], "evidence": "meta", "source": "meta-reels", "date": "2026-11-03" },
+        { "id": "meta-ad-left", "kind": "reserved", "box": [0, 269, 65, 1248], "evidence": "meta", "source": "meta-reels", "date": "2026-11-03" },
+        { "id": "meta-ad-right", "kind": "reserved", "box": [1015, 269, 1080, 1248], "evidence": "meta", "source": "meta-reels", "date": "2026-11-03" },
+        { "id": "reels-top", "kind": "live", "box": [0, 0, 1080, 240], "evidence": "canli-olcum", "source": "live-reels", "date": "2026-11-03" },
+        { "id": "reels-right-column", "kind": "live", "box": [914, 1000, 1080, 1860], "evidence": "canli-olcum", "source": "live-reels", "date": "2026-11-03" },
+        { "id": "reels-bottom-left", "kind": "live", "box": [0, 1709, 914, 1920], "evidence": "canli-olcum", "source": "live-reels", "date": "2026-11-03" },
+        { "id": "story-name-row", "kind": "live", "box": [0, 0, 1080, 134], "evidence": "canli-olcum", "source": "live-reels", "date": "2026-11-03" },
+        { "id": "tall-screen-left", "kind": "crop", "box": [0, 0, 48, 1920], "evidence": "canli-olcum", "source": "live-reels", "date": "2026-11-03" },
+        { "id": "tall-screen-right", "kind": "crop", "box": [1032, 0, 1080, 1920], "evidence": "canli-olcum", "source": "live-reels", "date": "2026-11-03" },
+        { "id": "cover-grid-top", "kind": "crop", "box": [0, 0, 1080, 240], "evidence": "ikincil", "source": "secondary-grid", "date": "2026-11-03" },
+        { "id": "cover-grid-bottom", "kind": "crop", "box": [0, 1680, 1080, 1920], "evidence": "ikincil", "source": "secondary-grid", "date": "2026-11-03" }
+      ]
+    },
+    {
+      "id": "post",
+      "width": 1080,
+      "height": 1350,
+      "usedBy": "Gonderi (4:5)",
+      "zones": [
+        { "id": "post-grid-left", "kind": "crop", "box": [0, 0, 34, 1350], "evidence": "ikincil", "source": "secondary-grid", "date": "2026-11-03" },
+        { "id": "post-grid-right", "kind": "crop", "box": [1046, 0, 1080, 1350], "evidence": "ikincil", "source": "secondary-grid", "date": "2026-11-03" }
+      ]
+    }
+  ]
+}

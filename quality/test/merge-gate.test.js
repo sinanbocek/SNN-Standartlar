@@ -50,5 +50,38 @@ expect('ret, güncelleme komutunu verir', behindReason(pr, { behindBy: 3, isPubl
 expect('güncel dal → geçer', behindReason(pr, { behindBy: 0, isPublic: false, base: 'main' }), null);
 expect('açık depo geride olsa da geçer (main CI ücretsiz ve kalır)', behindReason(pr, { behindBy: 5, isPublic: true, base: 'main' }), null);
 
+console.log('— otomatik birleştirme (2026-11-09, SNN-Standartlar PR #183: sahip "CI yeşilse otomatik birleşsin" dedi)');
+const { autoMergeReason } = require('../merge-gate');
+const auto = { number: 183, repo: 'o/r', raw: 'gh pr merge 183 --auto --squash', auto: true };
+const pend = [{ name: 'ci', bucket: 'pending' }];
+const req = { contexts: ['ci'], strict: false };
+const reqStrict = { contexts: ['ci'], strict: true };
+// Kapı akışı: önce koruma kararı, sonra denetim kararı
+const allowed = (merge, prot, pub, checks) => {
+  const a = autoMergeReason(merge, prot, pub);
+  return !!a && a.allow === true && decide(merge, checks, a.allow).allow;
+};
+expect('komutta --auto çözülür', parseMerges('gh pr merge 183 -R o/r --auto --squash')[0].auto, true);
+expect('--auto yoksa auto false', parseMerges('gh pr merge 183 -R o/r --squash')[0].auto, false);
+expect('--auto, numara ve depoyu bozmaz', pick(parseMerges('gh pr merge --auto 183 -R o/r')), [{ number: 183, repo: 'o/r' }]);
+expect('REST birleştirmede auto false', parseMerges('gh api repos/o/r/pulls/9/merge -X PUT')[0].auto, false);
+expect('--auto olmayan komut → null', autoMergeReason({ number: 1, repo: 'o/r', raw: 'x', auto: false }, null, true), null);
+expect('VAKA: zorunlu denetimli açık depo + pending → izin', allowed(auto, req, true, pend), true);
+expect('zorunlu denetim yok (koruma yok) → ret', autoMergeReason(auto, null, true).allow, false);
+expect('zorunlu denetim listesi boş → ret', autoMergeReason(auto, { contexts: [], strict: true }, true).allow, false);
+expect('ret gerekçesi --auto olmadan yolunu söyler', autoMergeReason(auto, null, true).reason.includes('"--auto" olmadan'), true);
+const { parseProtection } = require('../merge-gate');
+expect('koruma cevabı: contexts ve checks[].context birleşir, tekrar yok', parseProtection({ contexts: ['a', 'b'], checks: [{ context: 'b' }, { context: 'c' }], strict: true }), { contexts: ['a', 'b', 'c'], strict: true });
+expect('koruma cevabı: strict yoksa false', parseProtection({ contexts: ['a'] }).strict, false);
+expect('gizli depo + strict false → ret', autoMergeReason(auto, req, false).allow, false);
+expect('gizli depo + strict true → izin', allowed(auto, reqStrict, false, pend), true);
+expect('açık depo + strict false → izin', autoMergeReason(auto, req, true).allow, true);
+expect('kırmızı + --auto → ret', decide(auto, [{ name: 'ci', bucket: 'fail' }], true).allow, false);
+expect('iptal + --auto → ret', decide(auto, [{ name: 'ci', bucket: 'cancel' }], true).allow, false);
+expect('checks null + --auto + koruma var → izin', allowed(auto, req, true, null), true);
+expect('--auto olmayan pending → ret (eski davranış)', decide(m, pend).allow, false);
+expect('--auto olmayan pending, koruma izni verilse de ret', decide(m, pend, true).allow, false);
+expect('--auto ama koruma izni yok: pending ret', decide(auto, pend, false).allow, false);
+
 console.log(fail ? `\n✗ ${fail} test başarısız` : '\n✓ tümü geçti');
 process.exit(fail ? 1 : 0);

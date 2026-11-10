@@ -54,7 +54,7 @@
     {
       "id": "birlestirme-kapisi",
       "module": "quality/merge-gate.js",
-      "vaka": "2026-09-15: gizli depolarda GitHub'in 'zorunlu kontrol' dal korumasi ucretli plan istiyor; Portfoy'de 403 olculdu, yani kontroller kirmiziyken birlestirmeyi engelleyen hicbir sey yoktu.",
+      "vaka": "2026-09-15: gizli depolarda GitHub'in 'zorunlu kontrol' dal korumasi ucretli plan istiyor; Portfoy'de 403 olculdu, yani kontroller kirmiziyken birlestirmeyi engelleyen hicbir sey yoktu. 2026-11-09 (SNN-Standartlar PR #183): sahip 'CI yesilse otomatik birlessin' dedi; kapi --auto komutunu kontroller surerken reddedecekti. Cozum: --auto yalnizca GitHub'in zorunlu kontrolu bekledigi depoda serbest.",
       "test": "numara ve -R"
     },
     {
