@@ -2,7 +2,7 @@
 
 Son güncelleme: 2026-11-10
 
-**Kısa cevap:** `/git-temizlik` becerisi birleşti (#191, #192). Sahibin tek işi makineye kopyalamak; sonra ilk deneme Gunum-Var'da.
+**Kısa cevap:** `/git-temizlik` ilk denemesi SNN-Abacus-Core'da yapıldı, altı düzeltme işlendi (#194). Sahibin tek işi düzeltilmiş beceriyi makineye kopyalamak.
 
 ## Departmanlar
 
@@ -28,7 +28,8 @@ Yok.
 
 ## Son bitenler
 
-- 2026-11-10 · `/git-temizlik` aile becerisi kabul edildi ve birleşti (#191, #192). Uçtan uca denenmedi, ilk deneme Gunum-Var'da.
+- 2026-11-10 · `/git-temizlik` ilk denemesinden çıkan altı düzeltme kabul edildi (#194). Düzeltilmiş beceri yeniden koşulmadı.
+- 2026-11-10 · `/git-temizlik` aile becerisi kabul edildi ve birleşti (#191, #192).
 - 2026-11-10 · Ev kâğıdı makineye uygulandı (§8 işareti), kanca testleri yeşil.
 - 2026-11-10 · Beş talep kabul edildi (#131, #167, #172, #177, #178), Genel Müdür sahip vekâletiyle karar verdi. #131'de sahibin "beklet" şartı gerçekleşmeden karar değişti; kayıt `GERI-BILDIRIM-KAYDI.md`.
 - 2026-11-10 · TB-009 ölçüldü, sonuç "ayırt edilemiyor" (`docs/tb-009-kural-etkisi-olcumu.md`). TB-010 kapandı.
