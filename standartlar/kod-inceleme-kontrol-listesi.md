@@ -21,6 +21,13 @@ Bir değişiklik birleştirilmeden önce sorulan sorular. Her madde **evet/hayı
 - [ ] **Yeni tanımlayıcı (dosya, klasör, değişken, tip, tablo, sütun, API alanı) İngilizce mi? Proje kuralı aile standardıyla çelişiyor mu?**
       → `standartlar/kod-dili-standardi.md` (vaka: SNN-Piyasa-Core 2026-09-17, 52 dosya ve 10 tablo Türkçe adlandırıldı)
 
+## Veritabanı göçü
+
+- [ ] **Göçte yeni `REFERENCES` (yabancı anahtar) satırı var mı? Aynı iki tablo arasında ikinci ilişki oluşuyorsa, kodda yön belirtmeyen gömme sorgusu arandı mı?** (`grep -rn "<hedef> *(" src supabase/functions`)
+      → PostgREST (Supabase'in tablolara REST adresi veren katmanı) ikinci ilişkide `PGRST201` "more than one relationship" hatası verir ve `hedef(alan)` gömmesi anında kırılır. (vaka: Gunum-Var 2026-09-16, GHS-Panel 2026-10-01; #131, `GERI-BILDIRIM-KAYDI.md`)
+- [ ] Gömme varsa ya yabancı anahtarsız düz `uuid` kullanıldı ya da önce bütün gömmeler bağ adıyla (`hedef!fk_adi(...)`) yazılıp yayınlandı, anahtar sonra mı eklendi?
+- [ ] Canlı göçten hemen sonra uygulamanın gerçek REST gömme sorguları denendi mi? SQL testi bunu yakalamaz.
+
 ## Eş zamanlı çalışma
 
 - [ ] Commit'e yalnız bu işin dosyaları mı girdi? Silinen dalı taban alan açık PR var mıydı?

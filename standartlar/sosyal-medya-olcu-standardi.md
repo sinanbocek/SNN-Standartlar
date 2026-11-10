@@ -46,10 +46,12 @@ Sayılar `[sol, üst, sağ, alt]` piksel kutusudur; sağ ve alt kenar dahil değ
 Normal Reels'te alttaki gerçek sınır yaklaşık %11, reklamda %35'tir. İki sayı aynı şeyi anlatmaz.
 
 1. **Yazı ve okunması gereken öge** (logo, adres, başlık, soru) reklam bölgesinin dışında kalır: y 269–1248, x 65–1015. İçerik sonradan reklama çevrilebildiği için varsayılan budur.
-2. **Yazı olmayan öge** (telefon görüntüsü, fotoğraf) reklam bölgesine girebilir, canlı ölçülen düğmelerin altına girmemelidir.
+2. **Yazı olmayan öge** (fotoğraf, okunması gerekmeyen görüntü) reklam bölgesine girebilir. Düğmelerin altına girebilir, ama okunması gereken parçası girmez.
 3. **Düğmelerin altına** okunması gereken hiçbir şey girmez. İstisnası yoktur.
 4. **İstisna:** yazının reklam bölgesine girmesi gerekiyorsa proje rehberine gerekçesiyle yazılır. Proje rehberinde yazmayan istisna kusurdur.
 5. **Gönderide** logo ve adres kenardan en az 34 piksel içeride durur.
+
+**Madde 2'nin gerekçesi (2026-11-04, #177):** Pulmaca şehir videolarında fotoğraf tam karedir. Konya videosunda (`konya-ig.mp4`) fotoğraf bütün `reels-*` bölgelerinin altında kalıyor. Telefon gövdesinin altı 9. saniyede yaklaşık y 1772'ye iner, `reels-bottom-left` y 1709'da başlar. Okunması gereken en alt yazı y 1695'te biter, bölgenin üstünde kalır. Eski metin (fotoğraf düğmelerin altına girmemelidir) tam kare fotoğrafı yasaklıyordu. Fotoğrafı kırpmak ise tam kare 9:16 içeriği olanaksız kılar. Kapsam yalnız Pulmaca'nın Konya videosunun ölçümüne dayanır; başka proje ölçülmedi.
 
 ## 4. Bağlantı çıkartması
 
@@ -84,6 +86,7 @@ python -I "$HOME\.claude\standartlar-canli\quality\safe_zone.py" cikti.jpg dosya
 Bu boşluklar ölçülmedi. Dolduran proje bu dosyaya yazar.
 
 - Canlı ölçüm tek iPhone'dan gelir. Android ve kısa ekran denetlenmedi.
+- Madde 2'nin fotoğraf kapsamı yalnız Pulmaca'nın Konya videosunda ölçüldü (`@1`, `@5`, `@9`, `@14`, `@17` kareleri). Öteki şehir videoları ve başka projeler ölçülmedi.
 - Reels'te arkadaş tepki balonları bazen solda y 1440–1670 arasına çıkar. Yatay sınırı ölçülmediği için bölge tablosunda yok.
 - Reklam görünümü denetlenmedi. Meta'nın sayısı var, ama gerçek reklam ekranına bakılmadı.
 - Facebook Reels için Meta sayısı bulunamadı, sayfası 404 verdi. Hikâye sayıları Facebook'ta da aynıdır, Reels için bu varsayılmaz.

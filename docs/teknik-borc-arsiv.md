@@ -6,6 +6,54 @@
 
 ## Kapanan Kalemler
 
+### TB-010 — `--auto` koruma okuyucusu ruleset okumuyor
+- **Tespit Tarihi:** 2026-11-09 (otomatik birleştirme ortak süreç yapılırken)
+- **Kapanış:** 2026-11-10 — **TB-010: `--auto` koruma okuyucusu ruleset okumuyor.**
+  - **Ne yapıldı (sade):** `quality/merge-gate.js` klasik dal korumasına ek olarak kural setindeki (ruleset) zorunlu denetimi de okuyor. Okuma hatasında klasik sonuç geçerli kalır.
+  - **Ölçülen sonuç:** 18 aile deposunun 17'sinde kural seti 0; GHS-Panel 403 verdi (plan sınırı, okunamadı). Gerçek kural setli depoda denenmedi.
+  - **Ders:** Kısayolun yükseltme şartı (kural setli depo çıkması) beklenirken kayıt kapanmıyor. Küçük ve güvenli yönlü bir sınırı gidermek, kaydı açık tutmaktan ucuzdu.
+- **Öncelik (kapanışta):** P3 (Fırsatta)
+- **Issue:** #185 (kütük senkronuyla kapanır)
+
+#### 🟢 Sade Anlatım
+- **Sorun ne?** Otomatik birleştirme kapısı, bir deponun "zorunlu denetim" kuralı olup olmadığına bakar. Yalnız eski usul dal korumasını okur; yeni usul kural setini (ruleset) okumaz.
+- **Benzetme:** Kapıdaki görevli yalnız eski kilit defterine bakıyor; yeni kilit defteri varsa onu görmez ve "kilit yok" sanar.
+- **Çözülmezse ne olur?** Zorunlu denetimi kural setiyle kuran bir depoda kapı `--auto`yu gereksiz reddeder; PR elle birleştirilir. Yanlış birleştirme doğmaz.
+- **Senden beklenen karar:** Yok.
+
+#### 🔧 Teknik Detay
+- **Açıklama:** `quality/merge-gate.js` `readProtection` yalnız klasik dal korumasını okuyordu; ruleset okunmuyordu. 2026-11-09'da okunabilen 15 aile deposunda ruleset sayısı 0 idi.
+- **Etki:** Yoktu. Sonuç ret yönündeydi (kapı `--auto`yu reddederdi); yanlış birleştirme doğurmazdı.
+- **Neden şimdi çözülmüyordu:** Ruleset kullanan depo yoktu (15 depoda 0); kısayol güvenli yönde hata veriyordu.
+- **Bağlı kalemler:** Otomatik birleştirme kararı (`GERI-BILDIRIM-KAYDI.md`, 2026-11-09).
+
+---
+
+### TB-009 — "Kod yazarken" kuralının etkisi ölçülmedi
+- **Tespit Tarihi:** 2026-10-15 (#160, en küçük tam değişiklik standardı yazılırken)
+- **Kapanış:** 2026-11-10 — **TB-009: "Kod yazarken" kuralının etkisi ölçülmedi.** Karar (Genel Müdür, sahip vekâleti): kural yürürlükte kalır, ölçüm tekrarlanmaz.
+  - **Ne yapıldı (sade):** 9 projede kural öncesi ve sonrası PR'lar karşılaştırıldı. Ayrıntı: `docs/tb-009-kural-etkisi-olcumu.md`.
+  - **Ölçülen sonuç:** "Bu veriyle ayırt edilemiyor." Medyan eklenen satır 148 → 178; mantık içeren PR'larda test oranı %79,3 → %72,9 (Fisher p = 0,45); `KISAYOL` yorumu 0 → 2.
+  - **Ders:** İki haftalık pencere, proje karışımı değişince kural etkisini ayıramıyor. Yeniden ölçülecekse en az dört haftalık iki dönem gerekir.
+  - **Yeniden açma koşulu:** Yeniden ölçüm istenirse kayıt yeni numarayla açılır (numara yeniden kullanılmaz); en az dört haftalık iki dönem şartıyla.
+- **Öncelik (kapanışta):** P3 (Fırsatta)
+- **Issue:** #162 (kütük senkronuyla kapanır)
+
+#### 🟢 Sade Anlatım
+- **Sorun ne?** Yeni "Kod yazarken" kuralı ölçülmeden yürürlüğe girdi. Kuralın kodu küçültüp küçültmediğini, testi artırıp artırmadığını bilmiyorduk.
+- **Benzetme:** Yeni bir diyete başlayıp hiç tartıya çıkmamak gibi; işe yarıyor mu, zarar mı veriyor, görülmez.
+- **Ne ölçüldü?** Kural öncesi ve sonrası PR'lar 9 projede karşılaştırıldı. Fark, tesadüften ayırt edilemedi. Kural kalır, ölçüm tekrarlanmaz.
+- **Senden beklenen karar:** Yok. Karar sahip vekâletiyle verildi.
+
+#### 🔧 Teknik Detay
+- **Açıklama:** `standartlar/en-kucuk-tam-degisiklik-standardi.md` ev kâğıdına girdi. Tek sayı Ponytail yazarının kendi ölçümüydü (kod %47, maliyet %74, riskli mantığa test %68 → %98); bağımsız doğrulanmadı.
+- **Etki:** Kod yazılan bütün aile projeleri.
+- **Ara sayım (2026-10-17, #162):** 16 aile deposunda birleşmiş PR: öncesi (10-01..10-14) 97, 9 projede; sonrası (10-15..10-17) 50, 41'i iki projede (SNN-UI 21, Nakit-Akış 20). Dönem kısa ve proje karışımı farklıydı; karar (sahip): 2026-10-29'da ölçülür, yalnız iki dönemde de PR'ı olan projeler karşılaştırılır.
+- **Ölçüm (`docs/tb-009-kural-etkisi-olcumu.md`):** sonuç yukarıda; ölçümün tarih aralığı ve yöntemi o belgede.
+- **Bağlı kalemler:** Yok.
+
+---
+
 ### TB-008 — Aynı dalda eş zamanlı oturumlar dosya işaretlemeden çalışıyor
 - **Tespit Tarihi:** 2026-09-29 (OLC-001 ölçümü vadesinde kapatılırken)
 - **Kapanış:** 2026-10-09 — **TB-008: Aynı dalda eş zamanlı oturumlar dosya işaretlemeden çalışıyor.** Ölçüm kararı verdi: dosya kilidi kurulmadı.

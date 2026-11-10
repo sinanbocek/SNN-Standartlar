@@ -83,5 +83,37 @@ expect('--auto olmayan pending → ret (eski davranış)', decide(m, pend).allow
 expect('--auto olmayan pending, koruma izni verilse de ret', decide(m, pend, true).allow, false);
 expect('--auto ama koruma izni yok: pending ret', decide(auto, pend, false).allow, false);
 
+// Kural seti (ruleset) okuma (TB-010): sahte "gh api" cevaplarıyla.
+const { fetchProtection, parseRuleset, mergeProtection } = require('../merge-gate');
+const ghError = (stderr) => Object.assign(new Error('gh'), { stderr });
+const classicOk = JSON.stringify({ contexts: ['ci'], strict: false });
+const classicNone = () => { throw ghError('gh: Branch not protected (HTTP 404)'); };
+const rulesetRule = (ctxs, strict) => ({ type: 'required_status_checks', parameters: { strict_required_status_checks_policy: strict, required_status_checks: ctxs.map((c) => ({ context: c })) } });
+const fakeApi = (classic, ruleset) => (p) => {
+  const r = p.includes('/protection/') ? classic : ruleset;
+  if (typeof r === 'function') return r();
+  return r;
+};
+const fp = (classic, ruleset) => fetchProtection('o/r', 'main', '.', fakeApi(classic, ruleset));
+expect('ruleset: yalnız kural seti → denetim adı ve strict alınır', fp(classicNone, JSON.stringify([{ type: 'deletion' }, rulesetRule(['ci', 'test'], true)])), { contexts: ['ci', 'test'], strict: true });
+expect('ruleset: klasik + kural seti → birleşir (ad birleşimi, strict ikisinden biri)', fp(classicOk, JSON.stringify([rulesetRule(['test'], true)])), { contexts: ['ci', 'test'], strict: true });
+expect('ruleset: boş liste → klasik sonuç aynen', fp(classicOk, '[]'), { contexts: ['ci'], strict: false });
+expect('ruleset: boş liste + klasik yok → null', fp(classicNone, '[]'), null);
+expect('ruleset: zorunlu denetim türünde kural yok → klasik aynen', fp(classicOk, JSON.stringify([{ type: 'deletion' }])), { contexts: ['ci'], strict: false });
+expect('ruleset 403 (Upgrade to GitHub Pro) → yok sayılır, klasik aynen', fp(classicOk, () => { throw ghError('gh: Upgrade to GitHub Pro (HTTP 403)'); }), { contexts: ['ci'], strict: false });
+expect('ruleset 403 + klasik yok → null (--auto izin yönünde değil)', fp(classicNone, () => { throw ghError('gh: Upgrade to GitHub Pro (HTTP 403)'); }), null);
+expect('ruleset 404 → yok sayılır', fp(classicOk, () => { throw ghError('gh: Not Found (HTTP 404)'); }), { contexts: ['ci'], strict: false });
+let threw = '';
+try { fp(classicOk, () => { throw ghError('gh: Bad Gateway (HTTP 502)'); }); } catch (e) { threw = e.message; }
+expect('ruleset 502 → fırlatır (kapı kapalı kalır)', threw.startsWith('kural seti okunamadı'), true);
+threw = '';
+try { fp(classicOk, '{"message":"x"}'); } catch (e) { threw = e.message; }
+expect('ruleset bozuk cevap → fırlatır', threw.startsWith('kural seti okunamadı'), true);
+threw = '';
+try { fp(() => { throw ghError('gh: Bad Gateway (HTTP 502)'); }, '[]'); } catch (e) { threw = e.message; }
+expect('klasik okuma hatası hâlâ fırlatır', threw.startsWith('dal koruması okunamadı'), true);
+expect('parseRuleset: iki kural birleşir, strict biri yeterli', parseRuleset([rulesetRule(['a'], false), rulesetRule(['b', 'a'], true)]), { contexts: ['a', 'b'], strict: true });
+expect('mergeProtection: ikisi null → null', mergeProtection(null, null), null);
+
 console.log(fail ? `\n✗ ${fail} test başarısız` : '\n✓ tümü geçti');
 process.exit(fail ? 1 : 0);

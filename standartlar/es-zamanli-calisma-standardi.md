@@ -96,7 +96,7 @@ Bu kural SNN aile standardıdır (`SNN-Standartlar/standartlar/es-zamanli-calism
 
 # PR birleştirme
 
-Bu kural SNN aile standardıdır (`SNN-Standartlar/standartlar/es-zamanli-calisma-standardi.md` §7). Proje sahibi 2026-10-17'de verdi (#164); otomatik birleştirme 2026-11-09.
+Aynı standart, §7. Proje sahibi 2026-10-17'de verdi (#164).
 
 1. CI denetimlerinin hepsi yeşilse Claude oturumun kendi projesindeki PR'ı birleştirir; ayrıca onay beklemez.
 2. Birleştirmez: denetim kırmızı, beklemede ya da hiç çalışmamış; PR taslak; çakışma var; değişiklik istenmiş ya da çözülmemiş inceleme yorumu var; sahip "bekle" demiş.
@@ -105,6 +105,8 @@ Bu kural SNN aile standardıdır (`SNN-Standartlar/standartlar/es-zamanli-calism
 5. Zorunlu denetimli depoda Claude PR'ı açınca `gh pr merge <no> --auto` ile otomatik birleştirmeyi açar; madde 2 ve 4 geçerlidir. Zorunlu denetim yoksa elle birleştirilir (§7).
 6. Sahibe tek mesajla haber verilir: hangi PR, denetim sonucu ya da otomatik birleşeceği, kalan adım.
 7. Komut engellenirse izni Claude eklemez. Sahip `~/.claude/settings.json` → `permissions.allow` içine `"Bash(gh pr merge:*)"` ekler.
+
+Canlı veritabanına dokunmadan önce aynı standardın §8'i okunur.
 <!-- kullanici-talimati:bitir -->
 
 ## 7. PR birleştirme yetkisi
@@ -161,6 +163,58 @@ Açılmayan (7), nedeniyle:
 
 **Ölçülmedi:** strict'in Actions kotasına etkisi. Gizli depolarda strict, dal gerideyse CI'ı yeniden çalıştırır ve otomatik birleştirme dal güncellenene kadar bekler.
 
+## 8. Canlı veritabanı işlemi
+
+Canlı veritabanı: kullanıcıların gerçekten kullandığı veritabanıdır, deneme kopyası değildir. Kuralın kendisi bu bölümdedir; ev kâğıdında yalnız buraya bakan tek satır durur (yukarıdaki işaretli blok).
+
+Bu bölümde iki ayrı engel var. Sebepleri ve çözümleri farklıdır, bu yüzden ayrı yazıldı:
+
+| Engel | Kim durdurur | Çözüm |
+|---|---|---|
+| Otomatik izin denetleyicisi | Claude'un komutu çalıştırmadan önce bakan otomatik güvenlik süzgeci | §8.1: işlemi adıyla anan onay ya da SQL dosyası |
+| "You do not have permission" | Supabase sunucusu | §8.2: bağlayıcının erişimi ölçülür, yetkilendirilir |
+
+### 8.1 Yazmadan önce: işlemi adıyla anan onay (#167, 2026-10-19)
+
+**Neden:** Otomatik izin denetleyicisi canlı veritabanına yazmayı engelliyor. Sohbetteki genel "evet" işlemi geçirmiyor. İki bağımsız projede aynı ders çıktı:
+
+| Proje | Tarih | Gözlem |
+|---|---|---|
+| Gunum-Var | 2026-10-07 | MCP `execute_sql` ile DELETE ve UPDATE engellendi. Okuma ve `begin … rollback` sınamaları çalıştı. Yol: SQL dosyası hazırlandı, sahip SQL Editor'de çalıştırdı. |
+| SNN-Portfoy-Yonetimi | 2026-10-12 | `apply_migration` üç kez takıldı (TB-033). "Hepsi evet" geçmedi. Sahip işlemi adıyla anan tam cümleyi yazınca geçti. |
+
+Eski hâl: GHS-Panel notu (2026-09-26) Claude'un canlıda `apply_migration` çalıştırdığını yazar. Denetleyici o tarihte bu işi geçiriyordu. Ne zaman değiştiği ölçülmedi.
+
+**Kural:**
+
+1. Canlı veritabanına yazan işlemden önce ne yapılacağı, riski ve geri alma yolu yazılır.
+2. Sahipten işlemi adıyla anan tam cümle istenir; önerilen cümle kalın yazılır. Genel "evet" yetmez.
+3. İşlem önce `begin … rollback` ile sınanır: işlem çalışır, sonra geri alınır, veri kalıcı değişmez.
+4. Denetleyici yine engellerse dolanılmaz. İşlem tek SQL dosyasında toplanır, sahip SQL Editor'de çalıştırır (§4 kaçış kapısı).
+
+**Madde 2 neden böyle:** Adıyla anma, sahibin neyi onayladığını bilerek onaylamasıdır. Genel "evet" bir işlemi adıyla onaylamaz; sahip ne çalışacağını bilmeyebilir. Cümle denetleyiciyi geçirmek için kurulan bir hile değildir. Portföy'de bu cümle yazılınca işlem geçti (2026-10-12). Geçmezse madde 4 işler.
+
+### 8.2 Erişim: önce `list_projects` (#172, 2026-11-02)
+
+**Neden:** Supabase bağlayıcısı (Claude'un Supabase'e bağlandığı MCP aracı) izin hatası verince üç projede aynı olay üç farklı yorumla yazıldı:
+
+| Proje | Tarih | Notun yorumu |
+|---|---|---|
+| SNN-Abacus-Core | 2026-08-31 | "Erişim var. `list_projects` göstermez, proje koduyla doğrudan çağır." |
+| Gunum-Var | 2026-10-20 | "You do not have permission" hatası, denetleyici engellerinin devamı sayıldı: "artık okuma da engelli". |
+| GHS-Panel | 2026-10-28 | "Bağlayıcı başka hesapla yetkilendirilmiş. Önce `list_projects` ile denetle." |
+
+**Ölçüm (2026-11-02, salt okuma):** `list_projects` tek proje döndürdü: SNN_Portfoy_Yonetimi. Gunum-Var'ın proje koduyla `get_project` çağrısı `MCP error -32600: You do not have permission to perform this action` verdi. Abacus-Core notundaki "doğrudan çağrı çalışır" o gün geçerli değildi.
+
+**Kural:**
+
+1. Canlı veritabanı işinden önce `list_projects` çalıştırılır; proje listede mi bakılır.
+2. "You do not have permission" sunucu yanıtıdır. İzin denetleyicisi engeli sayılmaz; §8.1'in çözümü bunu düzeltmez.
+3. Erişim yoksa sahibe iki seçenek sunulur: bağlayıcıyı doğru hesapla yetkilendirmek ya da SQL dosyasını kendisi çalıştırmak.
+4. Bellek notuna "erişim var/yok" yalnız tarihli ölçüm olarak yazılır. Örnek: "2026-11-02: `list_projects` Gunum-Var'ı göstermedi."
+
+**Ölçülmedi:** bağlayıcının hangi hesaba yetkili olduğu (GHS-Panel notundaki "başka hesap" doğrulanmadı) ve yeniden yetkilendirmenin sorunu çözdüğü. Madde 3'ün birinci seçeneği bu yüzden denenmemiş bir yoldur.
+
 ## Kontrol listesi maddesi
 
 `standartlar/kod-inceleme-kontrol-listesi.md` içinde:
@@ -175,3 +229,7 @@ Açılmayan (7), nedeniyle:
 | Sahne (stage) | Commit'e girecek dosyaların bekleme alanı |
 | Taban dal (base) | Bir PR'ın hangi dalın üstüne açıldığı |
 | Oturum | Tek bir yapay zekâ çalışma penceresi |
+| Canlı veritabanı | Kullanıcıların gerçekten kullandığı veritabanı; deneme kopyası değil |
+| Otomatik izin denetleyicisi | Claude'un komutu çalıştırmadan önce bakan otomatik güvenlik süzgeci (auto mode) |
+| Bağlayıcı | Claude'un başka bir hizmete (burada Supabase) bağlandığı MCP aracı |
+| `rollback` | Açık işlemi geri alan komut; `begin` ile açılan işlem kalıcı yazmadan kapanır |
