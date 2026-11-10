@@ -86,6 +86,7 @@ expect('başka hesabın projesinde kota sorulmaz', cg.check('gh pr create --titl
 expect('kota %96 ama push → sorulmaz', cg.check('git push', '.', { local: () => pass, quota: () => quota(2880) }), null);
 expect('modül çökerse iş durmaz', cg.check('git push', '.', { local: () => { throw new Error('x'); } }), null);
 
+(async () => { // lc.run asenkron (Jest kapanış hatası taraması için çıktı yakalanır, Talep #178)
 console.log('— uçtan uca (geçici git deposu)');
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'snn-yerel-'));
 const git = (...a) => execFileSync('git', ['-C', dir, ...a], { stdio: ['ignore', 'pipe', 'ignore'], encoding: 'utf8' });
@@ -95,7 +96,7 @@ git('add', '.');
 git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-q', '-m', 'ilk');
 expect('damga yok → kapı durdurur', lc.gate(dir) !== null, true);
 const origLog = console.log; console.log = () => {};
-const code = lc.run(dir);
+const code = await lc.run(dir);
 console.log = origLog;
 expect('kontrol geçer', code, 0);
 expect('damga yazıldı → kapı geçer', lc.gate(dir), null);
@@ -107,7 +108,7 @@ fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ scripts: { tes
 git('add', '.');
 git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-q', '-m', 'kirik');
 console.log = () => {};
-const bad = lc.run(dir);
+const bad = await lc.run(dir);
 console.log = origLog;
 expect('kırık test → kontrol kalır', bad, 1);
 expect('kırık testte damga yazılmaz → kapı durdurur', lc.gate(dir) !== null, true);
@@ -115,3 +116,4 @@ fs.rmSync(dir, { recursive: true, force: true });
 
 console.log(fail ? `\n✗ ${fail} test başarısız` : '\n✓ tümü geçti');
 process.exit(fail ? 1 : 0);
+})();
