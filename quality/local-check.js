@@ -17,11 +17,13 @@
 //   - her iki durumda en sona kod dili taraması (yalnız origin/main'e göre eklenen satırlar, #146)
 //   CI'da projeye özgü adım varsa (Gunum-Var'da Deno kontrolü: 18 Eylül kırmızısı) proje `verify`
 //   betiği tanımlamalıdır; varsayılan liste onu bilemez.
+// Komut çıktısı canlı akar ve taranır: çıkış kodu 0 olsa bile Jest'in kapanış hatası görülürse komut
+//   kalır, damga yazılmaz (Talep #178; ifadeler TEARDOWN_PHRASES).
 // package.json yoksa ya da koşacak komut yoksa kapı uygulanmaz.
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { execFileSync, spawnSync } = require('child_process');
+const { execFileSync, spawn } = require('child_process');
 
 const STAMP = 'snn-yerel-kontrol.json';
 const DOCS_ONLY = /^docs\/|\.md$/i;
@@ -55,6 +57,46 @@ function projectCommands(pkg, hasTsconfig) {
   else if (hasTsconfig) out.push({ name: 'tsc', cmd: 'npx --no-install tsc --noEmit' });
   if (s.test && !NPM_DEFAULT_TEST.test(s.test)) out.push({ name: 'test', cmd: 'npm test' });
   return out;
+}
+
+// Jest kapanış hatası (Talep #178, 2026-11-05): SNN-Games-Pulmaca PR #147'de yerel kontrol üç commit
+// için "geçti" dedi, CI üçünde kırmızı oldu. Jest tam çalıştırmada bu hatayı yan süreçte
+// `process.exitCode = 1` ile yazıyor; ana süreç 0 ile çıkıyor. Yalnız Jest'in bu iki ifadesi aranır;
+// Vitest için ifade eklenmedi (ölçülmedi).
+const TEARDOWN_PHRASES = ['Jest environment has been torn down', 'Cannot log after tests are done'];
+const ANSI = /\x1b\[[0-9;]*[A-Za-z]/g;
+const TAIL_KEEP = Math.max(...TEARDOWN_PHRASES.map((p) => p.length)) - 1;
+
+// SAF: metinde kapanış hatası ifadesi var mı? Döner: bulunan ifade ya da null.
+function findTeardown(text) {
+  const clean = String(text).replace(ANSI, '');
+  return TEARDOWN_PHRASES.find((p) => clean.includes(p)) || null;
+}
+
+// SAF (durumlu): parça parça gelen akışı tarar; parçalar arasında bölünen ifadeyi de yakalar.
+// Her akış (stdout, stderr) için ayrı üretilir; iki akış birbirine karışıp ifadeyi bölmesin.
+function createTeardownScanner() {
+  let tail = '';
+  let found = null;
+  return {
+    feed(chunk) {
+      if (found) return found;
+      const text = tail + String(chunk).replace(ANSI, '');
+      found = findTeardown(text);
+      tail = text.slice(-TAIL_KEEP);
+      return found;
+    },
+    get found() { return found; },
+  };
+}
+
+// SAF: bir komutun sonucu → kaldı mı? Çıkış kodu sıfırdan farklıysa bugünkü gibi kalır;
+// kod 0 ama kapanış hatası görüldüyse de kalır.
+//   Döner: { failed, teardown } (teardown: yalnız "kod 0 ama ifade var" durumunda ifade)
+function judgeResult(status, teardownPhrase) {
+  if (status !== 0) return { failed: true, teardown: null };
+  if (teardownPhrase) return { failed: true, teardown: teardownPhrase };
+  return { failed: false, teardown: null };
 }
 
 // SAF: değişen dosyaların hepsi belge mi? Boş liste belge SAYILMAZ.
@@ -121,8 +163,22 @@ function readState(root) {
 
 const gate = (root) => decide(readState(root));
 
+// Tek komutu koşar; çıktı canlı akar (stdout/stderr aynen iletilir) ve aynı anda taranır.
+// Döner: Promise<{ status, teardown }>. Windows'ta shell: true ile çalışır.
+function runCommand(cmd, cwd) {
+  return new Promise((resolve) => {
+    const child = spawn(cmd, { cwd, shell: true, stdio: ['inherit', 'pipe', 'pipe'] });
+    const out = createTeardownScanner();
+    const err = createTeardownScanner();
+    child.stdout.on('data', (d) => { process.stdout.write(d); out.feed(d); });
+    child.stderr.on('data', (d) => { process.stderr.write(d); err.feed(d); });
+    child.on('error', () => resolve({ status: 1, teardown: null }));
+    child.on('close', (code) => resolve({ status: code === null ? 1 : code, teardown: out.found || err.found }));
+  });
+}
+
 // Komutları koşar; hepsi geçerse damga yazar. Çıkış: 0 geçti · 1 kaldı · 2 uygulanmaz
-function run(root) {
+async function run(root) {
   const top = git(root, ['rev-parse', '--show-toplevel']);
   if (!top) { console.log('✗ Git deposu değil.'); return 2; }
   const cmds = planCommands(readPkg(top), fs.existsSync(path.join(top, 'tsconfig.json')), { hasMain: hasMain(top) });
@@ -133,9 +189,15 @@ function run(root) {
   for (const c of cmds) {
     console.log(`\n▶ ${c.name}: ${c.cmd}`);
     const started = Date.now();
-    const r = spawnSync(c.cmd, { cwd: top, shell: true, stdio: 'inherit' });
+    const r = await runCommand(c.cmd, top);
     const sec = Math.round((Date.now() - started) / 1000);
-    if (r.status !== 0) { console.log(`\n✗ ${c.name} kaldı (${sec} sn). Damga yazılmadı.`); return 1; }
+    const verdict = judgeResult(r.status, r.teardown);
+    if (verdict.teardown) {
+      console.log(`\n✗ ${c.name} kaldı (${sec} sn): çıkış kodu 0 ama Jest'in kapanış hatası görüldü ("${verdict.teardown}"). `
+        + 'Bir test, test ortamı kapandıktan sonra çalışıyor; Jest bunu yan süreçte hata sayar, CI kırmızı olur. Damga yazılmadı.');
+      return 1;
+    }
+    if (verdict.failed) { console.log(`\n✗ ${c.name} kaldı (${sec} sn). Damga yazılmadı.`); return 1; }
     console.log(`✓ ${c.name} (${sec} sn)`);
   }
   if (dirty) { console.log('\n✓ Komutlar geçti ama çalışma alanı kirliydi; damga yazılmadı. Commit edip yeniden koş.'); return 1; }
@@ -144,6 +206,6 @@ function run(root) {
   return 0;
 }
 
-module.exports = { planCommands, docsOnly, decide, readState, gate, run, STAMP, SCRIPT_PATH };
+module.exports = { planCommands, docsOnly, decide, readState, gate, run, runCommand, createTeardownScanner, findTeardown, judgeResult, TEARDOWN_PHRASES, STAMP, SCRIPT_PATH };
 
-if (require.main === module) process.exit(run(path.resolve(process.argv[2] || process.cwd())));
+if (require.main === module) run(path.resolve(process.argv[2] || process.cwd())).then((code) => process.exit(code));
