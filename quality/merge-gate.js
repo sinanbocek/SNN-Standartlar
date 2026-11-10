@@ -146,7 +146,7 @@ function parseProtection(json) {
 // PR'ın hedef dalındaki zorunlu kontrol korumasını okur. Zorunlu kontrol yoksa protection null.
 // 404: yalnız GitHub "korumasız / zorunlu kontrol kapalı" diyorsa null. Düz "Not Found" depo adı yanlış
 // ya da yetki yok demek olabilir (olcum-standardi.md Kural 3: okunamadı ≠ yok) → fırlatır, kapı kapalı kalır.
-// KISAYOL (TB-010): yalnız klasik dal koruması okunur, ruleset (depo kuralı seti) okunmaz; 2026-11-09'da 15 okunabilir aile deposunda ruleset 0 idi, bir depoda ruleset ile zorunlu kontrol kurulursa "--auto" yanlışlıkla reddedilir (güvenli yön), ruleset kullanan ilk depoda okuyucu genişletilir.
+// Klasik dal koruması ile kural seti (ruleset) birlikte okunur (TB-010).
 function readProtection(merge, cwd) {
   const view = JSON.parse(execFileSync('gh', ['pr', 'view', String(merge.number), '--json', 'baseRefName,url']
     .concat(merge.repo ? ['-R', merge.repo] : []), { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
@@ -156,16 +156,49 @@ function readProtection(merge, cwd) {
   return { protection: fetchProtection(repo, view.baseRefName, cwd), isPublic };
 }
 
-function fetchProtection(repo, base, cwd) {
+// SAF: kural seti cevabından (dala uygulanan etkin kuralların listesi) { contexts, strict } çıkarır.
+// Zorunlu denetim türünde kural yoksa null. Liste değilse fırlatır (bozuk cevap "yok" sayılmaz).
+function parseRuleset(json) {
+  if (!Array.isArray(json)) throw new Error('kural seti cevabı liste değil');
+  const rules = json.filter((r) => r && r.type === 'required_status_checks');
+  if (!rules.length) return null;
+  const names = rules.flatMap((r) => ((r.parameters || {}).required_status_checks || []).map((c) => c.context)).filter(Boolean);
+  const strict = rules.some((r) => (r.parameters || {}).strict_required_status_checks_policy === true);
+  return { contexts: [...new Set(names)], strict };
+}
+
+// SAF: klasik koruma ve kural seti sonucunu birleştirir (ikisi de null olabilir). GitHub ikisini birlikte
+// uygular: denetim adları birleşir, "dal güncel olsun" ikisinden biri istiyorsa geçerlidir.
+function mergeProtection(a, b) {
+  if (!a) return b;
+  if (!b) return a;
+  return { contexts: [...new Set([...a.contexts, ...b.contexts])], strict: a.strict || b.strict };
+}
+
+// SAF: kural seti uç noktası "bu depoda yok/erişilemez" mi diyor? Yalnız 403 ve 404 (GHS-Panel'de
+// "Upgrade to GitHub Pro" 403'ü ölçüldü). Başka hata (ağ, 5xx, bozuk cevap) fırlatılır, kapı kapalı kalır.
+const rulesetAbsent = (msg) => /HTTP (403|404)\b/.test(msg);
+
+const ghApi = (path, cwd) => execFileSync('gh', ['api', path], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+
+// api: (yol) => cevap metni; hata → fırlatır ({ stderr, stdout } taşır). Testte sahtesi verilir.
+function fetchProtection(repo, base, cwd, api = (p) => ghApi(p, cwd)) {
+  let classic;
   try {
-    const out = execFileSync('gh', ['api', `repos/${repo}/branches/${base}/protection/required_status_checks`],
-      { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-    return parseProtection(JSON.parse(out));
+    classic = parseProtection(JSON.parse(api(`repos/${repo}/branches/${base}/protection/required_status_checks`)));
   } catch (e) {
     const msg = `${e.stderr || ''}${e.stdout || ''}`;
-    if (/Branch not protected|Required status checks not enabled/i.test(msg)) return null;
-    throw new Error(`dal koruması okunamadı: ${msg.trim() || e.message}`);
+    if (!/Branch not protected|Required status checks not enabled/i.test(msg)) throw new Error(`dal koruması okunamadı: ${msg.trim() || e.message}`);
+    classic = null;
   }
+  let ruleset = null;
+  try {
+    ruleset = parseRuleset(JSON.parse(api(`repos/${repo}/rules/branches/${base}`)));
+  } catch (e) {
+    const msg = `${e.stderr || ''}${e.stdout || ''}`;
+    if (!rulesetAbsent(msg)) throw new Error(`kural seti okunamadı: ${msg.trim() || e.message}`);
+  }
+  return mergeProtection(classic, ruleset);
 }
 
 // Komuttaki tüm birleştirmeler için ilk ret gerekçesi ya da null
@@ -203,6 +236,6 @@ function gate(cmd, cwd) {
   return null;
 }
 
-module.exports = { parseMerges, bypassReason, decide, behindReason, autoMergeReason, parseProtection, fetchProtection, gate };
+module.exports = { parseMerges, bypassReason, decide, behindReason, autoMergeReason, parseProtection, parseRuleset, mergeProtection, rulesetAbsent, fetchProtection, gate };
 // Hook'un bu modülü çağırması gereken komutlar (ucuz ön süzgeç)
 module.exports.TRIGGER = /\bgh\s+pr\s+(merge|ready)\b|\/pulls\/[^/\s]+\/merge\b|mergePullRequest|enablePullRequestAutoMerge|markPullRequestReadyForReview/;

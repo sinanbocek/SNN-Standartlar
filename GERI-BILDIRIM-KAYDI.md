@@ -34,6 +34,43 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 ## Kararlar
 
 
+### 2026-11-10 · Jest kapanış hatası: yerel kontrol çıktıyı da okusun (#178) — **KABUL (Genel Müdür, sahip vekâleti 2026-11-10)**
+
+- **Kimden:** SNN-Games-Pulmaca.
+- **Dört şart:** gerçek olay (PR #147, 2026-11-05: `quality/local-check.js` üç commit için "geçti" dedi, CI üçünde kırmızı oldu; her koşum yaklaşık 8,5 dakika), ölçülmüş çıktı (CI `npx jest --ci` çıkış 1; yerel tam çalıştırma çıkış 0, kapanış hatası satırı 2; yerel tek dosya çıkış 1), denenmiş alternatif (Pulmaca PR #149: projede `jestGuard.cjs` Jest çıktısını okuyor, kasıtlı kaçak testle çıkış 1; bu yalnız Pulmaca'yı korur), etki (Jest kullanan diğer gerçek proje: Gunum-Var; Vitest kullanan 9 proje ölçülmedi).
+- **Karar:** `quality/local-check.js` test komutunun çıktısını okur ve `Jest environment has been torn down` ile `Cannot log after tests are done` satırlarında kalır. Çıkış kodu 0 olsa da kalır. Kod işi Yazılım Müdürü'nde; bu kayıt yalnız kararı yazar.
+- **Kısıtlar:** (1) Yalnız Jest'in bu iki ifadesi kapsanır. Vitest'te aynı körlük var mı ölçülmedi; Vitest kapsama alınmaz. (2) CI'ın tek süreçte koşmasının yerel/CI farkının sebebi olduğu talepte "en olası" diye geçiyor, ölçülmedi. (3) `--runInBand` seçeneğinin yerel süreyi ne kadar uzattığı ölçülmedi. (4) Pulmaca'daki `jestGuard.cjs` kopyasının kaldırılması o projenin işidir; bu depodan dokunulmaz.
+- **Sahibe kalan adım:** yok.
+
+### 2026-11-10 · Aynı hedefe ikinci yabancı anahtar PostgREST gömmesini kırar (#131) — **KABUL (Genel Müdür, sahip vekâleti 2026-11-10)**
+
+- **Kimden:** haftalık bellek derleme görevi (2026-10-10). Önceki karar: aynı gün BEKLET (aşağıda 2026-10-10 kaydı).
+- **Dört şart:** gerçek olay (Gunum-Var 2026-09-16 `group_members.pending_user_id → users`, ana sayfa, grup listesi ve grup detayı kırıldı; GHS-Panel 2026-10-01 `inbound_documents.archived_by → settings_users`, Gelen belgeler ve dekont işçisi yaklaşık 1 dakika kırıldı), ölçülmüş çıktı (PGRST201 "more than one relationship" hatası, iki projede), denenmiş alternatif (iki projenin kendi notu var; ikincisi birincinin dersini miras almadı), etki: iki proje.
+- **Neden değişti:** Sahibin 2026-10-10 "beklet" kararı şunu şart koşuyordu: üçüncü projede görülürse ya da bir kez daha iş kaybı doğurursa standarda girer. 2026-11-09 sayımında hâlâ iki proje var; şart gerçekleşmedi. Karar, sahibin 2026-11-10 vekâletiyle Genel Müdür'ündür, sahibin kendi kararı değildir. Gerekçe: iki bağımsız canlı kırılma (15 gün arayla, ikincisi birincinin dersini almadı); kural üç satırlık kontrol listesi maddesi; projelere iş düşürmüyor; geri alması tek satır.
+- **Karar:** `standartlar/kod-inceleme-kontrol-listesi.md` içine yeni "Veritabanı göçü" bölümü, üç madde: (1) yeni `REFERENCES` satırında ikinci ilişki ve yön belirtmeyen gömme araması, (2) gömme varsa düz `uuid` ya da bağ adıyla yazıp yayınlama, anahtarı sonra ekleme, (3) canlı göçten hemen sonra gerçek REST gömme sorgusu denemesi.
+- **Kısıtlar:** `olcum-standardi.md`'ye "göç sonrası uygulama sorgusu" maddesi eklenmedi (talepte "isteğe bağlı"; vaka henüz üçüncü projede yok). Kapı kurulmadı; kural yalnız talimattır. Üçüncü proje ya da yeni iş kaybı olursa kapıya çevirme düşünülür.
+- **Sahibe kalan adım:** yok. Vekâletle verilen karar, sahip isterse tek bölümün kaldırılmasıyla geri alınır.
+
+### 2026-11-10 · Canlı veritabanı: adıyla anan onay (#167) ve bağlayıcı erişimi (#172) — **KABUL (Genel Müdür, sahip vekâleti 2026-11-10)**
+
+- **Kimden:** haftalık bellek derleme görevi: #167 (2026-10-19), #172 (2026-11-02). İki talep tek bölümde, iki alt konu ayrı.
+- **Dört şart, #167:** gerçek olay (Gunum-Var 2026-10-07: MCP `execute_sql` ile DELETE/UPDATE engellendi; SNN-Portfoy-Yonetimi 2026-10-12: `apply_migration` üç kez takıldı, TB-033), ölçülmüş çıktı (Gunum-Var'da okuma ve `begin … rollback` çalıştı; Portföy'de "hepsi evet" geçmedi, işlemi adıyla anan cümle geçti), denenmiş alternatif (SQL dosyası, sahip SQL Editor'de çalıştırır), etki: iki proje.
+- **Dört şart, #172:** gerçek olay (SNN-Abacus-Core 2026-08-31, Gunum-Var 2026-10-20 ve GHS-Panel 2026-10-28 notları aynı olayı üç farklı yorumla yazıyor; ilk not "listeye bakma", üçüncü "önce listeye bak" diyor), ölçülmüş çıktı (2026-11-02, salt okuma: `list_projects` tek proje döndürdü; Gunum-Var koduyla `get_project` `MCP error -32600: You do not have permission` verdi), denenmiş alternatif (notları tek tek düzeltmek tek projeyi kapsar), etki: üç proje.
+- **Karar:** `es-zamanli-calisma-standardi.md` §8 "Canlı veritabanı işlemi", §7'den sonra. İki alt konu ayrı: §8.1 işlemi adıyla anan onay (adıyla anma sahibin gerçek onayıdır, denetleyiciyi geçirme hilesi değildir; işlem önce `begin … rollback` ile sınanır; denetleyici yine engellerse işlem tek SQL dosyasında toplanır, sahip SQL Editor'de çalıştırır); §8.2 erişim (önce `list_projects`; "You do not have permission" sunucu yanıtıdır, denetleyici engeli sayılmaz; erişim yoksa sahibe iki seçenek; bellek notuna "erişim var/yok" yalnız tarihli ölçüm). Engeller farklı olduğu için çözümleri ayrı yazıldı.
+- **Talepten fark:** #167 önerisindeki "Kural önce canlıda `begin … rollback` ile sınanır" ifadesi "İşlem önce `begin … rollback` ile sınanır" oldu: sınanan kural değil işlemdir.
+- **Pano sorusu kapandı:** "Talep #167'ye Gunum-Var'ın yeni bilgisi (MCP ile okuma da engelli) eklensin mi?" sorusu. 2026-11-02 ölçümü o bilginin #172'ye ait olduğunu gösterdi: izin denetleyicisi değil, sunucu yanıtı. #167'ye eklenmez.
+- **Ölçülmedi:** bağlayıcının hangi hesaba yetkili olduğu (GHS-Panel notundaki "başka hesap" doğrulanmadı); yeniden yetkilendirmenin sorunu çözdüğü. Standartta madde 3'ün birinci seçeneği "denenmemiş yol" diye yazıldı. Denetleyicinin canlı yazmayı geçirdiği eski tarihten (GHS-Panel 2026-09-26) bu yana ne zaman değiştiği de ölçülmedi.
+- **Ev kâğıdı:** işaretli bloğa tek cümle eklendi ("Canlı veritabanına dokunmadan önce aynı standardın §8'i okunur."). Yeni blok ve başlık açılmadı. Toplam talimat sınırı (1200 kelime) aşılmasın diye "PR birleştirme" bölümünün giriş cümlesi kısaltıldı ("Aynı standart, §7. Proje sahibi 2026-10-17'de verdi (#164)."); davranış değişmedi, geçmiş bilgisi §7'de ve 2026-11-09 kararında duruyor. Toplam 1198 kelime; sınır yükseltilmedi.
+- **Sahibe kalan adım:** `node setup/setup-machine.js --uygula` (işaretli blok değişti).
+
+### 2026-11-10 · Ölçü standardı §3 madde 2: tam kare fotoğraf (#177) — **KABUL (Genel Müdür, sahip vekâleti 2026-11-10)**
+
+- **Kimden:** SNN-Games-Pulmaca.
+- **Dört şart:** gerçek olay (Pulmaca şehir videolarında fotoğraf tam kare; `konya-ig.mp4` 9. saniyede telefon gövdesi y 1770'e iner), ölçülmüş çıktı (`safe_zone.py` ile `konya-ig.mp4@1`, `@5`, `@9`, `@14`, `@17`: telefon ekranının altı yaklaşık y 1742, gövdesinin altı yaklaşık y 1772, `reels-bottom-left` y 1709'da başlıyor, okunması gereken en alt yazı yaklaşık y 1695'te bitiyor), denenmiş alternatif (proje rehberine istisna yazmak madde 4'e uymuyor, madde 4 yalnız yazıyı kapsıyor; fotoğrafı kırpmak tam kare 9:16'yı olanaksız kılıyor; telefonu yukarı almak 81 ilin videosunu yeniden üretmeyi gerektirebilir ve sahip 5 Kasım'da olduğu gibi kalmasına karar verdi), etki: tam kare fotoğraf ya da video kullanan her proje; başka proje ölçülmedi.
+- **Karar:** `sosyal-medya-olcu-standardi.md` §3 madde 2 fotoğrafı ve okunması gerekmeyen görüntüyü dışarıda bırakır: "Düğmelerin altına girebilir, ama okunması gereken parçası girmez." Madde 3 değişmedi. Standarda gerekçe paragrafı ve §8'e sınır satırı eklendi.
+- **Kısıtlar:** Kapsam yalnız Pulmaca'nın Konya videosunun ölçümüne dayanır. Öteki şehir videoları ve başka projeler ölçülmedi. Madde 2'deki "telefon görüntüsü" ifadesi metinden çıktı; telefon gövdesi "okunması gerekmeyen görüntü" sayılır, telefon ekranındaki okunan yazı madde 3'e tabi kalır.
+- **Sahibe kalan adım:** yok. Bu standardın işaretli bloğu değişmedi.
+
 ### 2026-11-09 · CI yeşilse otomatik birleştirme ortak süreç — **KABUL (sahip kararı)**
 
 - **Kimden:** proje sahibi: "ci yeşil ise otomatik birleşebilir. bunu artık ortak bir süreç haline getirelim. github da bir ayar yapılması gerekiyorsa yapılsın".
@@ -93,7 +130,7 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 - **#128 Oturum yalnız kendi projesinden sorumlu — KABUL.** `es-zamanli-calisma-standardi.md` §6, ev kâğıdına kopyalanır; açılış satırına "bilgi içindir" notu.
 - **#129 "Çalıştır" düğmesi: klasör değişimi aynı blokta — KABUL.** `iletisim-standardi.md` komut bölümü; tek komut tek blok kuralının tek istisnası.
 - **#130 Actions kotası: düzeltme turunda gönderim yok — KISMEN.** Madde 8'e "bitince = tur bitince, önce yerel kapı" eklendi. "Kota doluyken hiç gönderme" rejimi kalıcı kural **olmadı**: kota 2026-10-10'da %14, ödeme sorunu 2026-10-08'de çözülmüş; kota kapısı eşikte zaten uyarıyor, o günkü karar sahibin. Piyasa-Core'daki "sahip aksini söyleyene kadar push yok" notu emekliye ayrıldı.
-- **#131 İkinci yabancı anahtar PostgREST gömmesini kırar — BEKLET.** Teknik Supabase dersi, iki proje. Üçüncü projede ya da ikinci iş kaybında girer; talep açık, görev her hafta sayar.
+- **#131 İkinci yabancı anahtar PostgREST gömmesini kırar — BEKLET.** Teknik Supabase dersi, iki proje. Üçüncü projede ya da ikinci iş kaybında girer; talep açık, görev her hafta sayar. **→ 2026-11-10'da KABUL oldu (sahip vekâleti), bkz. 2026-11-10 kaydı (#131).**
 - **#132 Bekçi metni okur, dalı oturum klasöründen alır — KABUL.** `es-zamanli-calisma-standardi.md` §3 "Bilinen davranış". Görevin kendisi de aynı tuzağa düştü.
 - **#133 Kapı yeşil mi: çıkış koduna bak — KABUL.** `olcum-standardi.md` Kural 1 altına "Komut çıktısı" + kontrol listesi. Üç projede aynı tuzak.
 - **#134 Rol: kodu Claude yazar, Gemini emekli — RET.** Artık varsayılan durum; kural gerektirmez. İki not sonraki derleme turunda emekliye ayrılır.
