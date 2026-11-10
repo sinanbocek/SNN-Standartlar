@@ -109,3 +109,5 @@ Tablonun kendisi makineyle zorlanamaz: bir işin "teşhis" mi "kod yazma" mı ol
 ## Dağıtım
 
 İletişim standardıyla aynı yol: `setup-machine.js` iki standardın işaretli bölümünü art arda `~/.claude/CLAUDE.md` dosyasına yazar. Dosya proje sahibinin kendi dosyasıysa dokunulmaz (`iletisim-standardi.md`, Dağıtım tablosu).
+
+**İlgili:** Ana oturumun Genel Müdür, işi yapan ajanların müdür olduğu proje düzeni `ekip-duzeni-standardi.md` dosyasındadır; bu standart o düzende her müdür çağrısına uygulanır.

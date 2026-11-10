@@ -34,6 +34,34 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 ## Kararlar
 
 
+### 2026-11-09 · CI yeşilse otomatik birleştirme ortak süreç — **KABUL (sahip kararı)**
+
+- **Kimden:** proje sahibi: "ci yeşil ise otomatik birleşebilir. bunu artık ortak bir süreç haline getirelim. github da bir ayar yapılması gerekiyorsa yapılsın".
+- **Dört şart:** gerçek olay (SNN-Standartlar PR #183: CI yeşildi, oturum bekledi, sahibin ayrıca "birleştir" demesi gerekti), ölçülmüş çıktı (2026-11-09 GitHub salt okuma, 16 aile projesinin birleştirme ayarı), denenmiş alternatif (elle birleştirme: oturum CI'ı beklemek ya da sahibin haber vermesi gerekiyor; `--auto` kapı tarafından reddediliyordu), etki: 16 projenin 9'unda açık, 7'sinde kapalı (ayar geri okundu).
+- **Sahip eki:** "sen buraan yay": ayar bu oturumdan aile depolarına yayıldı, yalnız GitHub ayarı.
+- **Karar:** `es-zamanli-calisma-standardi.md` işaretli bloğunda madde 5 ve 6 değişti. Depoda zorunlu denetim ve otomatik birleştirme açıksa Claude PR'ı açınca `gh pr merge <no> --auto` ve yöntem bayrağını kendisi çalıştırır; madde 2'deki engellerde açılmaz. Sahibe PR açılınca "CI yeşil olunca kendiliğinden birleşecek" denir. §7'ye gerekçe, depo ayarı (üç adım) ve ölçüm eklendi.
+- **Talepten fark:** zorunlu denetimsiz depoda `--auto` yasak (denetim beklemeden birleşebilir); gizli depoda `strict` ("dal güncel olsun") şart. Elle birleştirmedeki tek mesaj kuralı aynen kaldı.
+- **Sahibe kalan adım:** `node setup/setup-machine.js --uygula` (işaretli blok değişti).
+
+### 2026-11-09 · Genel Müdür düzeni çerçeve standardı (#181) — **KABUL**
+
+- **Kimden:** talep #181 (vakası iki projede: SNN-Games-Pulmaca, Gunum-Var); karar proje sahibinin.
+- **Dört şart:** gerçek olay (SNN-Games-Pulmaca 2026-11-05 ve Gunum-Var 2026-11-08 aynı düzeni kurdu, Gunum-Var Pulmaca'yı örnek aldı; proje notları `pulmaca-ekip-duzeni.md` 2026-11-05, `ekip-duzeni-kuruldu.md` 2026-11-08), ölçülmüş çıktı (Genel Müdür'ün 2026-11-09 GitHub salt okuma ölçümü: üç projenin `ekip/` klasör listesi), denenmiş alternatif (proje notu tek projeyi kapsıyor; Gunum-Var düzeni Pulmaca'dan elle kopyaladı), etki: 16 aile projesinin 7'sinde müdür kartı var (2026-11-09).
+- **Sahip eki (2026-11-09):** müdür adları ortak olsun; ad tablosu ve öneri rehberi eklendi. Veri ve Veritabanı müdürleri sahip kararıyla Veritabanı Müdürü adında birleşti; Portföy'e kart adı işi düşer.
+- **Karar:** yeni `standartlar/ekip-duzeni-standardi.md`, çerçeve olarak: dört maddelik ortak iskelet, zorunlu departman listesi ya da dosya adı yok. Ayrı dosya, çünkü konu eş zamanlı çalışmadan farklı. İşaretli blok yok, ev kâğıdına gitmez, makineye iş düşmez. `alt-ajan-standardi.md` işaretli bloğun dışında tek cümleyle bağlandı.
+- **Talepten fark:** talepteki "açılışta yalnız `genel-mudur.md` ve `PANO.md` okunur" maddesi iskelete girmedi. Sahip kararındaki dört maddede yok ve dosya adı dayatır. Standartta "projeye bırakılan" olarak anılır.
+- **Sahibe kalan adım:** yok.
+- **Sahip kararı, beceri (2026-11-09):** düzen `/proje-kur` içine gömülmedi; `skills/proje-kur/SKILL.md` kurulum sonunda tek soru sorar, evet denirse standarda göre ayrı PR'la kurar. Aynı değişiklikte beceriye otomatik birleştirme adımı eklendi ve eski birleştirme satırı (onay şartı koyan) §7'ye bağlandı.
+
+### 2026-11-05 · Sosyal medya içerik ölçüleri aile standardı olsun (#175) — **KABUL (düzeltmeyle)**
+
+- **Kimden:** SNN-Games-Pulmaca. Kapsamı proje sahibi seçti: standart + ortak araç.
+- **Dört şart:** gerçek olay (2026-11-03 denetimi: Reels'te logo ve adres okunmuyor, şehir videolarında çipler arayüzün altında), ölçülmüş çıktı (Meta sayıları, canlı iPhone ölçümü), denenmiş alternatif (proje rehberi yalnız o projede görünür), etki: talep tek üretici diyordu; ölçümde ikinci üretici çıktı, `Sosyal-Medya/gunum-var/instagram` aynı biçimleri kullanıyor.
+- **Karar:** `standartlar/sosyal-medya-olcu-standardi.md`, `quality/safe_zone.py`, `quality/data/social-media-sizes.json`. Yenileme `OLC-002` kaydıyla makineye bağlandı. Ev kâğıdına tek paragraf işaret gider.
+- **Talepten fark:** (1) 122 piksel `turetilmis` etiketiyle girdi; Instagram sayısı değil. (2) Reklam sayısı ile canlı ölçüm ayrıldı, %20/%35 çelişkisi yazıldı. (3) Araç taşınırken sayılar koddan veri dosyasına alındı, ızgara kırpması ve 1440×2560 eklendi, test yazıldı. (4) `.py` dosyalarını kod dili tarayıcısı taramaz; araçtaki adlar elle İngilizce yazıldı.
+- **Tüketiciye kalan:** Pulmaca oturumu kendi `guvenli-bolge.py` kopyasını kaldırır, rehberindeki yolları ve sayı kaynağını günceller. Bu depodan dokunulmaz.
+- **Sahibe kalan adım:** ev kâğıdı için `node setup/setup-machine.js --uygula`.
+
 ### 2026-10-17 · CI yeşilse Claude PR'ı kendisi birleştirir (#164) — **KABUL**
 
 - **Kimden:** SNN-Piyasa-Core; kuralı proje sahibi bütün oturumlar için istedi.

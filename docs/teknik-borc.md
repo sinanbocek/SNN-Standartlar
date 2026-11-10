@@ -32,3 +32,22 @@ Kapanan kayıtlar: `docs/teknik-borc-arsiv.md`
 - **Neden Şimdi Çözülmüyor:** Sahip kararı (#160): kural ölçüsüz, istisna olarak kabul edildi. "Sonrası" verisi henüz yok.
 - **Ara sayım (2026-10-17, #162):** 16 aile deposunda birleşmiş PR: öncesi (10-01..10-14) 97, 9 projede; sonrası (10-15..10-17) 50, 41'i iki projede (SNN-UI 21, Nakit-Akış 20). Dönem kısa ve proje karışımı farklı; şimdi karşılaştırmak proje farkını ölçer. Karar (sahip): 2026-10-29'da ölçülür, yalnız iki dönemde de PR'ı olan projeler karşılaştırılır. Hatırlatma görevi kuruldu.
 - **Bağlı kalemler:** Yok.
+
+---
+
+### TB-010 — `--auto` koruma okuyucusu ruleset okumuyor
+- **Tespit Tarihi:** 2026-11-09 (otomatik birleştirme ortak süreç yapılırken)
+- **Öncelik:** P3 (Fırsatta)
+
+#### 🟢 Sade Anlatım
+- **Sorun ne?** Otomatik birleştirme kapısı, bir deponun "zorunlu denetim" kuralı olup olmadığına bakar. Yalnız eski usul dal korumasını okur; yeni usul kural setini (ruleset) okumaz.
+- **Benzetme:** Kapıdaki görevli yalnız eski kilit defterine bakıyor; yeni kilit defteri varsa onu görmez ve "kilit yok" sanar.
+- **Çözülmezse ne olur?** Zorunlu denetimi kural setiyle kuran bir depoda kapı `--auto`yu gereksiz reddeder; PR elle birleştirilir. Yanlış birleştirme doğmaz.
+- **Senden beklenen karar:** Yok.
+
+#### 🔧 Teknik Detay
+- **Açıklama:** `quality/merge-gate.js` `readProtection` yalnız klasik dal korumasını okur; ruleset okunmaz. 2026-11-09'da okunabilen 15 aile deposunda ruleset sayısı 0 idi.
+- **Etki:** Şimdilik yok. Sonuç ret yönündedir (kapı `--auto`yu reddeder); yanlış birleştirme doğurmaz.
+- **Çözüm yönü:** Bir depoda zorunlu denetim ruleset ile kurulduğunda okuyucu genişletilir.
+- **Neden Şimdi Çözülmüyor:** Ruleset kullanan depo yok (15 depoda 0); kısayol güvenli yönde hata verir.
+- **Bağlı kalemler:** Otomatik birleştirme kararı (`GERI-BILDIRIM-KAYDI.md`, 2026-11-09).
