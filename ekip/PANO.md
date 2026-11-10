@@ -2,7 +2,7 @@
 
 Son güncelleme: 2026-11-10
 
-**Kısa cevap:** `/git-temizlik` ilk denemesi SNN-Abacus-Core'da yapıldı, altı düzeltme işlendi (#194). Sahibin tek işi düzeltilmiş beceriyi makineye kopyalamak.
+**Kısa cevap:** `/git-temizlik` ilk denemesi SNN-Abacus-Core'da yapıldı, altı düzeltme işlendi (#194) ve makineye kopyalandı. Açık PR yok, cevapsız talep yok. Sahibin bekleyen işi yok.
 
 ## Departmanlar
 
@@ -24,7 +24,7 @@ Yok.
 
 ### Elle
 
-1. Beceriyi makineye kopyalamak için ana klasörde `node setup/setup-machine.js --uygula` çalıştırılacak.
+Yok.
 
 ## Son bitenler
 
