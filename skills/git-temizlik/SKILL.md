@@ -1,6 +1,6 @@
 ---
 name: git-temizlik
-description: Oturumun açıldığı projenin GitHub'da biriken bekleyenlerini (açık issue, PR, Dependabot uyarısı, silinmemiş dal) tek tabloda ölçer, sınıflandırır, müdürlere dağıtır, PR'ları sıraya koyup birleştirir ve sahibe tek brifle bitirir. Genel Müdür düzeni olan projelerde çalışır. "Git temizliği", "bekleyenleri topla", "issue ve PR'ları temizle", "Dependabot uyarılarını kapat", "/git-temizlik" dendiğinde kullan.
+description: Oturumun açıldığı projenin GitHub'da biriken bekleyenlerini (açık issue, PR, Dependabot uyarısı, silinmemiş ve öteki dallar) tek tabloda ölçer, sınıflandırır, müdürlere dağıtır, PR'ları sıraya koyup birleştirir ve sahibe tek brifle bitirir. Genel Müdür düzeni olan projelerde çalışır. "Git temizliği", "bekleyenleri topla", "issue ve PR'ları temizle", "Dependabot uyarılarını kapat", "/git-temizlik" dendiğinde kullan.
 ---
 
 # Projenin GitHub bekleyenlerini topla ve kapat
@@ -22,7 +22,7 @@ Kuralların kendisi standartlardadır, burada tekrar edilmez. Atıf: `<ev>/.clau
 
 ## 1. Envanter
 
-Tek tablo çıkar. Satırlar: açık issue, açık PR, Dependabot uyarısı, silinmemiş dal, Actions kotası. Her satırda sayı ve "nasıl ölçüldü" bulunur.
+Tek tablo çıkar. Satırlar: açık issue, açık PR, Dependabot uyarısı, silinmemiş dal (birleşmiş PR'ın dalı), öteki dallar, Actions kotası. Her satırda sayı ve "nasıl ölçüldü" bulunur.
 
 Aşağıdaki komutlar Bash aracında çalıştırılır: dal komutu Bash sözdizimi kullanır ve PowerShell'de çalışmaz.
 
@@ -31,13 +31,16 @@ Aşağıdaki komutlar Bash aracında çalıştırılır: dal komutu Bash sözdiz
 gh issue list --state open --limit 200 --json number,title,labels,updatedAt --jq '.[]|[.number,.title,(.labels|map(.name)|join(",")),.updatedAt[:10]]|@tsv'
 
 # Açık PR: CI, çakışma, taslak, dokunduğu dosya sayısı, yazar (Dependabot "app/dependabot" görünür)
-gh pr list --state open --limit 100 --json number,title,isDraft,mergeable,mergeStateStatus,changedFiles,reviewDecision,author,statusCheckRollup --jq '.[]|[.number,.title,(if .isDraft then "taslak" else "hazir" end),.mergeable,.mergeStateStatus,.changedFiles,((.statusCheckRollup//[])|map(.conclusion // .state // .status)|unique|join("/")),(.reviewDecision//"-"),.author.login]|@tsv'
+gh pr list --state open --limit 100 --json number,title,isDraft,mergeable,mergeStateStatus,changedFiles,reviewDecision,author,headRefOid,statusCheckRollup --jq '.[]|[.number,.title,(if .isDraft then "taslak" else "hazir" end),.mergeable,.mergeStateStatus,.changedFiles,((.statusCheckRollup//[])|map(.conclusion // .state // .status)|unique|join("/")),(if (.reviewDecision//"")=="" then "-" else .reviewDecision end),.author.login,.headRefOid[:7]]|@tsv'
 
-# Dependabot uyarısı: no, önem, kapsam (runtime = çalışan, development = geliştirme), paket, düzeltme sürümü
-gh api "repos/{owner}/{repo}/dependabot/alerts?state=open&per_page=100" --paginate --jq '.[]|[.number,.security_advisory.severity,(.dependency.scope // "?"),.security_vulnerability.package.name,(.security_vulnerability.first_patched_version.identifier // "yok")]|@tsv'
+# Dependabot uyarısı: no, önem, kapsam (runtime = çalışan, development = geliştirme), ilişki (direct = projenin kendi paketi, transitive = başka paketin getirdiği), paket, düzeltme sürümü
+gh api "repos/{owner}/{repo}/dependabot/alerts?state=open&per_page=100" --paginate --jq '.[]|[.number,.security_advisory.severity,(.dependency.scope // "?"),(.dependency.relationship // "?"),.security_vulnerability.package.name,(.security_vulnerability.first_patched_version.identifier // "yok")]|@tsv'
 
 # Silinmemiş dal: ucu, birleşmiş bir PR'ın son commit'iyle AYNI olan dallar (aşağıdaki not)
 D=$(gh api "repos/{owner}/{repo}/branches?per_page=100" --paginate --jq '.[]|select(.name!="main")|[.name,.commit.sha]|@tsv') && M=$(gh pr list --state merged --limit 200 --json headRefName,headRefOid,isCrossRepository --jq '.[]|select(.isCrossRepository|not)|[.headRefName,.headRefOid]|@tsv') && comm -12 <(echo "$D"|sort -u) <(echo "$M"|sort -u) || echo OKUNAMADI
+
+# Öteki dallar: varsayılan dal dışında, açık PR'ı olmayan, ucu birleşmiş PR ucuyla aynı OLMAYAN dallar (silinmez, "karar" kutusuna gider)
+D=$(gh api "repos/{owner}/{repo}/branches?per_page=100" --paginate --jq '.[]|select(.name!="main")|[.name,.commit.sha]|@tsv') && A=$(gh pr list --state open --limit 100 --json headRefName,isCrossRepository --jq '.[]|select(.isCrossRepository|not)|.headRefName') && M=$(gh pr list --state merged --limit 200 --json headRefName,headRefOid,isCrossRepository --jq '.[]|select(.isCrossRepository|not)|[.headRefName,.headRefOid]|@tsv') && comm -23 <(echo "$D"|sort -u) <(echo "$M"|sort -u) | awk -F'\t' 'FILENAME==ARGV[1]{a[$1]=1;next} !($1 in a)' <(echo "$A") - || echo OKUNAMADI
 
 # Actions kotası: hesap toplamı (çıkış 0 tamam, 1 eşik aşıldı, 2 ölçemedim)
 node "<ev>/.claude/standartlar-canli/quality/actions-quota.js"
@@ -48,9 +51,9 @@ Okuma notları:
 - `mergeable` ve `mergeStateStatus` bazen `UNKNOWN` döner (GitHub geç hesaplar). Bir kez daha sorulur; yine `UNKNOWN` ise tabloda "bilinmiyor" yazılır.
 - Dependabot uyarısı komutu hata verirse (alt sistem kapalı olabilir, yetki olmayabilir) satır "okunamadı: <hata>" olur. "0 uyarı" denmez.
 - **Dal için ad eşleşmesi yetmez.** 2026-11-10'da SNN-Standartlar'da ad eşleşmesi 1 dal gösterdi, uç eşitliği 0: dalın ucu birleşmiş PR'ın ucundan farklıydı (nedeni araştırılmadı). Ucu farklı dala dokunulmaz.
-- Birleşmemiş ama kapatılmış PR'ın dalı bu listeye girmez; o dalda birleşmemiş iş olabilir, "karar" kutusuna gider.
+- "Silinmemiş dal" komutu yalnız birleşmiş PR'ın dalını bulur. Öteki her dal ("öteki dallar" komutu) bunlardan biridir: kapatılmış ama birleşmemiş PR'ın dalı, hiç PR'ı olmayan dal, birleşmeden sonra yeni commit almış dal. Hepsinde birleşmemiş iş olabilir; silinmez, "karar" kutusuna gider. Satır sayısı tabloya yazılır (0 ise "yok", komut hata verdiyse "okunamadı").
 - Kota hesap geneli ölçülür (`<ev>/.claude/standartlar-canli/docs/actions-kotasi.md`). Tabloya hesap toplamı ve eşik ile bu projenin satırı yazılır; öteki projelerin satırları yazılmaz (§6). Yalnız gizli depo kota yakar (`isPrivate`). Açık depoda satır "ücretsiz, sayılmadı" olur.
-- **Kota öngörüsü.** Birleştirilecek PR sayısı N ise en az N−1 ek CI koşumu gelir (adım 4, neden orada). Bir koşumun süresi `gh run list --limit 10 --json name,startedAt,updatedAt,conclusion` ile okunur; GitHub her işi dakikaya yuvarlar (`<ev>/.claude/standartlar-canli/docs/actions-kotasi.md`). Çarpım kalan kotayı aşıyorsa brife yazılır ve PR toplama (adım 3) zorunlu olur.
+- **Kota öngörüsü.** Açık depoda (`isPrivate` false) atlanır: kota yakmaz. Gizli depoda, birleştirilecek PR sayısı N ise en az N−1 ek CI koşumu gelir (adım 4, neden orada). Bir koşumun süresi `gh run list --limit 10 --json name,startedAt,updatedAt,conclusion` ile okunur; GitHub her işi dakikaya yuvarlar (`<ev>/.claude/standartlar-canli/docs/actions-kotasi.md`). Çarpım kalan kotayı aşıyorsa brife yazılır ve PR toplama (adım 3) zorunlu olur.
 
 **Vaka (Gunum-Var, 2026-11-10, talep #191):** 14 PR ardışık birleşti. Her PR iki kez CI koştu, yaklaşık 70 dakika kota gitti. Bu sayı sahibin ölçümüdür; bu depoda yeniden ölçülmedi.
 
@@ -66,10 +69,13 @@ Genel Müdür sınıflandırır; müdüre sorulmaz. Her kalem dört kutudan biri
 | **Kapanmaz** | Eskimiş, tekrar eden, yapılmayacak ya da düzeltmesi olmayan kalem | Gerekçesi yazılı kapatılır ya da bırakılır (adım 4) |
 
 Kurallar:
-- **TB kaydı olan issue elle kapatılmaz.** Başlığında `TB-xxx` olan issue, kayıt kütükten arşive taşınınca senkronla kapanır (`teknik-borc-standardi.md`, "Kapanış"). Kutu: "koddan kapanır"; kütük işi belge turundadır (adım 5).
+- **TB kaydı olan issue elle kapatılmaz.** Başlığında `TB-xxx` olan issue, kayıt kütükten arşive taşınınca senkronla kapanır (`teknik-borc-standardi.md`, "Kapanış"). Kutu: "koddan kapanır"; kütük kapanışı adım 5'tedir.
+- **Ertelenmiş kayıt dağıtıma girmez.** Başlığında `TB-xxx` olan issue'nun kütük kaydı (`docs/teknik-borc.md`) dağıtımdan önce okunur. Kayıt sahip kararıyla ertelenmişse (örnek: "bir sonraki ana sürüm") kalem "koddan kapanır, ertelenmiş" diye tabloda görünür, müdüre verilmez. Verilirse ertelenen iş erken yapılır. Vaka (SNN-Abacus-Core, 2026-11-10, talep #194): TB-013 ve TB-015 bu durumdaydı.
+- **Öteki dallar "karar" kutusudur** (adım 1): silinmez, brife dal adı ve tek cümlelik soru yazılır.
 - **Canlı veritabanına yazan iş "koddan kapanır" olmaz.** Önce `es-zamanli-calisma-standardi.md` §8 okunur: işlemi adıyla anan onay ya da SQL dosyası. SQL dosyası hazırlanır, sahip çalıştırır; kutu "sahip adımı".
 - **Dependabot uyarısı bir kalemdir; güvenlik sınıflandırması Genel Müdür'de kalır** (`alt-ajan-standardi.md` Kural 8). Önem, çalışan/geliştirme kapsamı ve "düzeltme var mı" tablodan okunur:
-  - Düzeltme sürümü var: "koddan kapanır". Müdüre yalnız paket yükseltme kodu gider.
+  - Düzeltme sürümü var ve ilişki `direct`: "koddan kapanır". Müdüre yalnız paket yükseltme kodu gider.
+  - Düzeltme sürümü var ama ilişki `transitive` (başka paketin getirdiği): düzeltme sürümü üst paketin izin verdiği aralıkta mı diye bakılır. Aralıktaysa "koddan kapanır". Değilse "karar" kutusuna gider: üst paketin istemediği ana sürümü zorlamak sahibin kararıdır. Denetim (npm): `npm ls <paket>` üst paketi gösterir, `npm view <üst paket>@latest dependencies.<paket>` onun istediği aralığı. Öteki paket yöneticilerinde aynı soru o yöneticiyle sorulur. Bu denetim sınıflandırmanın parçasıdır, müdüre verilmez (Kural 8). Vaka (SNN-Abacus-Core, 2026-11-10, uyarı #13): düzeltme 11.0.1; üç üst paketin son sürümü `^10.x` istiyordu.
   - Düzeltme yok: "kapanmaz", gerekçeyle kapatılır. **Ek kural (bu becerinin kararı, standartta yok):** çalışan (`runtime`) kapsamda, önemi yüksek ya da kritik ve düzeltmesi olmayan uyarı kapatılmaz; "karar" kutusuna gider. Riski kabul etmek sahibin kararıdır.
 - Aynı paketi yükselten uyarılar tek kalemde toplanır; bir yükseltme çoğu zaman birkaç uyarıyı birden kapatır.
 
@@ -89,7 +95,7 @@ Kurallar:
    - Test zaman aşımına düşerse: tek başına yeniden koşulur; yine düşerse sınırı gevşetmeden raporlanır.
    - Müdür raporu: Yaptım, Denetlemedim, Bekleyen.
 7. **Müdür tipi Agent aracında yüklü değilse** (`.claude/agents/*` oturum başında kayıtlı olmayabilir; vaka: Gunum-Var 2026-11-10): `subagent_type: "general-purpose"` kullanılır ve tarifin ilk satırı "Önce `.claude/agents/<kart adı>.md` dosyasını oku ve ona uy" olur. Yedekte de model ve seviye açık yazılır; kartın `model` alanı yedeğe uygulanmaz.
-8. **Rapor doğrulama.** Kritik iddia (test sonucu, dosya listesi) Genel Müdür tarafından doğrulanır (Kural 6): `git -C <kopya> diff --stat origin/main`. Commit ve PR açma müdürün değil Genel Müdür'ündür; `ekip/genel-mudur.md` "İş verme kalıbı" sonundaki üç adım uygulanır.
+8. **Rapor doğrulama.** Kritik iddia (test sonucu, dosya listesi) Genel Müdür tarafından doğrulanır (Kural 6): `git -C <kopya> diff --stat origin/main`. Commit ve PR açma müdürün değil Genel Müdür'ündür; `ekip/genel-mudur.md` içinde commit ve PR adımlarını anlatan bölüm uygulanır (bölümün adı ve yeri projeden projeye değişebilir).
 
 ## 4. PR döngüsü
 
@@ -101,7 +107,10 @@ Birleştirme kuralı `es-zamanli-calisma-standardi.md` §7'dedir. Burada yalnız
 3. Zorunlu denetim var mı: `gh api "repos/{owner}/{repo}/branches/<varsayılan dal>/protection/required_status_checks" --jq '.contexts'`. Hata metni "Branch not protected" ise yok. Başka bir hata (yetki, ağ) ise **okunamadı**: elle birleştirme yolu seçilir ve tabloya "okunamadı" yazılır.
 
 **Her PR için, sırayla.** Önceki PR birleşmeden bir sonrakinin dalı güncellenmez. Hepsini baştan güncellemek her birleşmeden sonra hepsini yeniden geride bırakır ve CI iki kez koşar.
-1. `mergeStateStatus` `BEHIND` ise `gh pr update-branch <no>`. Çakışma varsa kopyada çözülür (aşağıda).
+1. **Dal güncelliği.** `mergeStateStatus` `BEHIND` ise `gh pr update-branch <no>`. Çakışma varsa kopyada çözülür (aşağıda). Güncellik şartı olmayan depoda `BEHIND` hiç görünmez (SNN-Abacus-Core: `strict: false`), bu yüzden ayrıca geride kalma sayısı okunur: `gh api "repos/{owner}/{repo}/compare/<varsayılan dal>...<headRefOid>" --jq .behind_by` (`headRefOid`: PR'ın uç commit'i; adım 1'deki PR listesinin son sütunu (kısa SHA, compare bunu da kabul eder); dal adı yerine bu kullanılır, çünkü dal silinince ya da PR çataldan gelince dal adı 404 verir).
+   - `behind_by` sıfırdan büyükse ve PR'ın denetimleri bu tur başlamadan önce koşmuşsa (`gh pr view <no> --json statusCheckRollup --jq '[.statusCheckRollup[].completedAt]|max'`, tur başlangıcından eski) birleştirmeden önce bir kez güncellenir. Vaka (SNN-Abacus-Core, 2026-11-10): `mergeStateStatus` `CLEAN`, dal 6 commit geride, denetimler 2026-10-21 tarihliydi.
+   - Bu turda denetimi koşmuş PR, güncellik şartı olmayan depoda yalnız geride diye yeniden güncellenmez; yoksa her PR'da çift CI koşumu geri gelir (adım 1, vaka).
+   - Okuma hata verirse (çatal PR'ında SHA bulunamayabilir) "okunamadı" yazılır, geride sayılmaz.
 2. Birleştirme §7'ye göre:
    - **Zorunlu denetimli depoda:** `gh pr merge <no> --auto --merge` (ya da deponun yöntemi). GitHub CI yeşil olunca kendisi birleştirir. Birleşme görülmeden sonraki PR'a geçilmez: `gh pr view <no> --json state,mergedAt`.
    - **Zorunlu denetim yoksa:** `gh pr checks <no> --watch -i 20`, hepsi yeşilse elle `gh pr merge <no> --merge`.
@@ -134,15 +143,19 @@ Döngü bitince adım 1'in komutları yeniden çalışır; bitiş sayıları ora
 
 ## 5. Belge turu
 
-En sonda, tek müdür. Kapsamı kütük, pano ve rehber olan müdür seçilir (ortak adı "Belge Müdürü", `ekip-duzeni-standardi.md`; kartı `.claude/agents/` içinden bulunur). Böyle bir müdür yoksa tur yapılmaz; brifte "belge turu yapılmadı: belge müdürü yok" yazılır.
+En sonda, belge turunu tek müdür yapar. Kapsamı pano ve rehber olan müdür seçilir (ortak adı "Belge Müdürü", `ekip-duzeni-standardi.md`; kartı `.claude/agents/` içinden bulunur). Böyle bir müdür yoksa tur yapılmaz; brifte "belge turu yapılmadı: belge müdürü yok" yazılır.
+
+**Kütük kapanışının sahibi** ayrıca bulunur: projenin `ekip/genel-mudur.md` içindeki "Departmanlar" ve "Sınırlar" tablolarından, kütüğü kimin tuttuğuna bakılır. Belge turunu yapan müdürden farklı olabilir (SNN-Abacus-Core'da kütük Yazılım Müdürü'nde, pano Belge'de; talep #194).
+- Aynı müdürse kütük kapanışı turun tarifine girer.
+- Farklıysa kütük kapanışı o müdürün son PR'ına girer ya da ayrı tarife verilir. Ayrı tarife ayrı PR demekse kota öngörüsüne eklenir.
 
 Tarife girenler:
-1. **Kütük kapanışları:** bu turda çözülen `TB-xxx` kayıtları kütükten arşive taşınır (`teknik-borc-standardi.md`, "Kapanış"); iki dosya aynı commit'te.
+1. **Kütük kapanışları:** bu turda çözülen `TB-xxx` kayıtları kütükten arşive taşınır (`teknik-borc-standardi.md`, "Kapanış"); iki dosya aynı commit'te. Kütüğü tutan müdürün işidir (yukarıda).
 2. **Pano:** biten işler yazılır, eskiyen satır kısaltılır.
 3. **Rehber sayıları:** `CLAUDE.md` ve proje rehberinde elle yazılmış sayılar (test sayısı, açık kayıt sayısı gibi) güncel ölçümle düzeltilir. Ölçülmeyen sayı "ölçülmedi" diye bırakılır.
 4. **Oturum belleği:** bu turdan kalıcı bir ders çıktıysa tarihli ve ölçümlü yazılır.
 
-Belge turu son PR'ı açar; bir PR daha kota demektir (adım 1 öngörüsüne eklenir).
+Belge turu son PR'ı açar; bir PR daha kota demektir (adım 1 öngörüsüne eklenir; açık depoda kota sayılmaz).
 
 ## 6. Brif
 
@@ -156,6 +169,7 @@ Sonuç (başlangıç → bitiş)
 - Açık issue: <a> → <b>
 - Açık Dependabot uyarısı: <a> → <b>
 - Silinmemiş birleşmiş dal: <a> → <b>
+- Öteki dallar (karar bekleyen): <a> → <b>
 - Actions kotası (hesap): <a> / <eşik> dk → <b> dk
 - Ölçüm notu: <ölçülemeyen ya da "okunamadı" olan satır ve nedeni; yoksa "hepsi ölçüldü">
 

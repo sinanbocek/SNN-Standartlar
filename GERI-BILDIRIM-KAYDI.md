@@ -34,6 +34,22 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 ## Kararlar
 
 
+### 2026-11-10 · git-temizlik ilk deneme düzeltmeleri (#194) — **KABUL (Genel Müdür, talebin kapsamı içinde)**
+
+- **Kimden:** SNN-Abacus-Core (açık depo), `/git-temizlik` becerisinin ilk denemesi, 2026-11-10.
+- **Dört şart:** gerçek olay (ilk deneme: 0, 1 ve 2. adımlar komutları değiştirilmeden çalıştı, beş envanter komutu hata vermedi; pürüz çıktının ve talimatın içeriğinde), ölçülmüş çıktı (altı madde, her biri o projedeki çıktıyla), denenen alternatif (her pürüzün etrafından elle dolaşıldı; beceri ortak depodan geldiği için proje tarafında kalıcı çözüm yok), etki (beceriyi çalıştıran her proje; ölçüm yalnız SNN-Abacus-Core'da). Genel Müdür maddeleri SNN-Abacus-Core'da salt okuma ile yeniden üretti (2026-11-10); madde 5'te #69 o arada birleştiği için sayılar yeniden üretilemedi, mekanizma ölçüldü.
+- **Karar, altı madde ve küçük not (hepsi `skills/git-temizlik/SKILL.md`):**
+  1. KABUL. PR komutundaki `reviewDecision//"-"` boş metinde devreye girmiyordu (PR #74: boş metin). İfade `(if (.reviewDecision//"")=="" then "-" else .reviewDecision end)` oldu.
+  2. KABUL. Adım 1'e "öteki dallar" satırı ve komutu eklendi: varsayılan dal dışında, açık PR'ı olmayan, ucu birleşmiş PR ucuyla aynı olmayan dallar. Silinmez, "karar" kutusuna gider. Tablo artık altı satır; `description`, başlangıç cümlesi ve brif şablonu aynı dilde tutuldu.
+  3. KABUL. Alt bağımlılık uyarısında (`dependency.relationship = transitive`) "düzeltme var" yetmez: düzeltme üst paketin izin verdiği aralıkta mı denir; değilse "karar" kutusu. Vaka: uyarı #13, minimatch düzeltmesi 11.0.1, üç üst paketin son sürümü `^10.x` istiyor. Tablo komutuna `relationship` sütunu eklendi. Denetim Genel Müdür'ün sınıflandırmasındadır, müdüre verilmez (alt ajan standardı Kural 8).
+  4. KABUL. Başlığında `TB-xxx` olan issue'nun kütük kaydı okunur; sahip kararıyla ertelenmişse dağıtıma girmez, tabloda "koddan kapanır, ertelenmiş" görünür. Vaka: TB-013 ve TB-015 ("bir sonraki ana sürüm").
+  5. KABUL, kapsamı daraltılarak (aşağıda).
+  6. KABUL. Kütük kapanışının sahibi projenin "Departmanlar" ve "Sınırlar" tablolarından bulunur; belge turunu yapan müdürden farklıysa kapanış o müdürün son PR'ına girer ya da ayrı tarife verilir. Adım 3.8 bölüm konumuna değil içeriğe ("commit ve PR adımlarını anlatan bölüm") atıf yapar. "Tek müdür" ifadesi "belge turunu tek müdür yapar" oldu; son turun kota etkisi korundu.
+  - Küçük not: KABUL. Kota öngörüsü açık depoda (`isPrivate` false) atlanır.
+- **Madde 5 daraltması ve gerekçesi:** Talep "geride olan ve denetimi eski PR birleştirmeden önce güncellensin" diyordu. Beceri bunu şöyle uygular: güncellik şartı olmayan depoda `BEHIND` görünmediği için geride kalma `compare` ile okunur (`behind_by`); geride olan PR'ın denetimleri **tur başlamadan önce** koşmuşsa birleştirmeden önce bir kez güncellenir. Bu turda denetimi koşmuş PR, yalnız geride diye yeniden güncellenmez. Gerekçe: aksi hâlde her PR yeniden güncellenir ve #191'in ilk pürüzü (her PR'da iki CI koşumu, Gunum-Var'da 14 PR için yaklaşık 70 dakika, talep sahibinin ölçümü) geri gelir. Ek karar: `compare` dal adıyla değil PR'ın uç commit'iyle (`headRefOid`) çağrılır. Dal adı dal silinince 404 verdi (SNN-Abacus-Core PR #74 birleşip dalı silinince ölçüldü); kısa SHA ile çağrı çalıştı. Çatal PR'ında SHA'nın bulunup bulunmadığı denenmedi; hata verirse beceri "okunamadı" yazar, geride saymaz.
+- **Ölçülmedi:** öteki projeler ölçülmedi (yalnız SNN-Abacus-Core). Düzeltilmiş beceri yeniden koşulmadı. #69'un sayıları (denetim tarihi, geride kalma) yeniden üretilemedi. Çatal PR'ında `compare` çağrısı. "Öteki dallar" komutu SNN-Abacus-Core'da (sonuç boş) ve bu depoda (1 dal) çalıştı; kapatılmış-birleşmemiş PR'lı dalda denenmedi.
+- **Sahibe kalan adım:** PR birleşince makinede canlı kopya tazelenir, sonra `node setup/setup-machine.js --uygula`.
+
 ### 2026-11-10 · /git-temizlik aile becerisi (#191) — **KABUL (sahip talimatı 2026-11-10)**
 
 - **Kimden:** Gunum-Var.
