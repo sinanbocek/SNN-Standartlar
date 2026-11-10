@@ -34,6 +34,16 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 ## Kararlar
 
 
+### 2026-11-10 · /git-temizlik aile becerisi (#191) — **KABUL (sahip talimatı 2026-11-10)**
+
+- **Kimden:** Gunum-Var.
+- **Dört şart:** gerçek olay (2026-11-10, Gunum-Var: 33 açık issue, 4 açık PR ve 25 Dependabot uyarısı tek oturumda elle toplandı; süreç yazılı değildi, 14 PR birleşti, uyarı 0'a indi), ölçülmüş çıktı (oturum sonu `gh` sayımları; her PR'da iki CI koşumu, 14 PR için yaklaşık 70 dakika kota; `ekip/<müdür>/DURUM.md` 7 kez çakıştı; aile CI'ı iki PR'ı Türkçe dosya adı yüzünden kırdı), denenmiş alternatif (projede `ekip/genel-mudur.md` süreci kısmen anlatıyor; envanter, sınıflandırma, PR sırası ve brif şablonu yok; projeye özel beceri başka projeye taşınmaz), etki: en az dört proje, aynı gün (Gunum-Var, SNN-UI, SNN-ihale-ozet, SNN-Ihale-Maliyet-Teklif-Yonetimi). Sayılar talep sahibinin ölçümüdür; bu depoda yeniden ölçülmedi.
+- **Karar:** kabul. `skills/git-temizlik/SKILL.md` (PR #192): envanter, sınıflandırma, dağıtım, PR döngüsü, belge turu, brif şablonu. Beceri projeye özel bilgiyi `ekip/genel-mudur.md` ve `.claude/agents/` dosyalarından okur; ekip düzeni yoksa `proje-kur`'a yönlendirir ve yalnız envanter çıkarır.
+- **Standartla ayrışan yerler (standart kazandı):** (1) Talepteki "her PR güncelle, CI bekle, birleştir" sırası `es-zamanli-calisma-standardi.md` §7 ile birleşti: zorunlu denetimli depoda `--auto`, değilse elle birleştirme; dal yalnız sırası gelen PR için güncellenir, böylece ikinci CI koşumu doğmaz. (2) Dependabot uyarısının sınıflandırması Genel Müdür'de kalır, müdüre yalnız paket yükseltme kodu gider (`alt-ajan-standardi.md` Kural 8). (3) Dependabot PR'ını kapatma yalnız yerini alan PR için; başkasının PR'ına dokunulmaz (`es-zamanli-calisma-standardi.md` §1 madde 4).
+- **Becerinin eklediği, talepte olmayan tek kural:** çalışan kapsamda, yüksek ya da kritik önemde, düzeltmesi olmayan Dependabot uyarısı kapatılmaz; sahibin kararına gider. Riski kabul etmek sahibin işidir. Beğenilmezse beceriden tek madde çıkarılır.
+- **Kısıtlar:** Ölçülmedi: beceri uçtan uca koşulmadı; ilk deneme Gunum-Var'da olacak. Aynı anda kaç ajanın ağır testte güvenli olduğu, koşum başına kota ve `strict`'in kotaya etkisi de ölçülmedi.
+- **Sahibe kalan adım:** makinede canlı kopya tazelendikten sonra `node setup/setup-machine.js --uygula` (beceri `~/.claude/skills` altına kopyalanır).
+
 ### 2026-11-10 · Jest kapanış hatası: yerel kontrol çıktıyı da okusun (#178) — **KABUL (Genel Müdür, sahip vekâleti 2026-11-10)**
 
 - **Kimden:** SNN-Games-Pulmaca.
