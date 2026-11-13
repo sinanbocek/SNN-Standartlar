@@ -68,7 +68,7 @@ Bir görev her projede tek adla anılır. Proje hangi müdürü açacağını se
 | Ürün Müdürü | `urun-muduru` | Özellik önceliğini ve yol haritasını hazırlar; kod yazmaz. | öneri | Product Manager, Ürün Yöneticisi |
 | Araştırma Müdürü | `arastirma-muduru` | Piyasa, rakip ve kaynak taraması yapar, bulguyu kaynağıyla yazar; karar vermez. | öneri | Research Manager, Araştırmacı |
 | İçerik Müdürü | `icerik-muduru` | Pazarlama'nın onaylı mesajını metne ve sosyal medya gönderisine döker; görsel Tasarım'ın işidir. | öneri | Content Manager, Copywriter, Metin Yazarı |
-| Destek Müdürü | `destek-muduru` | Son kullanıcıdan gelen talep ve geri bildirimleri toplar, sınıflar, yanıt taslağı yazar; projeler arası talep Talep'indir. | öneri | Support Manager, Müşteri Müdürü |
+| Destek Müdürü | `destek-muduru` | Son kullanıcıdan gelen talep ve geri bildirimleri toplar, sınıflar, yanıt taslağı yazar; projeler arası talep Talep'indir; yayından önce sanal müşteri canlandırmak Destek'in değil, bağımsız birim Müşteri İlişkileri'nin işidir (aşağıda "Bağımsız birimler"). | öneri | Support Manager, Müşteri Müdürü |
 | Finans Müdürü | `finans-muduru` | Bütçe, maliyet ve muhasebe kayıtlarını hazırlar; ödeme yapmaz. | öneri | Finance Manager, Muhasebe Müdürü, Bütçe Müdürü |
 | Uyum Müdürü | `uyum-muduru` | KVKK (Kişisel Verileri Koruma Kanunu), mağaza ve sözleşme kurallarına uygunluğu denetler ve not yazar. | öneri | Compliance Manager, Hukuk Müdürü |
 | Çeviri Müdürü | `ceviri-muduru` | Metni başka dile uyarlar (yerelleştirme); özgün metni değiştirmez. | öneri | Translator, Yerelleştirme Müdürü, Localization Manager |
@@ -83,6 +83,7 @@ Aşağıdaki ayrımlar projelerdeki kart tanımlarına dayanır.
 - **Yayın ve Altyapı:** Yayın sürümü ve yayın komutunu hazırlar; Altyapı sunucuyu ve ortamı kurar.
 - **Pazarlama ve İçerik:** Pazarlama kitleye, mesaja ve takvime karar verir; İçerik onaylı mesajı metne döker.
 - **Otomasyon ve Yazılım:** Otomasyon otomatik işlem motorlarını ve tarama betiklerini, Yazılım ekran ve servis kodunu yazar.
+- **Destek ve Müşteri İlişkileri:** Destek gerçek son kullanıcıdan gelen sözü toplar; Müşteri İlişkileri yayından önce sanal müşteri canlandırır ve gerçek kişiyle hiç konuşmaz.
 
 ### Tabloda olmayan alan
 
@@ -91,6 +92,79 @@ Proje önce tabloya bakar. Gerçekten yoksa aynı biçimde ad koyar (`<Alan> Mü
 ### Güvenlik Müdürü açılmaz
 
 Güvenlik incelemesini Genel Müdür yapar; bu yüzden tabloda Güvenlik Müdürü yoktur (`alt-ajan-standardi.md` Kural 8).
+
+## Bağımsız birimler
+
+Bağımsız birim: Genel Müdür'ün iş verdiği, kendi görev kartı olan, ama üretim zincirinin halkası olmayan yardımcı ajan. Müdürler içeriği üretir ya da denetler; birim zincirin dışından bakar. **Şu an tek birim vardır: Müşteri İlişkileri.** Birim kurmak isteğe bağlıdır; kurmayan projeye iş düşmez.
+
+### Neden (vaka, 2026-11-13)
+
+SNN-Destek-Gundemi'nde destek listesi için altı PDF biçimi hazırlandı. Altısı da Genel Müdür'ün "izleyici okuması" listesinden ve Uyum'un doğruluk denetiminden geçti; sahip yine de "hiç beğenmedim" dedi. Hiçbir müdür ve Genel Müdür, okurun "bana hangi destek uyar?" sorusunun cevapsız kaldığını görmemişti. Genel Müdür sanal müşteri panelini denedi: 8 sanal esnaf, her biri ayrı ajan (Sonnet · orta). Sayımın özeti (talep #198, talep sahibinin ölçümü; bu depoda yeniden ölçülmedi):
+
+- "Bana hangi destek uyar, anladım" diyen: 0/8.
+- Ortak bulgu: 8 kişi cevap yerine sınıf bulma ödevi gördü; 8 kişi "—*" işaretini "bilmiyoruz" diye okudu; 5 kişi tutar bekledi.
+- Bulgular yeni bir biçim doğurdu; sahip yeni biçimi "öncekilere göre çok daha güzel" diye kabul etti.
+
+Yöntem, `Jakeschincariol/founder-skill` deposundaki "consumer panel" fikrinden uyarlandı (MIT lisans; yalnız yöntem alındı, kod alınmadı). Sahip kalıcı birim istedi (proje PR'ları #68 ve #69) ve bunun aile standardı olmasını istedi (2026-11-13).
+
+**Ölçülmeyenler:** Panelin gerçek okurla uyumu; yalnız sahibin tek bir kabulü var. Tam panelin hızlı panele göre daha iyi bulgu verdiği; ikisi karşılaştırılmadı, "varsayılan tam panel" sahip kararıdır, ölçüm değil. Vaka tek projede ve tek içerik türünde (PDF) görüldü. Hangi aile projelerinin kullanıcıya dönük içerik ürettiği sayılmadı. SNN-Destek-Gundemi 2026-11-13'te `quality/data/family-projects.json` listesinde yoktur.
+
+### Ad ve ad kalıbı istisnası
+
+- **Ad:** Müşteri İlişkileri. **Kart:** `.claude/agents/musteri-iliskileri.md`.
+- Bu ad, "Ortak müdür adları" kalıbının (`<alan>-muduru`) istisnasıdır. Gerekçe (sahip kararı, 2026-11-13): ad farkı, birimin üretimin dışında durduğunu görünür kılar. İstisna yalnız bu bölümde sayılan birimler içindir. Başka bir bağımsız birim için proje adı kendisi koymaz; `standart-talep` ile bildirir.
+- **Karışma riski:** "Müşteri Müdürü" adı tabloda Destek Müdürü'ne yönlendirilir. Destek gerçek kullanıcıdan gelen sözü toplar. Müşteri İlişkileri gerçek kişiyle hiç konuşmaz; yalnız yayından önce sanal müşteri canlandırır. Proje ikisini de açarsa görev tanımları ayrı kalır.
+- Kart adında `-muduru` olmadığı için `.claude/agents/` klasörünü kart adına göre tarayan her araç bu kartı yabancı sayabilir. Bu depoda öyle bir araç ya da kapı yoktur (2026-11-13 metin taraması: `quality/`, `hooks/`, `setup/`, `debt-sync/`, `core/`, `.github/`, `ornek/`, `skills/`; `.claude/agents` ya da `-muduru` geçen tek yer `skills/git-temizlik/SKILL.md`, o da kartları ada bakmadan okur). Öteki aile projelerinin araçları ölçülmedi.
+
+### Bağımsızlık
+
+1. Birim işi yalnız Genel Müdür'den alır, raporunu yalnız ona verir. Sahibe yazmaz.
+2. Öteki müdürlerden iş almaz, onlara iş vermez. Onların iç notlarını, gerekçelerini ve tartışmalarını okumaz; yalnız müşteriye gidecek içeriğin kendisine bakar.
+3. Panel kişilerine içeriğin nasıl hazırlandığı söylenmez.
+4. Birim içeriği değiştirmez. Öneri yazar; değişikliği ilgili müdür yapar.
+
+### Panel: ne zaman, nasıl
+
+**Panele gitmek zorunlu değildir; Genel Müdür karar verir.** Her panel birkaç yüz bin parça tutar (aşağıda). Vakadan çıkan ve sayılmamış ölçüt:
+
+- **Gider:** ilk kez seçilen bir biçim ya da şablon; sahibin geri çevirdiği içerik; çok kişiye gidip geri alınamayan içerik.
+- **Gitmez:** aynı şablonda yeni veri; yazım ya da olgu düzeltmesi; iç belge.
+- Ölçütü proje kendi yöntem dosyasında daraltabilir ya da genişletebilir. İkinci bir vaka görülünce bu liste gözden geçirilir.
+
+**Yeri:** Üretimi yapan müdürlerin işi bittikten sonra; varsa doğruluk ya da uygunluk denetiminden (örn. Uyum Müdürü) önce. Gerekçe mantıklıdır, ölçülmedi: panel bir değişiklik doğurursa değişen içerik son denetimden geçsin. Dikkat: vakada panel Uyum'dan **sonra** koştu; "önce" sırasını vaka göstermedi. Biçim seçimi gibi kararlarda üretimden önce de çalışabilir.
+
+**Tam panel (panel yapılacaksa varsayılan):**
+- Her sanal kişi ayrı ajandır; kişiler birbirinden habersiz cevap verir. Kişi ajanı taze açılır, `fork` olmaz: fork Genel Müdür'ün bağlamını taşır, bağımsızlığı bozar.
+- Birim yönergeleri yazar ve cevapları sayar; kişi ajanlarını Genel Müdür açar. Proje bunun sebebi olarak alt ajanın alt ajan açamamasını gösterdi; bu depoda doğrulanmadı. Sebep ne olursa olsun düzenin faydası kalır: birim cevabı üretmez, yalnız sayar.
+- Kişinin cevabı eksik ya da bozuksa birim kendisi yazmaz. Genel Müdür kişiyi bir kez daha çalıştırır; yine olmazsa raporda "cevap yok" sayılır.
+- Model: Sonnet · orta (vakada ölçülen ayar). Kişi başına yaklaşık 100 bin parça okuduğu için Haiku'ya verilmez (`alt-ajan-standardi.md` Kural 9); Sonnet · yüksek ya da Haiku ile deneme yapılmadı. "İçerik kararı" satırı (Sonnet · yüksek) uygulanmaz: kişi hiçbir şeyi silmez ya da değiştirmez.
+- Aynı anda en çok 8 ajan çalışır (Kural 10, varsayım). Panel büyüklüğünü proje kendi yöntem dosyasında yazar; vakada 8 kişi. Fazlası dalgalar halinde çalışır.
+
+**Hızlı panel:** birimin kişileri tek başına sırayla canlandırması. Yalnız Genel Müdür açıkça isterse yapılır. Raporda "hızlı panel; kişiler bağımsız değil" yazar.
+
+**Maliyet (vakada ölçülen):** kişi başına 103.924–106.068 parça ve 7 araç çağrısı; kişi başına 27–40 saniye; 8 kişi toplam yaklaşık 840 bin parça. Hızlı panelin maliyeti ölçülmedi. Her panel raporuna kişi sayısı, panel türü ve model·seviye yazılır (Kural 10); Genel Müdür sonucu panelin değerine göre tartar.
+
+### Alt ajan standardıyla ilişki
+
+- Kural 3 ("küçük iş ajansız yapılır") panel için bir engel değildir: panelin amacı bağımsız bakıştır, tek ajanla alınamaz. Ama bu yüzden bedeli ayrıca gerekçelendirilir, yani yukarıdaki "panele gitmek zorunlu değildir".
+- Kural 4 (bağlı iş bölünmez) panelde çelişmez: kişi cevapları birbirine bağlı değildir, ayrı olması istenir.
+- Kural 8 (güvenlik incelemesi alt ajana verilmez) panelde konu dışıdır.
+
+### Değişmez sınırlar
+
+1. Kişiler kibar olmaz ve içerikte yazmayan bilgiyi uydurmaz. Rakamı yanlış bulurlarsa "bence yanlış" derler; doğruluğa Uyum karar verir.
+2. Her raporda şu anlamda bir cümle bulunur: "Bunlar sanal kişiler; neyin anlaşılmadığını gösterir, gerçek okunma ya da başvuru oranını tahmin etmez."
+3. Kişi sözü müşteri yorumu diye yayında kullanılmaz.
+4. Gerçek kişiye yazılmaz, anket açılmaz, gerçek kişi adı ya da kişisel veri kullanılmaz.
+5. Birim ücretli araç ya da kredi harcayan servis kullanmaz; yayın yapmaz.
+
+### Birimin raporu
+
+Birim Genel Müdür'e şunları verir: tek cümlelik sonuç; biçim ya da sahne başına tablo; ortak bulgular (her birinde kaç kişi dediği); anlaşılmayan kelimeler; "olsaydı okurdum" önerileri; sınır cümlesi, panel türü, kişi sayısı, neye bakılmadığı. Kişi havuzu ve kişi yönergesi kalıbı projenin yöntem dosyasındadır (vaka projesinde `ekip/musteri-iliskileri/YONTEM.md`); standart bunları dayatmaz.
+
+### Ortak beceri
+
+Yönerge kalıbını ve sayımı yapan ortak bir beceri düşünülebilir. Bu standart onu yazmaz; ikinci bir proje birim kurarsa ayrı iş olarak açılır (`GERI-BILDIRIM-KAYDI.md`, #198).
 
 ## Diğer standartlarla sınır
 
@@ -105,7 +179,8 @@ Bu standart başka kuralları tekrar etmez; bağ verir.
 Aşağıdakilerin hiçbiri bu standartla dayatılmaz. Her proje kendi ihtiyacına göre seçer.
 
 - **Hangi müdürler açılır.** Kaç müdür olacağı ve hangi alanların açılacağı projenin kararıdır. Ad tablosu bir açılış listesi değildir; açılan müdür yalnız tablodaki adı taşır. "Neden" bölümündeki vaka tablosu ise yalnız ölçümdür.
-- **Klasör düzeni ve durum dosyası adları.** `ekip/<ad>/` ya da `ekip/<ad>-muduru/` ya da başka bir düzen serbesttir. Görev kartı adı serbest değildir; "Ortak müdür adları" tablosundan gelir.
+- **Klasör düzeni ve durum dosyası adları.** `ekip/<ad>/` ya da `ekip/<ad>-muduru/` ya da başka bir düzen serbesttir. Görev kartı adı serbest değildir; "Ortak müdür adları" tablosundan gelir ("Bağımsız birimler" bölümündeki birim adı hariç).
+- **Bağımsız birim kurmak.** Müşteri İlişkileri isteğe bağlıdır; kurmayan proje bir şey yapmaz. Kuran proje kart adını ve yukarıdaki sınırları aynen alır, panel büyüklüğünü ve panele gitme ölçütünü kendi yöntem dosyasında yazar.
 - **Pano yapısı.** Tek sayfa mı, her müdüre ayrı durum dosyası mı, hangi başlıklar: proje seçer. Önemli olan durumun tek yerde bulunmasıdır.
 - **Genel Müdür'ün açılışta okuduğu dosyalar.** Hangi dosyaların okunacağını proje kendi rehberine yazar.
 
