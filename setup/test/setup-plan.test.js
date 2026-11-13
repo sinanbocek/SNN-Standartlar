@@ -101,7 +101,7 @@ expect('gizli depo: public alanı yok',
   'public' in JSON.parse(K.familyWithEntry(FAMILY_JSON, 'sinanbocek/Gizli', 'Gizli', false)).projects[1], false);
 // Asıl vaka çağrı yerindeydi: görünürlük ölçülüyor, familyWithEntry'ye geçirilmiyordu.
 expect('kurulum betiği görünürlüğü kayda geçirir',
-  /familyWithEntry\(.*, o\.repo\.isPublic\);/.test(require('fs').readFileSync(require('path').join(__dirname, '../setup-project.js'), 'utf8')), true);
+  /familyWithEntry\(.*o\.repo\.isPublic.*\);/.test(require('fs').readFileSync(require('path').join(__dirname, '../setup-project.js'), 'utf8')), true);
 expect('boş listeye ekler', JSON.parse(K.familyWithEntry('{ "projects": [] }\n', 'sinanbocek/Yeni', 'Yeni')).projects, [{ repo: 'sinanbocek/Yeni', dir: 'Yeni' }]);
 
 // Gerçek listeyle: satır sayısı bir artar, eski satırların hepsi aynen kalır.
@@ -124,6 +124,52 @@ expect('dışlanmış → iş yok', familyStep('excluded').status, 'present');
 // Liste okunamadıysa "yok" VARSAYILMAZ: ölçülemedi denir, iş proje sahibine gider.
 expect('okunamadı → ölçülemedi', familyStep(null).status, 'unmeasured');
 expect('okunamadı → sahibine', familyStep(null).who, 'owner');
+
+console.log('— yeniden adlandırılmış depo (2026-11-13, SNN-Kosgeb → SNN-Destek-Gundemi)');
+{
+  const LIST = [
+    '{',
+    '  "projects": [',
+    '    { "repo": "sinanbocek/Var", "dir": "Var" },',
+    '    { "repo": "sinanbocek/SNN-Kosgeb", "dir": "SNN-Kosgeb", "public": true }',
+    '  ],',
+    '  "excluded": [{ "repo": "baskasi/Dislanan", "reason": "x" }]',
+    '}',
+    '',
+  ].join('\n');
+  const NEW = 'sinanbocek/SNN-Destek-Gundemi';
+  const names = { 'sinanbocek/var': 'sinanbocek/Var', 'sinanbocek/snn-kosgeb': NEW };
+  expect('eski adlı kayıt güncel adla eşleşir', K.familyLookup(LIST, NEW, names), 'renamed');
+  expect('eşlem yoksa eski davranış (yok)', K.familyLookup(LIST, NEW), false);
+  expect('kayıt aynı adlıysa zaten listede', K.familyLookup(LIST, 'sinanbocek/Var', names), true);
+  expect('okunamayan kayıt için eşleşme uydurulmaz', K.familyLookup(LIST, NEW, { 'sinanbocek/var': 'sinanbocek/Var' }), false);
+  expect('eski ad hangisi', K.familyRenamedFrom(LIST, NEW, names), 'sinanbocek/SNN-Kosgeb');
+  expect('aynı adlıysa eski ad yok', K.familyRenamedFrom(LIST, 'sinanbocek/Var', names), null);
+  const out = K.familyWithEntry(LIST, NEW, 'SNN-Destek-Gundemi', true, names);
+  const parsed = JSON.parse(out);
+  expect('yeniden adlandırma: kayıt sayısı artmaz', parsed.projects.length, 2);
+  expect('yeniden adlandırma: repo güncel ad olur, dir ve public korunur', parsed.projects[1], { repo: NEW, dir: 'SNN-Kosgeb', public: true });
+  expect('yeniden adlandırma: dosyanın geri kalanı bayt bayt aynı', out.replace(NEW, 'sinanbocek/SNN-Kosgeb'), LIST);
+  expect('güncel adla zaten kayıtlıysa null', K.familyWithEntry(out, NEW, 'SNN-Destek-Gundemi', true, { 'sinanbocek/snn-destek-gundemi': NEW }), null);
+  expect('dışlanan eski ad da güncel adla bulunur', K.familyLookup(LIST, 'baskasi/Yeni-Dislanan', { 'baskasi/dislanan': 'baskasi/Yeni-Dislanan' }), 'excluded');
+  const rs = K.plan(base({ inFamily: 'renamed', familyRenamedFrom: 'sinanbocek/SNN-Kosgeb' })).find((x) => x.id === 'aile-listesi');
+  expect('plan: yeniden adlandırma betik işi', [rs.who, rs.status], ['agent', 'toAdd']);
+  expect('plan: adım satırı eski adı söyler', rs.why.includes('sinanbocek/SNN-Kosgeb') && /yeniden adland/i.test(rs.why), true);
+  const t = K.familyPrText({ full: NEW, name: 'SNN-Destek-Gundemi' }, 'sinanbocek/SNN-Kosgeb');
+  expect('PR başlığı yeniden adlandırmayı söyler', /SNN-Kosgeb/.test(t.title) && /SNN-Destek-Gundemi/.test(t.title), true);
+  expect('PR gövdesi yeni kayıt eklenmediğini söyler', /eklenmedi/.test(t.body), true);
+  const a = K.familyPrText({ full: NEW, name: 'SNN-Destek-Gundemi' }, null);
+  expect('ekleme PR başlığı', a.title, 'chore(aile): SNN-Destek-Gundemi aile listesine eklensin');
+  expect('PR gövdesi otomatik birleşmeyi söyler', /otomatik birle/i.test(a.body) && /otomatik birle/i.test(t.body), true);
+}
+
+console.log('— liste PR\'ı otomatik birleşir (2026-11-13; #174 6, #179 4, #197 3 gün bekledi)');
+expect('otomatik birleştirme açıldı', K.autoMergeNote({ ok: true, out: '' }), 'otomatik birleştirme açıldı');
+expect('başarısızlık: ilk satır, düşmez', K.autoMergeNote({ ok: false, err: 'GraphQL: hata bir\nikinci satır' }), 'otomatik birleştirme açılamadı: GraphQL: hata bir');
+expect('başarısızlık: boş hata metni', K.autoMergeNote({ ok: false, err: '' }), 'otomatik birleştirme açılamadı: bilinmeyen hata');
+expect('komut bağımsız değişkenleri', K.autoMergeArgs('https://github.com/sinanbocek/SNN-Standartlar/pull/203', 'sinanbocek/SNN-Standartlar'),
+  ['pr', 'merge', '203', '--repo', 'sinanbocek/SNN-Standartlar', '--auto', '--merge', '--delete-branch']);
+expect('PR numarası okunamazsa null', K.autoMergeArgs('bozuk', 'a/b'), null);
 
 console.log('— kütük şablonundaki makine adresi');
 // 2026-09-23: şablon `~/.claude/standartlar/…` yazıyordu; o yeri hiçbir betik kurmuyor ve 10 tüketici

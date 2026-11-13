@@ -49,6 +49,7 @@ function measure(dir) {
   const secretList = tryGh(['api', `repos/${full}/actions/secrets`]);
   const alerts = tryGh(['api', `repos/${full}/vulnerability-alerts`, '-i']);
   const fixes = tryGh(['api', `repos/${full}/automated-security-fixes`]);
+  const family = familyState(full);
   return {
     repo: { owner: info.owner.login, name: info.name, full, isPublic: info.visibility === 'public', isOrg: info.owner.type === 'Organization', defaultBranch: def },
     admin,
@@ -63,7 +64,8 @@ function measure(dir) {
     },
     gitattributes: exists(full, '.gitattributes', def),
     board,
-    inFamily: familyState(full),
+    inFamily: family.inFamily,
+    familyRenamedFrom: family.renamedFrom,
     secret: secretList.ok ? JSON.parse(secretList.out).secrets.some((s) => s.name === 'PROJECT_TOKEN') : null,
     deleteBranchOnMerge: admin ? !!info.delete_branch_on_merge : null,
     vulnAlerts: admin ? (alerts.ok && /HTTP\/[\d.]+ 204/.test(alerts.out)) : null,
@@ -79,16 +81,50 @@ const FAMILY_FILE = 'quality/data/family-projects.json';
 // Karar saf modülde (setup-plan.familyLookup); burada yalnız dosya okunur.
 function familyState(full) {
   try {
-    return K.familyLookup(fs.readFileSync(path.join(ROOT, FAMILY_FILE), 'utf8'), full);
-  } catch { return null; }
+    const raw = fs.readFileSync(path.join(ROOT, FAMILY_FILE), 'utf8');
+    const inFamily = K.familyLookup(raw, full);
+    if (inFamily !== false) return { inFamily, renamedFrom: null };
+    // Adla bulunamadı: listedeki kayıtlardan biri yeniden adlandırılmış olabilir.
+    const names = currentNames(raw);
+    return { inFamily: K.familyLookup(raw, full, names), renamedFrom: K.familyRenamedFrom(raw, full, names) };
+  } catch { return { inFamily: null, renamedFrom: null }; }
+}
+
+// Uyarılar çıktının sonunda yazılır (okunamayan kayıt "yok" sayılmaz; CLAUDE.md "Okunamadı ≠ yok").
+const warnings = [];
+
+// Listedeki her kaydın GitHub'daki güncel adı: { "<listedeki ad küçük harf>": "<güncel ad>" }.
+// Okunamayan kayıt (404, ağ hatası) eşleme dışı kalır ve uyarı yazılır.
+function currentNames(raw) {
+  const names = {};
+  const unread = [];
+  for (const p of JSON.parse(raw).projects || []) {
+    if (!p || !p.repo) continue;
+    const r = tryGh(['api', `repos/${p.repo}`, '-q', '.full_name']);
+    if (r.ok && r.out.trim()) names[String(p.repo).toLowerCase()] = r.out.trim();
+    else unread.push(p.repo);
+  }
+  if (unread.length) warnings.push(`Aile listesinde ${unread.length} kaydın güncel adı okunamadı (${unread.join(', ')}); bu kayıtlar için ad eşleşmesi aranamadı. Proje "listede yok" görünüyorsa, okunamayan kayıtlardan biri yeniden adlandırılmış olabilir; PR açmadan önce elle bak.`);
+  return names;
+}
+
+// PR'ı kendiliğinden birleşecek şekilde ayarlar; başarısızlık kurulumu düşürmez, PR açık kalır.
+function enableAutoMerge(prUrl) {
+  const args = K.autoMergeArgs(prUrl, STANDARDS_REPO);
+  if (!args) return 'otomatik birleştirme açılamadı: PR numarası okunamadı';
+  return K.autoMergeNote(tryGh(args));
 }
 
 // Ortak depoya "projeyi aile listesine ekle" PR'ı açar. Hedef proje PR'ından AYRI tutulur:
 // farklı depolar, farklı inceleme. Döner: PR adresi ya da null (zaten listede).
 function applyFamilyEntry(o, dir) {
   const current = ghJson(['api', `repos/${STANDARDS_REPO}/contents/${FAMILY_FILE}`]);
-  const next = K.familyWithEntry(Buffer.from(current.content, 'base64').toString('utf8'), o.repo.full, dir, o.repo.isPublic);
+  const raw = Buffer.from(current.content, 'base64').toString('utf8');
+  // Ad eşlemi yalnız adla bulunamadığında kurulur (her kayıt için bir gh çağrısı).
+  const names = K.familyLookup(raw, o.repo.full) === false ? currentNames(raw) : {};
+  const next = K.familyWithEntry(raw, o.repo.full, dir, o.repo.isPublic, names);
   if (!next) return null;
+  const text = K.familyPrText(o.repo, K.familyRenamedFrom(raw, o.repo.full, names));
   const branch = `chore/aile-listesi-${o.repo.name.toLowerCase()}`;
   const base = ghJson(['api', `repos/${STANDARDS_REPO}/git/ref/heads/main`]).object.sha;
   if (!tryGh(['api', `repos/${STANDARDS_REPO}/git/ref/heads/${branch}`]).ok) {
@@ -102,24 +138,20 @@ function applyFamilyEntry(o, dir) {
     const shaArgs = onBranch.ok ? ['-f', `sha=${JSON.parse(onBranch.out).sha}`] : [];
     gh(['api', '-X', 'PUT', `repos/${STANDARDS_REPO}/contents/${FAMILY_FILE}`,
       '-f', `branch=${branch}`, '-F', `content=@${tmp}`,
-      '-f', `message=chore(aile): ${o.repo.name} aile listesine eklendi\n\nSNN-Standartlar/setup/setup-project.js`, ...shaArgs]);
+      '-f', `message=${text.message}`, ...shaArgs]);
   } finally { fs.rmSync(tmp, { force: true }); }
   const open = tryGh(['pr', 'list', '-R', STANDARDS_REPO, '--head', branch, '-s', 'open', '--json', 'url', '--jq', '.[0].url']);
-  if (open.ok && open.out.trim()) return open.out.trim();
-  const body = [
-    `\`${o.repo.full}\` aile listesine eklenir.`,
-    '',
-    'Bu liste **haftalık uyum issue\'larının** ve **toplu ölçümün** kaynağıdır; proje listede',
-    'değilken kapılar ve oturum açılışı yine çalışır, ama eksikleri issue olarak düşmez.',
-    '',
-    '🤖 SNN-Standartlar proje kurulum betiği',
-  ].join('\n');
-  const bodyFile = path.join(require('os').tmpdir(), `aile-pr-${Date.now()}.md`);
-  fs.writeFileSync(bodyFile, body);
-  try {
-    return gh(['pr', 'create', '-R', STANDARDS_REPO, '--base', 'main', '--head', branch,
-      '--title', `chore(aile): ${o.repo.name} aile listesine eklensin`, '--body-file', bodyFile]).trim();
-  } finally { fs.rmSync(bodyFile, { force: true }); }
+  let url = open.ok ? open.out.trim() : '';
+  if (!url) {
+    const bodyFile = path.join(require('os').tmpdir(), `aile-pr-${Date.now()}.md`);
+    fs.writeFileSync(bodyFile, text.body);
+    try {
+      url = gh(['pr', 'create', '-R', STANDARDS_REPO, '--base', 'main', '--head', branch,
+        '--title', text.title, '--body-file', bodyFile]).trim();
+    } finally { fs.rmSync(bodyFile, { force: true }); }
+  }
+  // Liste PR'ları elle birleştirilene dek günlerce bekliyordu (#174 6, #179 4, #197 3 gün; 2026-11-13).
+  return `${url} (${enableAutoMerge(url)})`;
 }
 
 function putFile(repo, file, content, message) {
@@ -218,6 +250,10 @@ function main() {
     done.forEach((d) => console.log(`  ✓ ${d}`));
     failed.forEach((f) => console.log(`  ✗ ${f}`));
     if (failed.length) process.exitCode = 1;
+  }
+  if (warnings.length) {
+    console.log('\nUyarılar:');
+    warnings.forEach((w) => console.log(`  ! ${w}`));
   }
   const tasks = K.userTasks(steps);
   if (tasks.length) {
