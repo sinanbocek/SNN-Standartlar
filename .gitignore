@@ -1,3 +1,5 @@
 node_modules/
 *.log
 .snn-standartlar/
+__pycache__/
+*.pyc
