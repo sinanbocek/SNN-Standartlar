@@ -28,7 +28,7 @@ Yok.
 
 ## Son bitenler
 
-- 2026-11-13 · #198 kısmi kabul: "Bağımsız birimler" bölümü, Müşteri İlişkileri birimi isteğe bağlı. Vaka projesi SNN-Destek-Gundemi aile listesinde yok.
+- 2026-11-13 · #198 kısmi kabul: "Bağımsız birimler" bölümü, Müşteri İlişkileri birimi isteğe bağlı. Vaka projesi SNN-Destek-Gundemi aynı gün aile listesine eklendi.
 - 2026-11-13 · SNN-Kosgeb aile listesine eklendi (#197).
 
 - 2026-11-10 · `/git-temizlik` ilk denemesinden çıkan altı düzeltme kabul edildi (#194). Düzeltilmiş beceri yeniden koşulmadı.
