@@ -4,13 +4,15 @@ Son güncelleme: 2026-11-13
 
 ## Açık
 
-Yok. Talep #178 kodu yazıldı; commit/PR Genel Müdür'de bekliyor. Talebin kaydı Belge'de.
+Aile listesi adımı iki düzeltmesi yazıldı (aşağıda), commit/PR bekliyor. Ayrıca talep #178 kodu yazıldı; commit/PR Genel Müdür'de bekliyor. Talebin kaydı Belge'de.
 
 ## Sahip kararı bekleyen
 
 Yok.
 
 ## Biten (son 10)
+
+- 2026-11-13 · Kurulum betiği aile listesi adımı (`setup/setup-project.js`, `setup/lib/setup-plan.js`, test `setup/test/setup-plan.test.js`): (1) yeniden adlandırılmış depo ikinci kez eklenmez; saf `familyLookup(raw, full, currentNames)` yeni durum `'renamed'` verir, `familyWithEntry` eski kaydın `repo` alanını metin düzeyinde değiştirir (diğer alanlar ve baytlar korunur), `familyPrText` başlık/gövdeyi üretir; IO tarafı `currentNames` her kayıt için `gh api repos/<ad> -q .full_name` çağırır, yalnız adla bulunamazsa; okunamayan kayıt eşlem dışı kalır ve "Uyarılar" altında yazılır. (2) Liste PR'ı açılınca `gh pr merge <no> --repo sinanbocek/SNN-Standartlar --auto --merge --delete-branch`; başarısızlık "otomatik birleştirme açılamadı: <ilk satır>" olur, kurulum düşmez. Sabotaj iki kez kırmızı. Commit/PR Genel Müdür'de bekliyor.
 
 - 2026-11-13 · `.gitignore`'a `__pycache__/` ve `*.pyc` eklendi (canlı kopyada izlenmeyen .pyc yüzünden `refresh()` tazelemeyi durduruyordu). Doğrulandı: `.pyc` varken `git status --porcelain` boş; satırlar kalkınca `?? quality/__pycache__/` göründü (sabotaj). Kod dili taraması temiz. Commit/PR Genel Müdür'de bekliyor.
 

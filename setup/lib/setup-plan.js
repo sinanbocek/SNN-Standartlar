@@ -75,6 +75,7 @@ function plan(o) {
   // kapılar ve açılış listesi yine çalışır ama posta kutusuna hiç mektup düşmez (2026-09-19).
   if (o.inFamily === true) add('aile-listesi', 'agent', 'present', 'Proje aile listesinde (quality/data/family-projects.json).');
   else if (o.inFamily === 'excluded') add('aile-listesi', 'agent', 'present', 'Proje aile listesinde gerekçeli olarak DIŞLANMIŞ; ölçülmez.');
+  else if (o.inFamily === 'renamed') add('aile-listesi', 'agent', 'toAdd', `Listedeki ${o.familyRenamedFrom || 'bir kayıt'} deposu yeniden adlandırılmış; yeni kayıt eklenmez, kaydın adı güncel adla değiştirilir (SNN-Standartlar'a ayrı PR).`);
   else if (o.inFamily === null) add('aile-listesi', 'owner', 'unmeasured', 'Aile listesi okunamadı; projenin listede olup olmadığı ölçülemedi.');
   else add('aile-listesi', 'agent', 'toAdd', 'Proje aile listesine eklenir (SNN-Standartlar\'a ayrı PR) — haftalık uyum issue\'ları bu listeye göre açılır.');
   if (o.secret === true) add('anahtar', 'owner', 'present', 'PROJECT_TOKEN depoda tanımlı.');
@@ -96,12 +97,75 @@ function plan(o) {
 const pending = (steps) => steps.filter((s) => s.who === 'agent' && s.status === 'toAdd');
 const userTasks = (steps) => steps.filter((s) => s.who === 'owner' && s.status !== 'present');
 
-// SAF: liste içeriği + depo adı → true | false | 'excluded'
-function familyLookup(raw, full) {
+// SAF: liste içeriği + depo adı (+ güncel ad eşlemi) → true | false | 'excluded' | 'renamed'
+// currentNames: { "<listedeki ad, küçük harf>": "<GitHub'daki güncel ad>" }. Depo yeniden adlandırılınca
+// GitHub kimliği aynı kalır ama liste eski adı taşır; yalnız adla bakmak aynı projeyi ikinci kez
+// ekletiyordu (2026-11-13, SNN-Kosgeb → SNN-Destek-Gundemi). Eşlemi IO tarafı kurar; okunamayan kayıt
+// eşlemde yoktur ve eşleşme sayılmaz (yok varsayılmaz, uyarı IO tarafında yazılır).
+function familyLookup(raw, full, currentNames = {}) {
   const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-  const eq = (a) => String(a || '').toLowerCase() === full.toLowerCase();
-  if ((parsed.excluded || []).some((x) => x && eq(x.repo))) return 'excluded';
-  return (parsed.projects || []).some((p) => p && eq(p.repo));
+  const want = full.toLowerCase();
+  const eq = (a) => String(a || '').toLowerCase() === want;
+  const renamed = (a) => String(currentNames[String(a || '').toLowerCase()] || '').toLowerCase() === want;
+  if ((parsed.excluded || []).some((x) => x && (eq(x.repo) || renamed(x.repo)))) return 'excluded';
+  const projects = (parsed.projects || []).filter(Boolean);
+  if (projects.some((p) => eq(p.repo))) return true;
+  return projects.some((p) => renamed(p.repo)) ? 'renamed' : false;
+}
+
+// SAF: listede eski adla duran kaydın adı (güncel ad `full` ise); yoksa null.
+function familyRenamedFrom(raw, full, currentNames = {}) {
+  const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  const want = full.toLowerCase();
+  const hit = (parsed.projects || []).find((p) => p && String(p.repo).toLowerCase() !== want
+    && String(currentNames[String(p.repo).toLowerCase()] || '').toLowerCase() === want);
+  return hit ? hit.repo : null;
+}
+
+// SAF: liste PR'ının başlığı, gövdesi ve commit iletisi. renamedFrom doluysa yeni kayıt eklenmez, eski kaydın adı güncellenir.
+function familyPrText(repo, renamedFrom) {
+  const autoNote = 'Denetimler yeşil olunca kendiliğinden birleşir (otomatik birleştirme açılır); elle birleştirme gerekmez.';
+  if (renamedFrom) {
+    return {
+      title: `chore(aile): ${renamedFrom} kaydı yeni adla güncellensin (${repo.full})`,
+      message: `chore(aile): ${renamedFrom} kaydı ${repo.full} olarak güncellendi\n\nSNN-Standartlar/setup/setup-project.js`,
+      body: [
+        `\`${renamedFrom}\` deposu GitHub'da \`${repo.full}\` olarak yeniden adlandırılmış (eski ad yönlendiriliyor).`,
+        'Listedeki kaydın `repo` alanı güncel adla değiştirilir; yeni kayıt eklenmedi, diğer alanlar korunur.',
+        '',
+        autoNote,
+        '',
+        '🤖 SNN-Standartlar proje kurulum betiği',
+      ].join('\n'),
+    };
+  }
+  return {
+    title: `chore(aile): ${repo.name} aile listesine eklensin`,
+    message: `chore(aile): ${repo.name} aile listesine eklendi\n\nSNN-Standartlar/setup/setup-project.js`,
+    body: [
+      `\`${repo.full}\` aile listesine eklenir.`,
+      '',
+      'Bu liste **haftalık uyum issue\'larının** ve **toplu ölçümün** kaynağıdır; proje listede',
+      'değilken kapılar ve oturum açılışı yine çalışır, ama eksikleri issue olarak düşmez.',
+      '',
+      autoNote,
+      '',
+      '🤖 SNN-Standartlar proje kurulum betiği',
+    ].join('\n'),
+  };
+}
+
+// SAF: PR'ı kendiliğinden birleştirme komutunun bağımsız değişkenleri (yöntem deponun alışkanlığı: birleştirme commit'i).
+function autoMergeArgs(prUrl, standardsRepo) {
+  const m = /\/(\d+)\/?$/.exec(String(prUrl));
+  return m ? ['pr', 'merge', m[1], '--repo', standardsRepo, '--auto', '--merge', '--delete-branch'] : null;
+}
+
+// SAF: komut sonucu → sonuç satırı metni. Başarısızlık kurulumu düşürmez; PR açık kalır.
+function autoMergeNote(result) {
+  if (result.ok) return 'otomatik birleştirme açıldı';
+  const first = String(result.err || '').trim().split('\n')[0] || 'bilinmeyen hata';
+  return `otomatik birleştirme açılamadı: ${first}`;
 }
 
 // SAF: metindeki `"projects": [ … ]` dizisinin açılış ve kapanış konumu; bulunamazsa null.
@@ -127,13 +191,31 @@ function projectsArraySpan(raw) {
   return null;
 }
 
+// SAF: eski adlı kaydın "repo" alanını metin düzeyinde değiştirir; diğer her bayt korunur. Bozuk sonuç yazılmaz.
+function renameEntry(raw, parsed, oldName, newName) {
+  const span = projectsArraySpan(raw);
+  const re = new RegExp(`("repo"\\s*:\\s*)${JSON.stringify(oldName).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+  const m = span && re.exec(raw.slice(span.open, span.close));
+  if (!m) throw new Error('Aile listesinde eski adlı kayıt metinde bulunamadı: dosya beklenmeyen biçimde.');
+  const at = span.open + m.index;
+  const next = `${raw.slice(0, at)}${m[1]}${JSON.stringify(newName)}${raw.slice(at + m[0].length)}`;
+  const expected = { ...parsed, projects: parsed.projects.map((p) => (p && p.repo === oldName ? { ...p, repo: newName } : p)) };
+  if (JSON.stringify(JSON.parse(next)) !== JSON.stringify(expected)) {
+    throw new Error('Aile listesinde kayıt adı güncellenemedi: dosya beklenmeyen biçimde.');
+  }
+  return next;
+}
+
 // SAF: listeye yeni kayıt ekler, sırayı korur, yinelemez. Döner: yeni metin ya da null.
 // Yalnız yeni kayıt satırı eklenir; dosyanın geri kalanı bayt bayt korunur. Tüm dosyayı
 // yeniden yazmak her tek satırlık kaydı dört satıra açıyordu (#109, 2026-09-25).
 // isPublic true ise kayda "public": true yazılır; gizli depoda alan hiç eklenmez (#153, 2026-10-14).
-function familyWithEntry(raw, repo, dir, isPublic = false) {
+function familyWithEntry(raw, repo, dir, isPublic = false, currentNames = {}) {
   const parsed = JSON.parse(raw);
   if ((parsed.projects || []).some((p) => p && String(p.repo).toLowerCase() === repo.toLowerCase())) return null;
+  // Yeniden adlandırılmış depo: yeni kayıt eklenmez, eski kaydın repo alanı güncel adla değişir.
+  const oldName = familyRenamedFrom(parsed, repo, currentNames);
+  if (oldName) return renameEntry(raw, parsed, oldName, repo);
   const entryObj = isPublic ? { repo, dir, public: true } : { repo, dir };
   const expected = { ...parsed, projects: [...(parsed.projects || []), entryObj] };
   const span = projectsArraySpan(raw);
@@ -162,4 +244,4 @@ function familyWithEntry(raw, repo, dir, isPublic = false) {
 }
 
 
-module.exports = { familyLookup, familyWithEntry, BOARD_TITLE, debtFileTemplate, archiveFileTemplate, plan, pending, userTasks };
+module.exports = { familyLookup, familyRenamedFrom, familyPrText, autoMergeArgs, autoMergeNote, familyWithEntry, BOARD_TITLE, debtFileTemplate, archiveFileTemplate, plan, pending, userTasks };
