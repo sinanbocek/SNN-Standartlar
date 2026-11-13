@@ -1,8 +1,8 @@
 # Pano
 
-Son güncelleme: 2026-11-10
+Son güncelleme: 2026-11-13
 
-**Kısa cevap:** `/git-temizlik` ilk denemesi SNN-Abacus-Core'da yapıldı, altı düzeltme işlendi (#194) ve makineye kopyalandı. Açık PR yok, cevapsız talep yok. Sahibin bekleyen işi yok.
+**Kısa cevap:** #198 kısmen kabul edildi: ekip düzeni standardına "Bağımsız birimler" bölümü (Müşteri İlişkileri, sanal müşteri paneli) yazıldı. Panele gitmek zorunlu değil; Genel Müdür ölçütle karar verir. SNN-Kosgeb aile listesine girdi (#197).
 
 ## Departmanlar
 
@@ -27,6 +27,9 @@ Yok.
 Yok.
 
 ## Son bitenler
+
+- 2026-11-13 · #198 kısmi kabul: "Bağımsız birimler" bölümü, Müşteri İlişkileri birimi isteğe bağlı. Vaka projesi SNN-Destek-Gundemi aile listesinde yok.
+- 2026-11-13 · SNN-Kosgeb aile listesine eklendi (#197).
 
 - 2026-11-10 · `/git-temizlik` ilk denemesinden çıkan altı düzeltme kabul edildi (#194). Düzeltilmiş beceri yeniden koşulmadı.
 - 2026-11-10 · `/git-temizlik` aile becerisi kabul edildi ve birleşti (#191, #192).
