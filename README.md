@@ -18,7 +18,7 @@ SNN projelerinin ortak çalışma standartları ve **teknik borç kütüphanecis
 | `standartlar/kod-inceleme-kontrol-listesi.md` | Birleştirmeden önce sorulan sorular |
 | `standartlar/kod-dili-standardi.md` | Tanımlayıcılar İngilizce, belgeler ve yorumlar Türkçe |
 | `standartlar/es-zamanli-calisma-standardi.md` | Aynı depoda aynı anda çalışan oturumlar: dal, sahne, dal silme, worktree |
-| `standartlar/alt-ajan-standardi.md` | Alt ajan açarken model ve düşünme seviyesi seçimi; `~/.claude/CLAUDE.md` dosyasına kopyalanır |
+| `standartlar/alt-ajan-standardi.md` | Alt ajan açarken model ve düşünme seviyesi seçimi; ücretli üretim aracında onay kuralı; `~/.claude/CLAUDE.md` dosyasına kopyalanır |
 | `standartlar/ekip-duzeni-standardi.md` | Genel Müdür + müdürler düzeni için ortak iskelet ve ortak müdür adları; çerçevedir, katı kalıp değildir, makineye kopyalanmaz |
 | `quality/session-registry.js` · `quality/wide-effect-git.js` | Oturum defteri ve geniş etkili git komutu denetimi (bekçiler çağırır) |
 | `quality/code-language-scan.js` | Türkçe tanımlayıcı tarayıcısı (+ `ornek/kod-dili.yml` ile projeye bağlanır) |
