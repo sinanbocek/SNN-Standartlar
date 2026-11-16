@@ -34,6 +34,27 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 ## Kararlar
 
 
+### 2026-11-16 · Ücretli üretim aracında kredi harcamadan önce sahibin onayı (#204) — **KABUL (Belge Müdürü; sahip vekâleti, Genel Müdür'ün kabul yönü)**
+
+- **Kimden:** haftalık bellek derleme görevi (2026-11-16, `docs/bellek-derleme/2026-11-16.md` §1). Sahip bu oturumda "bu kaydı incele ve gereğini yap" dedi; Genel Müdür sahip vekâletiyle kabul yönünü verdi.
+- **Vakasız, sahip kararı.** Onaysız harcama vakası yok. Üç not da sahibin önceden koyduğu sınırdır; kural çiğnenmedi, harcama yanlışlıkla yapılmadı. Bu karar çiğnenmiş bir kuralın cezası değil, tekrar eden sahip talimatının aile kuralına çevrilmesidir. Çiğnenme sayısı ölçülmedi.
+- **Dört şart:**
+  1. Gerçek olay: **var, ama başka türden.** Üç proje, üç tarih: SNN-Games-Umi 2026-09-30, EGO-Gayrimenkul 2026-11-06, SNN-Destek-Gundemi 2026-11-12. Sahip aynı sınırı üç projede ayrı ayrı koydu. Notlar bu depoda açılıp okunmadı; tablo #204'ün aktardığı biçimdir, bellek derleme raporu aynı üç notu sayıyor (2026-11-16). Karşı ağırlık: harcanan kredi geri alınmaz; geri alınamaz işlemde vaka beklenmez. Bu "ya şöyle olursa" senaryosu değil, sahibin üç projede ayrı ayrı söylediği yazılı talimattır.
+  2. Ölçülmüş çıktı: **kısmen.** Üç notun varlığı derleme görevinin sayımıdır; bu işte yeniden sayılmadı. Kural metninin ev kâğıdına sığdığı ölçüldü (aşağıda). Ölçülmeyen: kuralın kaç aile projesinde ücretli üretim aracı bağlı olduğu.
+  3. Denenmiş alternatif: **var.** Her proje kuralı kendi bellek notuna yazdı (üç kez). Çalışıyor ama her projede sahibin yeniden öğretmesini gerektiriyor; yeni ya da tek oturumlu projede not yoksa kural da yok. Yer alternatifi: `ekip-duzeni-standardi.md` yalnız bağımsız birimi kapsıyor; Genel Müdür düzeni olmayan projeleri kapsamıyor.
+  4. Kaç projeyi etkiliyor: **3 projede görüldü; aile geneli ölçülmedi.** Higgsfield ya da ücretli API bağlayan öteki aile projeleri sayılmadı. Kural bağlı olmayan projede etkisizdir, iş düşürmez.
+- **Karar:** kabul. `standartlar/alt-ajan-standardi.md` işaretli bölümüne "Ücretli üretim aracı" başlığı (üç madde ve giriş cümlesi) eklendi; ayrıntı, vaka tablosu ve kapsam aynı dosyada gövdede. Makineye kopyalanır (`~/.claude/CLAUDE.md`), çünkü kural tek oturumlu projeleri de kapsar.
+  - **Kabul edilen:** beş maddenin hepsi: açık onay olmadan çağrılmaz; onay isterken üretim, model ve tahmini maliyet yazılır; okuma araçları serbest; alt ajan çağırmaz; gözetimsiz çalışmada harcama yok.
+  - **Değiştirilen: madde 4.** Talep "bu araçlar alt ajana verilmez; verilecekse yasak yazılır" diyordu. Bu ortamda araç verilmemesi kendiliğinden olmuyor: 2026-11-16'da bu işi yapan Belge Müdürü ajanının araç listesinde Higgsfield'ın üretim araçları (`generate_image`, `generate_video`) vardı ve müdür kartları "tüm araçlar" tanımlı. Metin "alt ajan bu araçları çağırmaz; talimata yasak açıkça yazılır" oldu. Araç kısıtı olan kartın kısıtının MCP araçlarını gerçekten kapattığı bu depoda denenmedi.
+  - **Değiştirilen: sıra.** Maddeler 1 ve 3 (okuma serbest) giriş cümlesinde birleşti; beş madde üçe indi. Anlam aynı, kelime bütçesi için.
+  - **Eklenen (talepte yok):** `ekip-duzeni-standardi.md` bağımsız birim madde 5'ine tek satırlık atıf: birimin sınırı aile kuralından sıkıdır (birim hiç kullanmaz, onay istemek yetmez); çelişme olmasın diye yazıldı. Kapsam notu: reklam bütçesi ve bulut kaynağı açma gibi öteki harcamalar bu kuralda yok; o alanda vaka gelirse ayrı talep.
+  - **Alınmayan:** bekçi (araç adlarına bakan kapı). Vaka yok, kural makineyle zorlanmaz; "Nasıl ölçülür" bölümüne yazıldı.
+- **Kelime bütçesi:** işaretli bölümler toplamı 1198 idi (sınır 1200, `setup-machine.test.js`). Yeni kural 59 kelime (başlık dahil). Sınır yükseltilmedi; `alt-ajan-standardi.md` bölümünden dört cümle çıkarıldı (Kural 3, 8, 9, 11'in ikinci cümleleri; Kural 10'un "raporda" cümlesi Kural 2'ye birleşti; giriş cümlelerinden biri kısaldı). Çıkarılan her gerekçe aynı dosyanın gövdesinde duruyor; bilgi silinmedi. Toplam şimdi 1199. Sonraki ekleme için sınırı yükseltmek sahibin kararıdır (2026-10-15'te bir kez yükseltildi).
+- **Ölçülmedi:** kuralın aile projelerindeki karşılığı (hangi projede hangi harcayan araç bağlı); araç kısıtlı kartın MCP araçlarını kapatıp kapatmadığı; üç notun şu anki içeriği (açılıp okunmadı); kuralın ajan davranışını gerçekten değiştirdiği (yeni kural, gözlem yok).
+- **Sahibe kalan adım:** makinede `node setup/setup-machine.js --uygula` (ev kâğıdı bloğu değişti; kuru çalışmada "güncellenecek" görüldü).
+- **Komut ve yazma işi Genel Müdür'de:** commit, PR, #204'e yorum ve kapatma. Üç projenin kendi notları bu depodan değiştirilmez; kural ev kâğıdına inince notlar bellek derleme görevinde yönlendirmeye çevrilir.
+
+
 ### 2026-11-13 · Bağımsız birim: Müşteri İlişkileri, sanal müşteri paneli (#198) — **KISMİ KABUL (Belge Müdürü taslağı; Genel Müdür ve sahip onayına açık)**
 
 - **Kimden:** SNN-Destek-Gundemi. Sahip isteği (2026-11-13, sohbet): "bu uygulamanın diğer tüm projelerde de standart hale getirilmesi için gerekli talebi ilet". Proje PR'ları #68 (birim kuruldu) ve #69 (sahibin üç kararı) birleşti.
