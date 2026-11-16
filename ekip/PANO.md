@@ -2,7 +2,7 @@
 
 Son güncelleme: 2026-11-16
 
-**Kısa cevap:** #204 kabul edildi: ücretli üretim aracı (Higgsfield, Gemini API gibi) sahibin o üretim için onayı olmadan çağrılmaz. Kural ev kâğıdına iner; sahip `setup-machine.js --uygula` çalıştırmalı.
+**Kısa cevap:** #204 kabul edildi, sahip düzeltmesiyle (#208): ücretli üretim aracını alt ajan çağırabilir; sahip Genel Müdür'e bütçe verir ya da işe izin verir, aşılacaksa alt ajan durur. Kural ev kâğıdına iner; sahip `setup-machine.js --uygula` çalıştırmalı.
 
 ## Departmanlar
 
@@ -28,6 +28,7 @@ Yok.
 
 ## Son bitenler
 
+- 2026-11-16 · #204 sahip düzeltmesi (#208): "alt ajan çağırmaz" yanlıştı; alt ajan sahibin bütçesi ya da izniyle çağırır.
 - 2026-11-16 · #204 kabul (#206): ücretli üretim aracında harcama öncesi sahip onayı. Vakasız, sahip kararı. Ev kâğıdı bütçesi 1199/1200 kelime.
 - 2026-11-16 · Bellek derleme raporu birleşti (#205).
 - 2026-11-13 · #198 kısmi kabul: "Bağımsız birimler" bölümü, Müşteri İlişkileri birimi isteğe bağlı. Vaka projesi SNN-Destek-Gundemi aynı gün aile listesine eklendi.
