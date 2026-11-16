@@ -1,8 +1,8 @@
 # Pano
 
-Son güncelleme: 2026-11-13
+Son güncelleme: 2026-11-16
 
-**Kısa cevap:** #198 kısmen kabul edildi: ekip düzeni standardına "Bağımsız birimler" bölümü (Müşteri İlişkileri, sanal müşteri paneli) yazıldı. Panele gitmek zorunlu değil; Genel Müdür ölçütle karar verir. SNN-Destek-Gundemi aile listesinde; eski adıyla (SNN-Kosgeb) açılan çift kayıt çıkarıldı.
+**Kısa cevap:** #204 kabul edildi: ücretli üretim aracı (Higgsfield, Gemini API gibi) sahibin o üretim için onayı olmadan çağrılmaz. Kural ev kâğıdına iner; sahip `setup-machine.js --uygula` çalıştırmalı.
 
 ## Departmanlar
 
@@ -24,10 +24,12 @@ Yok.
 
 ### Elle
 
-Yok.
+- Ev kâğıdını tazele: `node setup/setup-machine.js --uygula` (#204 kuralı).
 
 ## Son bitenler
 
+- 2026-11-16 · #204 kabul (#206): ücretli üretim aracında harcama öncesi sahip onayı. Vakasız, sahip kararı. Ev kâğıdı bütçesi 1199/1200 kelime.
+- 2026-11-16 · Bellek derleme raporu birleşti (#205).
 - 2026-11-13 · #198 kısmi kabul: "Bağımsız birimler" bölümü, Müşteri İlişkileri birimi isteğe bağlı. Vaka projesi SNN-Destek-Gundemi aynı gün aile listesine eklendi.
 - 2026-11-13 · SNN-Kosgeb ile SNN-Destek-Gundemi aynı depo (yeniden adlandırma). #197 ve #201 aynı projeyi iki kez ekledi; eski adlı kayıt çıkarıldı.
 
