@@ -156,7 +156,7 @@ Yöntem, `Jakeschincariol/founder-skill` deposundaki "consumer panel" fikrinden 
 2. Her raporda şu anlamda bir cümle bulunur: "Bunlar sanal kişiler; neyin anlaşılmadığını gösterir, gerçek okunma ya da başvuru oranını tahmin etmez."
 3. Kişi sözü müşteri yorumu diye yayında kullanılmaz.
 4. Gerçek kişiye yazılmaz, anket açılmaz, gerçek kişi adı ya da kişisel veri kullanılmaz.
-5. Birim ücretli araç ya da kredi harcayan servis kullanmaz; yayın yapmaz. (Aile geneli kural: `alt-ajan-standardi.md` "Ücretli üretim aracı"; birim için onay istemek de yeterli değildir, hiç kullanmaz.)
+5. Birim ücretli araç ya da kredi harcayan servis kullanmaz; yayın yapmaz. (Aile geneli kural: `alt-ajan-standardi.md` "Ücretli üretim aracı"; bütçe ya da izin verilse de birim hiç kullanmaz.)
 
 ### Birimin raporu
 

@@ -89,6 +89,8 @@ Sonunda: ekip/<departman>/DURUM.md güncelle.
 
 Kod yazan müdürün tarifine şu satır da girer: "Tanımlayıcılar İngilizce; yorum ve kullanıcı metni Türkçe (kod-dili-standardi.md)."
 
+Ücretli üretim aracı (Higgsfield, Gemini API) kullanacak işin tarifine sahibin verdiği bütçe ya da onayladığı iş ve "aşma" yasağı yazılır. Bütçe aşılacaksa müdür durur; Genel Müdür sahipten yeni izin alır (`alt-ajan-standardi.md`, #204).
+
 Ayrı kopyada çalışan müdür bitince commit yine Genel Müdür'dendir:
 
 1. Kopyanın `origin/main` üstünde olduğunu denetle: `git -C <yol> merge-base --is-ancestor origin/main HEAD`.

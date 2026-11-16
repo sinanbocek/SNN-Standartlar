@@ -64,12 +64,12 @@ Cevap anahtarı önceden yazıldı; iddialar elle doğrulandı. **Sınır:** aya
 
 Aşağıdaki işaretli bölüm, `setup/setup-machine.js` tarafından her makinede `~/.claude/CLAUDE.md` dosyasına kopyalanır. Claude Code bu dosyayı her projede, her oturumda okur. Bölüm iki başlık taşır: "Alt ajan açarken" (model ve seviye) ve "Ücretli üretim aracı" (aşağıda). Bölümü değiştirirsen makinede `node setup/setup-machine.js --uygula` çalıştır.
 
-İşaretli bölümde kelime bütçesi dolu (toplam 1199, sınır 1200; `setup/test/setup-machine.test.js`). 2026-11-16'da "Ücretli üretim aracı" eklenirken bu bölümde dört cümle çıkarıldı; gerekçeleri bu dosyanın gövdesinde duruyor: Kural 3'ün açılış maliyeti ("Kaynaklar" altında ve ilk ölçümde), Kural 8'in güvenlik filtresi gerekçesi (Haiku ve Sonnet bulgusu), Kural 9'un fiyat ve bağlam gerekçesi (fiyat tablosu ve ilk ölçümün son maddesi), Kural 11'in bekçi cümlesi (aşağıdaki vaka). Sonraki ekleme için sınır sahibin kararıdır.
+İşaretli bölümde kelime bütçesi dolu (toplam 1199, sınır 1200; `setup/test/setup-machine.test.js`). 2026-11-16'da "Ücretli üretim aracı" eklenirken bu bölümde dört cümle çıkarıldı (aynı gün sahip düzeltmesinde birkaç kelime daha: "açıkça" iki yerde, "bu kuralla", "çalışma" ve "birbirine"; anlam değişmedi); gerekçeleri bu dosyanın gövdesinde duruyor: Kural 3'ün açılış maliyeti ("Kaynaklar" altında ve ilk ölçümde), Kural 8'in güvenlik filtresi gerekçesi (Haiku ve Sonnet bulgusu), Kural 9'un fiyat ve bağlam gerekçesi (fiyat tablosu ve ilk ölçümün son maddesi), Kural 11'in bekçi cümlesi (aşağıdaki vaka). Sonraki ekleme için sınır sahibin kararıdır.
 
 <!-- kullanici-talimati:basla -->
 # Alt ajan açarken
 
-Bu kurallar SNN aile standardıdır (`SNN-Standartlar/standartlar/alt-ajan-standardi.md`). Proje sahibi 2026-10-09'da bu kuralla düşünme seviyesi ayarına kalıcı izin verdi.
+Bu kurallar SNN aile standardıdır (`SNN-Standartlar/standartlar/alt-ajan-standardi.md`). Proje sahibi 2026-10-09'da düşünme seviyesi ayarına kalıcı izin verdi.
 
 | İş | Model · seviye |
 |---|---|
@@ -81,22 +81,22 @@ Bu kurallar SNN aile standardıdır (`SNN-Standartlar/standartlar/alt-ajan-stand
 | Sonnet iki kez başarısız olursa | Opus · orta (seyrek) |
 
 1. Fable ve Haiku · yüksek alt ajanda kullanılmaz.
-2. Her ajan çağrısında ve raporunda model ve seviye açıkça yazılır.
+2. Her ajan çağrısında ve raporunda model ve seviye yazılır.
 3. Küçük iş ajansız yapılır.
-4. Sıralı, birbirine bağlı iş bölünmez.
+4. Sıralı, bağlı iş bölünmez.
 5. Ajan "takılırsan sor" diye yükseltilmez; yetersiz raporu koordinatör bir üst ayarla yaptırır.
 6. Ajan raporundaki kritik iddiayı (satır numarası, test sonucu) koordinatör kendisi doğrular.
-7. Kod ajanına dokunabileceği dosyalar açıkça yazılır. Yazan ajanlar ayrı çalışma kopyasında çalışır.
+7. Kod ajanına dokunabileceği dosyalar yazılır. Yazan ajanlar ayrı kopyada çalışır.
 8. Güvenlik incelemesi alt ajana verilmez.
 9. Toplam bağlamı 100 bin parçayı geçecek iş Haiku'ya verilmez.
 10. Aynı anda en fazla 6–8 ajan çalışır (varsayım).
-11. Kod yazan ajanın talimatına şu satır yazılır: "Tanımlayıcılar İngilizce; yorum ve kullanıcı metni Türkçe (kod-dili-standardi.md)."
+11. Kod ajanının talimatına şu satır yazılır: "Tanımlayıcılar İngilizce; yorum ve kullanıcı metni Türkçe (kod-dili-standardi.md)."
 
 # Ücretli üretim aracı
 
-Kredi ya da para harcayan üretim aracı (Higgsfield, Gemini API gibi) sahibin o üretim için açık onayı olmadan çağrılmaz (#204). Okuma araçları (bakiye, fiyat, model listesi) serbesttir.
-1. Onay isterken üretim, model ve tahmini maliyet yazılır.
-2. Alt ajan bu araçları çağırmaz; talimata yasak açıkça yazılır.
+Kredi ya da para harcayan üretim aracında (Higgsfield, Gemini API) yetki koordinatördedir: sahip bütçe verir ya da işe izin verir (üretim, model, tahmini maliyet yazılarak). Okuma araçları serbesttir.
+1. Alt ajan çağırabilir; talimatına bütçe ya da onaylı iş ve aşma yasağı yazılır.
+2. Bütçe aşılacaksa alt ajan durur; koordinatör sahipten yeni izin alır.
 3. Gözetimsiz çalışmada (gece görevi, zamanlanmış görev) harcama yapılmaz.
 <!-- kullanici-talimati:bitir -->
 
@@ -112,7 +112,7 @@ Kural işaretli bölümdedir. Buradaki ayrıntı gövdede kalır, her oturumda o
 |---|---|---|---|
 | SNN-Games-Umi | `yumurcak-proje-durumu.md` | 2026-09-30 | Higgsfield'da her üretimden önce maliyet sorgusu ve onay |
 | EGO-Gayrimenkul | `gorsel-uretim-oncelik.md` | 2026-11-06 | Higgsfield ve Gemini API: iki yolda da harcama öncesi sahibe sorulur |
-| SNN-Destek-Gundemi | `higgsfield-kredi-onayi.md` | 2026-11-12 | Kesin onay olmadan kredi kullanılmaz; okuma araçları serbest; alt ajana bu araçlar verilmez |
+| SNN-Destek-Gundemi | `higgsfield-kredi-onayi.md` | 2026-11-12 | Kesin onay olmadan kredi kullanılmaz; okuma araçları serbest; alt ajana bu araçlar verilmez (bu madde sahip düzeltmesiyle değişti, aşağıda) |
 
 Akraba notlar (aynı yön, sayıma katılmadı): SNN-Destek-Gundemi `meta-baglayicilari.md` (2026-11-12) ve `gece-gorevi-kurallari.md` (2026-11-11). Notlar bu depoda açılıp okunmadı; tablo #204'ün aktardığı biçimdir.
 
@@ -120,9 +120,9 @@ Akraba notlar (aynı yön, sayıma katılmadı): SNN-Destek-Gundemi `meta-baglay
 
 **Kapsam.** Üretim aracı: görsel, video, ses üretimi ve ücretli API (örnek: Higgsfield, Gemini API). Reklam bütçesi, bulut kaynağı açma gibi başka harcama türleri bu kuralın konusu değildir; üretim araçlarının dışında vaka gelirse ayrı talep olur.
 
-**Madde 2 (alt ajan).** Talepteki "alt ajana verilmez" bu ortamda kendiliğinden tutmaz: 2026-11-16'da bu işi yapan Belge Müdürü ajanının araç listesinde Higgsfield'ın görsel ve video üretim araçları vardı; müdür kartları "tüm araçlar" tanımlı. Bu yüzden kural "alt ajan bu araçları çağırmaz; talimata yasak açıkça yazılır" diye yazıldı. Araç kısıtı olan kartta kısıt da işe yarar (bu depoda denenmedi); kısıt yoksa yasak cümlesi şarttır.
+**Yetki ve alt ajan (sahip düzeltmesi, 2026-11-16).** İlk yazım (#206) "alt ajan bu araçları çağırmaz; talimata yasak yazılır" diyordu; talep de "alt ajana verilmez" demişti. Sahip bunu düzeltti: "Alt ajan bu aracı çağırabilir. Ancak kullanılacak kredi miktarı Genel Müdür'e sahip tarafından verilir ya da izin alınır, ardından işi yine alt ajan yapar." Eski karar yanlış anlaşılmadı; sahip kuralı bu modele çevirdi. Model: harcama yetkisi koordinatördedir (Genel Müdür ya da ana oturum). Sahip iki yoldan birini verir: bir kredi bütçesi, ya da tek iş için izin (üretim, model, tahmini maliyet yazılarak). Koordinatör alt ajanın talimatına bütçeyi (ya da onaylanan işi) ve "aşma" yasağını yazar. Bütçe aşılacaksa alt ajan durur, koordinatör sahipten yeni izin alır. Okuma araçları (bakiye, fiyat, model listesi) alt ajana da serbesttir; aşma kontrolü bunlarla yapılır. Bu ortamda ajan kartları "tüm araçlar" tanımlı ve 2026-11-16'da bir müdür ajanının listesinde Higgsfield üretim araçları vardı; yani sınır araç tarafında değil talimattadır. Araç tarafında bütçe sayacı olup olmadığı ve alt ajanın bütçeyi gerçekten saydığı ölçülmedi.
 
-**Madde 3 (gözetimsiz).** Gece görevinde ve zamanlanmış görevde onay verecek kimse yoktur; kural bu durumda "onay alınamaz, harcama yapılmaz" demektir.
+**Gözetimsiz çalışma (değişmedi).** Gece görevinde ve zamanlanmış görevde onay verecek kimse yoktur; kural bu durumda "onay alınamaz, harcama yapılmaz" demektir. Bu kural önceden verilmiş bütçeyi de kapsar: gözetimsiz çalışmada bütçe kullanılmaz.
 
 ## Nasıl ölçülür
 

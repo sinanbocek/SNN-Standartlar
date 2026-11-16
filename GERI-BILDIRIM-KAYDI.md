@@ -34,7 +34,7 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 ## Kararlar
 
 
-### 2026-11-16 · Ücretli üretim aracında kredi harcamadan önce sahibin onayı (#204) — **KABUL (Belge Müdürü; sahip vekâleti, Genel Müdür'ün kabul yönü)**
+### 2026-11-16 · Ücretli üretim aracında kredi harcamadan önce sahibin onayı (#204) — **KABUL (Belge Müdürü; sahip vekâleti, Genel Müdür'ün kabul yönü); madde 4 sahip düzeltmesiyle değişti (2026-11-16)**
 
 - **Kimden:** haftalık bellek derleme görevi (2026-11-16, `docs/bellek-derleme/2026-11-16.md` §1). Sahip bu oturumda "bu kaydı incele ve gereğini yap" dedi; Genel Müdür sahip vekâletiyle kabul yönünü verdi.
 - **Vakasız, sahip kararı.** Onaysız harcama vakası yok. Üç not da sahibin önceden koyduğu sınırdır; kural çiğnenmedi, harcama yanlışlıkla yapılmadı. Bu karar çiğnenmiş bir kuralın cezası değil, tekrar eden sahip talimatının aile kuralına çevrilmesidir. Çiğnenme sayısı ölçülmedi.
@@ -49,6 +49,11 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
   - **Değiştirilen: sıra.** Maddeler 1 ve 3 (okuma serbest) giriş cümlesinde birleşti; beş madde üçe indi. Anlam aynı, kelime bütçesi için.
   - **Eklenen (talepte yok):** `ekip-duzeni-standardi.md` bağımsız birim madde 5'ine tek satırlık atıf: birimin sınırı aile kuralından sıkıdır (birim hiç kullanmaz, onay istemek yetmez); çelişme olmasın diye yazıldı. Kapsam notu: reklam bütçesi ve bulut kaynağı açma gibi öteki harcamalar bu kuralda yok; o alanda vaka gelirse ayrı talep.
   - **Alınmayan:** bekçi (araç adlarına bakan kapı). Vaka yok, kural makineyle zorlanmaz; "Nasıl ölçülür" bölümüne yazıldı.
+- **Sahip düzeltmesi (2026-11-16, #206 birleştikten sonra): madde 4 yanlıştı.** Yukarıdaki "Değiştirilen: madde 4" ve "alt ajan çağırmaz" metni geçersizdir; kural şu modele çevrildi. Sahibin sözü: "Alt ajan bu aracı çağırabilir. Ancak kullanılacak kredi miktarı Genel Müdür'e sahip tarafından verilir ya da izin alınır, ardından işi yine alt ajan yapar." Eski karar yanlış anlaşılmadı: talep "alt ajana verilmez" diyordu ve Destek notu da öyle; sahip kuralı kendisi düzeltti.
+  - **Yeni model:** harcama yetkisi koordinatördedir (Genel Müdür ya da ana oturum). Sahip ya kredi bütçesi verir ya da o iş için izin verir (üretim, model, tahmini maliyet yazılarak). Alt ajan aracı çağırabilir; talimatına bütçe (ya da onaylı iş) ve "aşma" yasağı yazılır. Bütçe aşılacaksa alt ajan durur, koordinatör sahipten yeni izin alır. Okuma araçları serbest; gözetimsiz çalışmada harcama yok (ikisi değişmedi).
+  - **Sonuç:** maddeler üçe iniyor (ilk yazımda da üçtü), ama içerik değişti. Bağımsız birimin "hiç kullanmaz" sınırı (`ekip-duzeni-standardi.md` madde 5) kalır; atıf satırı buna göre düzeltildi.
+  - **Ölçülmedi:** alt ajanın verilen bütçeyi gerçekten sayıp aşmadan durduğu (yeni kural, gözlem yok); araç tarafında bütçe sınırı ya da sayaç bulunup bulunmadığı. Sınır talimattadır, makineyle zorlanmaz.
+  - **Kelime bütçesi:** düzeltme sonrası işaretli bölümler toplamı 1199 (sınır 1200); toplam değişmedi; yeni bölüm eskisinden uzun olduğu için işaretli bölümde dört yerde birkaç kelime kısaldı (anlam aynı).
 - **Kelime bütçesi:** işaretli bölümler toplamı 1198 idi (sınır 1200, `setup-machine.test.js`). Yeni kural 59 kelime (başlık dahil). Sınır yükseltilmedi; `alt-ajan-standardi.md` bölümünden dört cümle çıkarıldı (Kural 3, 8, 9, 11'in ikinci cümleleri; Kural 10'un "raporda" cümlesi Kural 2'ye birleşti; giriş cümlelerinden biri kısaldı). Çıkarılan her gerekçe aynı dosyanın gövdesinde duruyor; bilgi silinmedi. Toplam şimdi 1199. Sonraki ekleme için sınırı yükseltmek sahibin kararıdır (2026-10-15'te bir kez yükseltildi).
 - **Ölçülmedi:** kuralın aile projelerindeki karşılığı (hangi projede hangi harcayan araç bağlı); araç kısıtlı kartın MCP araçlarını kapatıp kapatmadığı; üç notun şu anki içeriği (açılıp okunmadı); kuralın ajan davranışını gerçekten değiştirdiği (yeni kural, gözlem yok).
 - **Sahibe kalan adım:** makinede `node setup/setup-machine.js --uygula` (ev kâğıdı bloğu değişti; kuru çalışmada "güncellenecek" görüldü).
