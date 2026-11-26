@@ -6,6 +6,9 @@ const { execFileSync } = require('child_process');
 
 const PROJECTS_ROOT = process.env.CLAUDE_PROJECTS_ROOT || path.join(require('os').homedir(), 'Documents', 'SNN-AI-Asus-Z14');
 const STANDARD_FILE = path.join('docs', 'teknik-borc.md');
+const STANDARD_ARCHIVE = path.join('docs', 'teknik-borc-arsiv.md');
+// Git yolları her zaman '/' ile gelir; kütük adını git'e yol olarak veren ya da git çıktısıyla karşılaştıran kod bunu kullanır.
+const LEDGER_GIT_PATHS = [STANDARD_FILE, STANDARD_ARCHIVE].map((f) => f.split(path.sep).join('/'));
 const LEGACY_FILES = ['docs/tech-debt.md', 'docs/TECHNICAL_DEBT.md', 'TECH_DEBT.md', 'TECHNICAL_DEBT.md'];
 const DAY_MS = 86400000;
 // Özet ve oturum başı listelerinde gösterilmeyen klasörler (kullanıcı kararı, 2026-09-15: ihale-mcp test amaçlı)
@@ -177,4 +180,4 @@ function debtLabel(d) {
   return `P1:${c.P1} P2:${c.P2} P3:${c.P3}` + (c['P?'] ? ` P?:${c['P?']}` : '');
 }
 
-module.exports = { PROJECTS_ROOT, isRepoRoot, projectStatus, unpushedBranches, forgottenWork, listProjects, findProjectRoot, debtLabel, parseDebts, parseArchiveIds, setIssueNumber };
+module.exports = { STANDARD_FILE, STANDARD_ARCHIVE, LEDGER_GIT_PATHS, PROJECTS_ROOT, isRepoRoot, projectStatus, unpushedBranches, forgottenWork, listProjects, findProjectRoot, debtLabel, parseDebts, parseArchiveIds, setIssueNumber };

@@ -1,6 +1,6 @@
 # Belge — durum
 
-Son güncelleme: 2026-11-16
+Son güncelleme: 2026-11-26
 
 ## Açık
 
@@ -20,6 +20,7 @@ Talepler `node quality/open-requests.js` çıktısından alındı (2026-11-08).
 
 ## Biten (son 10)
 
+- 2026-11-26 · Hata bildirimi: borç bekçisi (`hooks/stop-debt-push.js`) kütüğü `teknik-debt.md` adıyla arıyordu, standart `teknik-borc.md`; kanca 2026-09-19'dan beri hiçbir projede çalışmadı. Karar kaydı: `GERI-BILDIRIM-KAYDI.md` en üst giriş, KABUL. Kod düzeltmesi ve testler Yazılım Müdürü'nde (bu işte yalnız kayıt yazıldı). Aile ölçümü kayıtta aktarılan biçimiyle yazıldı, bu işte yeniden koşulmadı. Commit ve PR Genel Müdür'de; sonra canlı kopya tazelenip makine için `node setup/setup-machine.js --uygula`. Kaynak: kayıt girişi.
 - 2026-11-16 · Talep #204: `standartlar/alt-ajan-standardi.md` işaretli bölümüne "Ücretli üretim aracı" (59 kelime) eklendi; ayrıntı, vaka tablosu ve kapsam gövdede. Bütçe için bölümden dört cümle çıkarıldı, gerekçeleri gövdede duruyor. `ekip-duzeni-standardi.md` bağımsız birim madde 5'ine atıf, README satırı. Karar kaydı: `GERI-BILDIRIM-KAYDI.md` en üst giriş, KABUL (vakasız, sahip kararı). Aynı gün sahip madde 4'ü düzeltti: alt ajan çağırabilir, yetki ve bütçe koordinatördedir, aşılacaksa alt ajan durur; bölüm ve kayıt buna göre yeniden yazıldı. Kuru çalışma (kaynak yeni dosyalara yönlendirilerek) "güncellenecek" gösterdi. Notlar ve öteki projeler ölçülmedi.
 - 2026-11-13 · Talep #198: `standartlar/ekip-duzeni-standardi.md` içine "Bağımsız birimler" bölümü (Müşteri İlişkileri), Destek satırı ve "Karışabilecek çiftler" notu, "Zorunlu değil" maddesi. Karar kaydı: `GERI-BILDIRIM-KAYDI.md` en üst giriş, KISMİ KABUL (panele gitme isteğe bağlı, birim isteğe bağlı, yeri genelleştirildi, ortak beceri yazılmadı). Panel yeniden koşulmadı, öteki projeler ölçülmedi. Commit ve PR Genel Müdür'de; makineye kopyalanmaz.
 - 2026-11-10 · Talep #194: `skills/git-temizlik/SKILL.md` altı düzeltme ve küçük notla güncellendi (reviewDecision ifadesi, "öteki dallar" satırı, alt bağımlılık uyarısı, ertelenmiş kayıt, geride kalma, kütük sahibi). Karar kaydı yazıldı: `GERI-BILDIRIM-KAYDI.md` en üst giriş, madde 5 daraltmasıyla. Yeniden koşulmadı, öteki projeler ölçülmedi. Commit, PR ve issue yorumu Genel Müdür'de; makine için canlı kopya tazelenip `node setup/setup-machine.js --uygula`.

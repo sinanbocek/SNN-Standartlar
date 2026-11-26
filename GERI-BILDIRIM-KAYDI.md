@@ -34,6 +34,17 @@ Bunlar `standartlar/olcum-standardi.md`'nin talep tarafındaki karşılığıdı
 ## Kararlar
 
 
+### 2026-11-26 · Borç bekçisi yanlış dosya adını arıyordu: `teknik-debt.md` yerine `teknik-borc.md` — **KABUL (hata bildirimi; bir müşteri teklif sistemi projesinin oturumu)**
+
+- **Kimden:** Bir müşteri teklif sistemi projesinin oturumu, kurulum hazırlığında ortak depoların kanca kodunu salt okuma ile okurken buldu.
+- **Bulgu:** `hooks/stop-debt-push.js` teknik borç kütüğünü `docs/teknik-debt.md` ve `docs/teknik-debt-arsiv.md` adıyla arıyordu. Standart ad `docs/teknik-borc.md` ve `docs/teknik-borc-arsiv.md`. Kanca hiçbir projede kütük değişikliğini görmedi, hiç engellemedi. Sessiz kaldığı için fark edilmedi; testler de yanlış adı doğruluyordu, CI yakalamadı.
+- **Kök neden:** 527093f (2026-09-19) kancalar depoya alınırken adlar İngilizceye taşındı; "borc" dosya yolu metninde de "debt" oldu. Ad kancada, `debt-sync/lib/debt.js` standart tablosundan ayrı, elle ikinci kez yazılmıştı.
+- **Dört şart:** gerçek olay (yukarıdaki bulgu, 2026-11-26, kanca yazıldığı 2026-09-19'dan beri sessiz); ölçülmüş çıktı (testler eski kodla kırmızı, yeni kodla yeşil; sabotaj kırmızıya döndü; gerçek denemede kanca engelledi; 48 test dosyası yeşil); denenmiş alternatif (adı kancada elle düzeltmek aynı sapmayı yeniden doğurur, tek kaynak şart); etki: tüm aile.
+- **Düzeltme:** kanca adları tek kaynaktan alıyor (`debt-sync/lib/debt.js`: `STANDARD_FILE`, yeni `STANDARD_ARCHIVE`, `LEDGER_GIT_PATHS`). Yükleme çağrı anında; canlı kopya eskiyse kanca çökmez, stderr'e yazar. Yeni testler: commit'siz kütük, push'lanmamış kütük, commit'siz arşiv engeller; temiz geçer; kancadaki adlar standart tablosuyla ve kurulum şablonuyla aynıdır.
+- **Aile ölçümü** (`quality/remote-read.js`, 19 proje, ana dal): `docs/teknik-debt.md` 0 var, 19 yok, 0 okunamadı; `docs/teknik-borc.md` 19 var. Eski ad kaldırıldı, geçiş kodu yok.
+- **Ders:** yeniden adlandırma taramasında dosya yolu ve dosya adı metinleri tanımlayıcı değildir; elle kopyalanan sabit tek kaynaktan alınmalı.
+- **Kalan:** makinedeki kanca, sahip `node setup/setup-machine.js --uygula` çalıştırana kadar eski adı arar. Sıra: PR birleşir, canlı kopya tazelenir, makineye kopyalanır.
+
 ### 2026-11-16 · Ücretli üretim aracında kredi harcamadan önce sahibin onayı (#204) — **KABUL (Belge Müdürü; sahip vekâleti, Genel Müdür'ün kabul yönü); madde 4 sahip düzeltmesiyle değişti (2026-11-16)**
 
 - **Kimden:** haftalık bellek derleme görevi (2026-11-16, `docs/bellek-derleme/2026-11-16.md` §1). Sahip bu oturumda "bu kaydı incele ve gereğini yap" dedi; Genel Müdür sahip vekâletiyle kabul yönünü verdi.

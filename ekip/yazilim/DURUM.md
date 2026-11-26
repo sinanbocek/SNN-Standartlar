@@ -1,6 +1,6 @@
 # Yazılım — durum
 
-Son güncelleme: 2026-11-13
+Son güncelleme: 2026-11-26
 
 ## Açık
 
@@ -11,6 +11,8 @@ Aile listesi adımı iki düzeltmesi yazıldı (aşağıda), commit/PR bekliyor.
 Yok.
 
 ## Biten (son 10)
+
+- 2026-11-26 · Kütük kancası yanlış adı arıyordu, düzeltildi (`hooks/stop-debt-push.js`, `debt-sync/lib/debt.js`, test `hooks/test/stop-debt-push.test.js`): kanca `docs/teknik-debt*.md` arıyordu (527093f, 2026-09-19; "borc" yolda da "debt" olmuştu), standart ad `docs/teknik-borc.md` ve `docs/teknik-borc-arsiv.md`. Ad artık tek kaynaktan: `debt-sync/lib/debt.js` `STANDARD_ARCHIVE` ve `LEDGER_GIT_PATHS` (git için `/` ayıraçlı) dışa verir, kanca `./lib/debt` üzerinden çağrıldığında yükler; canlı kopya yoksa ya da eski sürümse kanca çökmez, stderr'e yazıp çıkış 0 verir (sessiz kapanma riski: bu durumda koruma yok, ama oturum da kilitlenmez). Yeni testler: arşiv dosyası, kanca adı = standartlar tablosu + setup şablonu, ortak depo okunamazsa çıkış 0. Eski kodla kırmızı, sabotajla (arşiv adı bozuldu) kırmızı. Aile ölçümü: eski ad 0/19 projede, standart ad 19/19. Önemli: kanca makineye `setup-machine.js --uygula` ile kopyalanır ve canlı kopya main'den tazelenmeden yeni kanca `LEDGER_GIT_PATHS` bulamaz; sıra: PR birleş, canlı kopyayı tazele, sonra makineye kopyala. Commit/PR Genel Müdür'de bekliyor.
 
 - 2026-11-13 · Kurulum betiği aile listesi adımı (`setup/setup-project.js`, `setup/lib/setup-plan.js`, test `setup/test/setup-plan.test.js`): (1) yeniden adlandırılmış depo ikinci kez eklenmez; saf `familyLookup(raw, full, currentNames)` yeni durum `'renamed'` verir, `familyWithEntry` eski kaydın `repo` alanını metin düzeyinde değiştirir (diğer alanlar ve baytlar korunur), `familyPrText` başlık/gövdeyi üretir; IO tarafı `currentNames` her kayıt için `gh api repos/<ad> -q .full_name` çağırır, yalnız adla bulunamazsa; okunamayan kayıt eşlem dışı kalır ve "Uyarılar" altında yazılır. (2) Liste PR'ı açılınca `gh pr merge <no> --repo sinanbocek/SNN-Standartlar --auto --merge --delete-branch`; başarısızlık "otomatik birleştirme açılamadı: <ilk satır>" olur, kurulum düşmez. Sabotaj iki kez kırmızı. Commit/PR Genel Müdür'de bekliyor.
 
