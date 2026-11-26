@@ -24,7 +24,8 @@
     { "repo": "sinanbocek/SNN-UI", "dir": "SNN-UI", "public": true },
     { "repo": "sinanbocek/EGO-Gayrimenkul", "dir": "EGO-Gayrimenkul" },
     { "repo": "sinanbocek/SNN-Games-Bizim-Sube", "dir": "SNN-Games-Bizim-Sube" },
-    { "repo": "sinanbocek/SNN-Destek-Gundemi", "dir": "SNN-Destek-Gundemi" }
+    { "repo": "sinanbocek/SNN-Destek-Gundemi", "dir": "SNN-Destek-Gundemi" },
+    { "repo": "sinanbocek/Furkan-Ambalaj-Teklif", "dir": "Furkan-Ambalaj-Teklif" }
   ],
   "excluded": [
     {
