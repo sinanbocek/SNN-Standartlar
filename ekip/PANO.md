@@ -1,8 +1,8 @@
 # Pano
 
-Son güncelleme: 2026-11-16
+Son güncelleme: 2026-11-26
 
-**Kısa cevap:** #204 kabul edildi, sahip düzeltmesiyle (#208): ücretli üretim aracını alt ajan çağırabilir; sahip Genel Müdür'e bütçe verir ya da işe izin verir, aşılacaksa alt ajan durur. Kural ev kâğıdına iner; sahip `setup-machine.js --uygula` çalıştırmalı.
+**Kısa cevap:** Borç bekçisi (`hooks/stop-debt-push.js`) 2026-09-19'dan beri yanlış kütük adını arıyordu, hiç devreye girmedi. Düzeltildi; ad artık tek kaynaktan geliyor. Makinede çalışması için sahip `setup-machine.js --uygula` çalıştırmalı.
 
 ## Departmanlar
 
@@ -24,9 +24,11 @@ Yok.
 
 ### Elle
 
-- Ev kâğıdını tazele: `node setup/setup-machine.js --uygula` (#204 kuralı).
+- Ev kâğıdını ve kancaları tazele: `node setup/setup-machine.js --uygula` (#204 kuralı ve borç bekçisi düzeltmesi).
 
 ## Son bitenler
+
+- 2026-11-26 · Borç bekçisi yanlış adı (`teknik-debt.md`) arıyordu; standart ada (`teknik-borc.md`) çevrildi, ad `debt-sync/lib/debt.js`'ten geliyor. Aile: 19 projenin 19'unda standart ad, eski ad 0.
 
 - 2026-11-16 · #204 sahip düzeltmesi (#208): "alt ajan çağırmaz" yanlıştı; alt ajan sahibin bütçesi ya da izniyle çağırır.
 - 2026-11-16 · #204 kabul (#206): ücretli üretim aracında harcama öncesi sahip onayı. Vakasız, sahip kararı. Ev kâğıdı bütçesi 1199/1200 kelime.

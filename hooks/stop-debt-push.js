@@ -6,7 +6,17 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
-const LEDGER = ['docs/teknik-debt.md', 'docs/teknik-debt-arsiv.md'];
+// Kütük adları TEK kaynaktan gelir (debt-sync/lib/debt.js, ortak depo). Elle yazılmış ikinci bir liste tutulmaz:
+// 2026-09-19'da buraya elle yazılan ad, "borc" yerine "debt" ile, standart adla ayrıştı ve kanca kütüğü hiç görmedi.
+// Yükleme üst düzeyde DEĞİL, çağrıldığında yapılır: canlı kopya yoksa ya da eski sürümse kanca çökmez
+// (CLAUDE.md §1: kuralı çalıştıran şey akmamalı); main() hatayı stderr'e yazar ve oturumu kilitlemez.
+function loadLedger() {
+  const files = require('./lib/debt').LEDGER_GIT_PATHS;
+  if (!Array.isArray(files) || !files.length) {
+    throw new Error('kütük adları ortak depodan okunamadı (LEDGER_GIT_PATHS yok; canlı kopya eski olabilir)');
+  }
+  return files;
+}
 
 function git(cwd, args) {
   try {
@@ -29,7 +39,7 @@ function decide({ uncommitted, unpushed, hookActive }) {
   return { decision: 'block', reason: `[global kural] ${msg}` };
 }
 
-function measure(root) {
+function measure(root, LEDGER = loadLedger()) {
   const present = LEDGER.filter((f) => fs.existsSync(path.join(root, f)));
   if (!present.length) return null;
   const status = git(root, ['status', '--porcelain', '--', ...LEDGER]) || '';
@@ -63,4 +73,4 @@ if (require.main === module) {
   }
   process.exit(0);
 }
-module.exports = { decide, measure };
+module.exports = { decide, measure, loadLedger };
